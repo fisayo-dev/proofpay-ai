@@ -1,16 +1,11 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+# backend/app/db/connection.py
 
+import psycopg
+from psycopg.rows import dict_row
 from app.core.config import settings
 
-
-engine = create_engine(settings.database_url)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+def get_connection():
+    return psycopg.connect(
+        settings.database_url,
+        row_factory=dict_row
+    )
