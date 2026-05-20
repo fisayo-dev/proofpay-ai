@@ -13,6 +13,10 @@ from app.services.vendor_service import get_vendor_for_scoring
 from app.core.config import settings
 
 
+def amount_kobo_to_naira(amount_kobo: int) -> float:
+    return round(amount_kobo / 100, 2)
+
+
 def create_payment_request(data: dict) -> dict:
     vendor_id = data["vendor_id"]
     amount_kobo = data["amount_kobo"]
@@ -129,7 +133,7 @@ def create_payment_request(data: dict) -> dict:
     checkout_config = {
         "key": settings.kora_public_key,
         "reference": kora_reference,
-        "amount": amount_kobo / 100,
+        "amount": amount_kobo_to_naira(amount_kobo),
         "currency": data.get("currency", "NGN"),
         "customer": {
             "name": data.get("buyer_name", ""),
@@ -170,6 +174,26 @@ def get_payment_request_by_slug(slug: str) -> dict | None:
     cursor.execute(
         "SELECT * FROM payment_requests WHERE public_slug = %s",
         (slug,)
+    )
+    row = cursor.fetchone()
+    conn.close()
+
+    return dict(row) if row else None
+
+
+def get_trust_check_by_payment_request_id(payment_request_id: str) -> dict | None:
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        SELECT score, verdict, reasons, feature_snapshot, model_version, created_at
+        FROM trust_checks
+        WHERE payment_request_id = %s
+        ORDER BY created_at DESC
+        LIMIT 1
+        """,
+        (payment_request_id,)
     )
     row = cursor.fetchone()
     conn.close()
