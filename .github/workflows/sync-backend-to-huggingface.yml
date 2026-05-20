@@ -1,0 +1,92 @@
+name: Sync Backend to Hugging Face Space
+
+on:
+  push:
+    branches:
+      - main
+      - backend-pr
+    paths:
+      - "backend/**"
+      - ".github/workflows/sync-backend-to-huggingface.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: sync-backend-to-huggingface
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout GitHub repository
+        uses: actions/checkout@v4
+
+      - name: Prepare backend-only Space files
+        run: |
+          rm -rf hf-space
+          mkdir -p hf-space
+          rsync -a \
+            --exclude '.env' \
+            --exclude '.env.*' \
+            --exclude '__pycache__/' \
+            --exclude '*.pyc' \
+            --exclude '.pytest_cache/' \
+            --exclude '.mypy_cache/' \
+            --exclude '.ruff_cache/' \
+            backend/ hf-space/
+
+          cat > hf-space/Dockerfile <<'EOF'
+          FROM python:3.10-slim
+
+          ENV PYTHONDONTWRITEBYTECODE=1
+          ENV PYTHONUNBUFFERED=1
+          ENV PYTHONPATH=/code
+
+          WORKDIR /code
+
+          COPY requirements.txt /code/requirements.txt
+          RUN pip install --no-cache-dir --upgrade pip \
+              && pip install --no-cache-dir -r /code/requirements.txt
+
+          COPY . /code
+
+          EXPOSE 7860
+
+          CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "7860"]
+          EOF
+
+          cat > hf-space/README.md <<'EOF'
+          ---
+          title: ProofPay AI Backend
+          colorFrom: blue
+          colorTo: green
+          sdk: docker
+          app_port: 7860
+          pinned: false
+          license: mit
+          ---
+
+          # ProofPay AI Backend
+
+          FastAPI backend for ProofPay AI.
+          EOF
+
+      - name: Push backend to Hugging Face Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_SPACE_REPO: https://huggingface.co/spaces/OlatunjiTobi/proofpay-ai-backend
+        run: |
+          if [ -z "$HF_TOKEN" ]; then
+            echo "Missing GitHub secret: HF_TOKEN"
+            exit 1
+          fi
+
+          cd hf-space
+          git init
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "Sync backend from GitHub ${GITHUB_SHA}"
+          git branch -M main
+          git remote add origin "https://OlatunjiTobi:${HF_TOKEN}@huggingface.co/spaces/OlatunjiTobi/proofpay-ai-backend"
+          git push --force origin main
