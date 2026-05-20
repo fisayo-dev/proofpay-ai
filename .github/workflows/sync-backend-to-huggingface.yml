@@ -5,14 +5,14 @@ on:
     branches:
       - main
       - backend-pr
-    paths:
-      - "backend/**"
-      - ".github/workflows/sync-backend-to-huggingface.yml"
   workflow_dispatch:
 
 concurrency:
   group: sync-backend-to-huggingface
   cancel-in-progress: true
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   sync:
