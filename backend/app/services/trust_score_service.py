@@ -1,5 +1,13 @@
 # backend/app/services/trust_score_service.py
 
+
+def _safe_int(value, default: int = 0) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
 def calculate_trust_score(vendor: dict, payment_request: dict) -> dict:
     score = 0
     reasons = []
@@ -13,7 +21,7 @@ def calculate_trust_score(vendor: dict, payment_request: dict) -> dict:
         vendor.get("bank_account_name"),
         vendor.get("social_handle"),
     ]
-    filled = sum(1 for f in profile_fields if f)
+    filled = sum(1 for field in profile_fields if field and str(field).strip())
     completion_rate = filled / len(profile_fields)
     features["profile_completeness"] = round(completion_rate, 2)
 
@@ -25,80 +33,109 @@ def calculate_trust_score(vendor: dict, payment_request: dict) -> dict:
         reasons.append("Vendor profile is mostly complete")
     else:
         score += 4
-        reasons.append("Vendor profile is incomplete")
+        reasons.append("Vendor profile is incomplete - missing key details")
 
     # Factor 2: Transaction history (25 points)
-    completed = vendor.get("completed_transactions", 0)
+    completed = _safe_int(vendor.get("completed_transactions", 0))
+    total = _safe_int(vendor.get("total_transactions", 0))
     features["completed_transactions"] = completed
+    features["total_transactions"] = total
 
-    if completed >= 10:
+    if completed >= 20:
         score += 25
+        reasons.append(f"Vendor has {completed} completed transactions - strong history")
+    elif completed >= 10:
+        score += 20
         reasons.append(f"Vendor has {completed} completed transactions")
+    elif completed >= 5:
+        score += 14
+        reasons.append(f"Vendor has {completed} completed transactions - growing history")
     elif completed >= 3:
-        score += 15
-        reasons.append(f"Vendor has {completed} completed transactions")
+        score += 10
+        reasons.append(f"Vendor has {completed} completed transactions - early history")
     elif completed >= 1:
-        score += 8
-        reasons.append("Vendor has limited transaction history")
+        score += 7
+        reasons.append(f"Vendor has {completed} completed transaction(s) - limited history")
     else:
         score += 2
-        reasons.append("Vendor has no transaction history yet")
+        reasons.append("Vendor has no completed transactions yet - new seller")
 
-    # Factor 3: Dispute history (20 points)
-    disputes = vendor.get("dispute_count", 0)
-    total = vendor.get("total_transactions", 1)
+    # Factor 3: Dispute history (25 points)
+    disputes = _safe_int(vendor.get("dispute_count", 0))
     dispute_rate = disputes / total if total > 0 else 0
-    features["dispute_rate"] = round(dispute_rate, 2)
+    features["dispute_count"] = disputes
+    features["dispute_rate"] = round(dispute_rate, 3)
 
-    if disputes == 0:
-        score += 20
+    if total == 0:
+        score += 5
+        reasons.append("No dispute history yet - not enough completed transactions")
+    elif disputes == 0:
+        score += 25
         reasons.append("No disputes on record")
-    elif dispute_rate <= 0.1:
-        score += 15
-        reasons.append("Very few disputes relative to transaction volume")
-    elif dispute_rate <= 0.3:
-        score += 8
-        reasons.append("Some disputes on record - review carefully")
+    elif dispute_rate <= 0.05:
+        score += 20
+        reasons.append("Very low dispute rate - highly reliable")
+    elif dispute_rate <= 0.15:
+        score += 12
+        reasons.append("Some disputes on record - review before paying")
+    elif dispute_rate <= 0.30:
+        score += 5
+        reasons.append("Notable dispute history - proceed carefully")
     else:
         score += 0
-        reasons.append("High dispute rate - proceed with caution")
+        reasons.append("High dispute rate - exercise significant caution")
 
     # Factor 4: Account name consistency (15 points)
-    bank_name = vendor.get("bank_account_name", "")
-    business_name = vendor.get("business_name", "")
-    name_match = any(
-        word.lower() in bank_name.lower()
-        for word in business_name.split()
-        if len(word) > 2
-    )
+    bank_name = str(vendor.get("bank_account_name", "") or "").strip().lower()
+    business_name = str(vendor.get("business_name", "") or "").strip().lower()
+
+    meaningful_words = [
+        word for word in business_name.split()
+        if len(word) > 2 and word not in {"the", "and", "for", "ltd", "co"}
+    ]
+    name_match = any(word in bank_name for word in meaningful_words)
+    features["bank_account_name_provided"] = bool(bank_name)
     features["name_consistency"] = name_match
 
     if bank_name and name_match:
         score += 15
         reasons.append("Account name is consistent with business name")
-    elif bank_name:
+    elif bank_name and not name_match:
         score += 8
-        reasons.append("Account name provided but does not fully match business name")
+        reasons.append("Account name provided but does not match business name - verify identity")
     else:
         score += 0
         reasons.append("No bank account name provided")
 
     # Factor 5: Amount reasonableness (15 points)
-    amount_kobo = payment_request.get("amount_kobo", 0)
+    amount_kobo = _safe_int(payment_request.get("amount_kobo", 0))
     amount_naira = amount_kobo / 100
     features["amount_naira"] = amount_naira
 
-    if 500 <= amount_naira <= 50000:
+    category = str(vendor.get("category", "") or "").lower()
+    category_ranges = {
+        "food": (500, 15000),
+        "fashion": (1000, 80000),
+        "gadgets": (5000, 500000),
+        "services": (1000, 100000),
+        "tickets": (500, 50000),
+        "other": (500, 100000),
+    }
+    low, high = category_ranges.get(category, (500, 100000))
+
+    if low <= amount_naira <= high:
         score += 15
-        reasons.append("Payment amount is within a normal range")
-    elif amount_naira <= 200000:
-        score += 8
-        reasons.append("Payment amount is higher than average - verify before paying")
+        reasons.append("Payment amount is normal for this vendor category")
+    elif amount_naira < low:
+        score += 10
+        reasons.append("Payment amount is lower than typical for this category")
+    elif amount_naira <= high * 2:
+        score += 7
+        reasons.append("Payment amount is above average - confirm item details")
     else:
         score += 0
-        reasons.append("Payment amount is unusually high")
+        reasons.append("Payment amount is unusually high for this category")
 
-    # Determine verdict
     if score >= 80:
         verdict = "Trusted"
     elif score >= 55:
@@ -108,10 +145,16 @@ def calculate_trust_score(vendor: dict, payment_request: dict) -> dict:
     else:
         verdict = "Manual Review Needed"
 
-    # Determine confidence
-    if completed >= 5 and bank_name:
+    data_richness = sum([
+        completed >= 3,
+        bool(bank_name),
+        total >= 3,
+        completion_rate >= 0.8,
+    ])
+
+    if data_richness >= 3:
         confidence = "high"
-    elif completed >= 1 or bank_name:
+    elif data_richness >= 2:
         confidence = "medium"
     else:
         confidence = "low"
@@ -127,26 +170,58 @@ def calculate_trust_score(vendor: dict, payment_request: dict) -> dict:
 
 
 if __name__ == "__main__":
-    vendor = {
-        "business_name": "Favour Fits",
-        "category": "fashion",
-        "phone": "+2348012345678",
-        "bank_account_name": "FAVOUR ADE",
-        "social_handle": "@favourfits",
-        "completed_transactions": 14,
-        "total_transactions": 15,
-        "dispute_count": 0,
-    }
+    samples = [
+        (
+            "Trusted vendor",
+            {
+                "business_name": "Favour Fits",
+                "category": "fashion",
+                "phone": "+2348012345678",
+                "bank_account_name": "FAVOUR ADE",
+                "social_handle": "@favourfits",
+                "completed_transactions": 14,
+                "total_transactions": 15,
+                "dispute_count": 0,
+            },
+            {"amount_kobo": 750000},
+        ),
+        (
+            "Caution vendor",
+            {
+                "business_name": "Quick Sales",
+                "category": "gadgets",
+                "phone": "+2348099999999",
+                "bank_account_name": None,
+                "social_handle": None,
+                "completed_transactions": 3,
+                "total_transactions": 5,
+                "dispute_count": 1,
+            },
+            {"amount_kobo": 5000000},
+        ),
+        (
+            "New vendor",
+            {
+                "business_name": "Fresh Eats",
+                "category": "food",
+                "phone": None,
+                "bank_account_name": None,
+                "social_handle": None,
+                "completed_transactions": 0,
+                "total_transactions": 0,
+                "dispute_count": 0,
+            },
+            {"amount_kobo": 300000},
+        ),
+    ]
 
-    payment_request = {
-        "amount_kobo": 750000,
-        "item_name": "Black hoodie",
-    }
-
-    result = calculate_trust_score(vendor, payment_request)
-    print(f"score: {result['score']}")
-    print(f"verdict: {result['verdict']}")
-    print(f"confidence: {result['confidence']}")
-    print("reasons:")
-    for reason in result["reasons"]:
-        print(f"  - {reason}")
+    for label, vendor, request in samples:
+        result = calculate_trust_score(vendor, request)
+        print(label)
+        print(f"score: {result['score']}")
+        print(f"verdict: {result['verdict']}")
+        print(f"confidence: {result['confidence']}")
+        print("reasons:")
+        for reason in result["reasons"]:
+            print(f"  - {reason}")
+        print()
