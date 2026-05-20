@@ -1,9 +1,9 @@
 {
-  "demo_vendor_id": "fb703511-20f0-4828-89d1-0b6136fedae4",
-  "demo_slug": "ppai_TWAQSN4N",
-  "demo_kora_reference": "PPAY-20260520-THTYHEUL",
-  "demo_amount_naira": 7500.99,
+  "demo_vendor_id": "c6aa02e6-ceca-4d96-a67b-d9cf208815f2",
+  "demo_slug": "ppai_GSHV4VTU",
+  "demo_kora_reference": "PPAY-20260520-NX04BHTW",
+  "demo_amount_naira": 7500,
   "demo_item": "Black hoodie",
-  "demo_trust_score": 72,
+  "demo_trust_score": 57,
   "demo_verdict": "Caution"
 }
