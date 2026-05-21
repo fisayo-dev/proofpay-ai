@@ -1,7 +1,7 @@
 import { Badge } from "../ui/badge";
 import Image from "next/image";
 import { Button } from "../ui/button";
-import { GlassWaterIcon, Lightbulb, ShoppingCart } from "lucide-react";
+import { Compass, ShoppingCart } from "lucide-react";
 
 const Hero = () => {
   return (
@@ -16,22 +16,29 @@ const Hero = () => {
           />
           <span>Payments Powered by Kora</span>
         </Badge>
-        <div className="grid space-y-2">
-          <h2 className="text-4xl sm:text-5xl md:text-6xl font-medium max-w-5xl md:max-w-4xl">
+
+        <div className="grid space-y-4">
+          <h2 className="text-4xl sm:text-5xl md:text-6xl max-w-5xl md:max-w-4xl font-semibold">
             Verify your{" "}
             <span className="text-primary font-extrabold">favourite</span>{" "}
             vendors before making payments.
           </h2>
-          <p>Lorem ispum</p>
+
+          <p className="text-muted-foreground sm:text-base max-w-2xl mx-auto leading-relaxed">
+            Discover trusted vendors, avoid scams, and shop with confidence
+            using real customer insights and verified business information.
+          </p>
         </div>
+
         <div className="grid md:flex items-center justify-center gap-2 md:gap-4">
           <Button>
             <ShoppingCart className="text-white" />
             <span>Start Shopping</span>
           </Button>
+
           <Button variant="outline">
-            <Lightbulb />
-            <span>Explore store</span>
+            <Compass />
+            <span>Explore Store</span>
           </Button>
         </div>
       </div>
