@@ -13,6 +13,9 @@
 # testing
 /coverage
 
+#ai
+.docx-temp/
+
 # next.js
 /.next/
 /out/

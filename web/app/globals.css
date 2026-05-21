@@ -8,9 +8,9 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
 
-  --font-sans: var(--font-sans);
+  --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  --font-heading: var(--font-geist-sans);
 
   /* Core UI */
   --color-card: var(--card);
@@ -79,11 +79,6 @@
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
 }
-
-/* =========================
-   LIGHT MODE
-   ========================= */
-
 :root {
   --radius: 0.75rem;
 
@@ -151,11 +146,6 @@
   --sidebar-border: oklch(0.9 0.01 250);
   --sidebar-ring: oklch(0.58 0.19 258);
 }
-
-/* =========================
-   DARK MODE
-   ========================= */
-
 .dark {
   /* Base */
   --background: oklch(0.16 0.015 255);
@@ -221,7 +211,6 @@
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.7 0.16 255);
 }
-
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -234,4 +223,12 @@
   body {
     @apply bg-background text-foreground antialiased;
   }
+}
+
+body {
+    font-family: var(--font-sans)
+}
+
+.app-container {
+    @apply container mx-auto md:px-20 px-5;
 }
