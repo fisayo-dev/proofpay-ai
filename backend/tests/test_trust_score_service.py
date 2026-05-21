@@ -59,7 +59,51 @@ class TrustScoreServiceTest(unittest.TestCase):
         self.assertEqual(len(verdicts), 3)
         for result in (result_a, result_b, result_c):
             self.assertGreaterEqual(len(result["reasons"]), 5)
-            self.assertEqual(result["model_version"], "rules-v1")
+            self.assertEqual(result["model_version"], "rules-v1-anomaly")
+
+    def test_applies_anomaly_multiplier_to_large_new_vendor_payment(self):
+        vendor = {
+            "business_name": "Quick Cash",
+            "category": "gadgets",
+            "phone": None,
+            "bank_account_name": None,
+            "social_handle": None,
+            "completed_transactions": 0,
+            "total_transactions": 0,
+            "dispute_count": 0,
+        }
+        payment_request = {"amount_kobo": 15000000}
+
+        result = calculate_trust_score(vendor, payment_request)
+
+        self.assertEqual(result["score"], 14)
+        self.assertEqual(result["verdict"], "Manual Review Needed")
+        self.assertEqual(result["features"]["risk_multiplier"], 0.549)
+        self.assertEqual(len(result["features"]["anomaly_flags"]), 4)
+        self.assertIn(
+            "Large payment requested from a vendor with very few transactions",
+            result["reasons"],
+        )
+
+    def test_keeps_trusted_vendor_score_when_no_anomaly_detected(self):
+        vendor = {
+            "business_name": "Favour Fits",
+            "category": "fashion",
+            "phone": "+2348012345678",
+            "bank_account_name": "FAVOUR ADE",
+            "social_handle": "@favourfits",
+            "completed_transactions": 14,
+            "total_transactions": 15,
+            "dispute_count": 0,
+        }
+        payment_request = {"amount_kobo": 750000}
+
+        result = calculate_trust_score(vendor, payment_request)
+
+        self.assertEqual(result["score"], 95)
+        self.assertEqual(result["verdict"], "Trusted")
+        self.assertEqual(result["features"]["risk_multiplier"], 1.0)
+        self.assertEqual(result["features"]["anomaly_flags"], [])
 
 
 if __name__ == "__main__":
