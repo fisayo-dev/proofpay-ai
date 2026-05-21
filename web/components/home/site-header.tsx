@@ -1,4 +1,7 @@
+import { header_links } from "@/constants/home";
 import { Button } from "../ui/button";
+import Link from "next/link";
+import { User2 } from "lucide-react";
 
 export function SiteHeader() {
   return (
@@ -9,20 +12,24 @@ export function SiteHeader() {
             <h2 className="text-3xl font-extrabold text-primary">Proof Pay</h2>
             {/* Links*/}
             <div className="hidden md:flex items-center text-sm">
-              {["Product", "Github", ""].map((link, index) => (
-                <div
+              {header_links.map((link, index) => (
+                <Link
+                  href={link.link}
                   key={index}
                   className="px-3 py-2 rounded-full cursor-pointer hover:bg-gray-100"
                 >
-                  {link}
-                </div>
+                  {link.text}
+                </Link>
               ))}
             </div>
           </div>
 
           <div className="flex items-center space-x-4">
-            <Button>Signup as vendor/buyer</Button>
-            {/*<Button variant="outline">Login</Button>*/}
+            <Button>
+              <User2 />
+              Signup as vendor/buyer
+            </Button>
+            <Button variant="outline">Login</Button>
           </div>
         </div>
       </div>
