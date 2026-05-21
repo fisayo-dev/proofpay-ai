@@ -1,5 +1,7 @@
 # backend/app/services/trust_score_service.py
 
+from app.services.anomaly_service import detect_anomalies
+
 
 def _safe_int(value, default: int = 0) -> int:
     try:
@@ -136,15 +138,6 @@ def calculate_trust_score(vendor: dict, payment_request: dict) -> dict:
         score += 0
         reasons.append("Payment amount is unusually high for this category")
 
-    if score >= 80:
-        verdict = "Trusted"
-    elif score >= 55:
-        verdict = "Caution"
-    elif score >= 30:
-        verdict = "High Risk"
-    else:
-        verdict = "Manual Review Needed"
-
     data_richness = sum([
         completed >= 3,
         bool(bank_name),
@@ -159,13 +152,33 @@ def calculate_trust_score(vendor: dict, payment_request: dict) -> dict:
     else:
         confidence = "low"
 
+    anomaly_result = detect_anomalies(vendor, payment_request)
+
+    if anomaly_result["anomaly_detected"]:
+        adjusted_score = round(score * anomaly_result["risk_multiplier"])
+        reasons.extend(anomaly_result["anomaly_flags"])
+    else:
+        adjusted_score = score
+
+    if adjusted_score >= 80:
+        verdict = "Trusted"
+    elif adjusted_score >= 55:
+        verdict = "Caution"
+    elif adjusted_score >= 30:
+        verdict = "High Risk"
+    else:
+        verdict = "Manual Review Needed"
+
+    features["anomaly_flags"] = anomaly_result["anomaly_flags"]
+    features["risk_multiplier"] = anomaly_result["risk_multiplier"]
+
     return {
-        "score": score,
+        "score": adjusted_score,
         "verdict": verdict,
         "confidence": confidence,
         "reasons": reasons,
         "features": features,
-        "model_version": "rules-v1",
+        "model_version": "rules-v1-anomaly",
     }
 
 
