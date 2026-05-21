@@ -2,10 +2,12 @@ import { Badge } from "../ui/badge";
 import Image from "next/image";
 import { Button } from "../ui/button";
 import { Compass, ShoppingCart } from "lucide-react";
+import NetBackground from "@/utils/net-background";
 
 const Hero = () => {
   return (
     <div className="">
+      <NetBackground />
       <div className="h-100 grid place-content-center text-center gap-6">
         <Badge className="pr-5 mx-auto bg-background text-foreground border border-foreground/30">
           <Image
