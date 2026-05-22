@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     kora_webhook_url: str = ""
     frontend_base_url: str = "http://localhost:3000"
     backend_base_url: str = "http://localhost:8000"
+    session_secret: str = ""
     env: str = "development"
 
 settings = Settings()
