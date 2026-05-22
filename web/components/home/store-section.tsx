@@ -53,7 +53,7 @@ const StoreSection = () => {
                     {nairaFormatter.format(product.payment_request.amount)}
                   </p>
                 </div>
-                <Badge className="bg-success text-success-foreground">
+                <Badge className="bg-primary text-success-foreground">
                   {product.trust.verdict}
                 </Badge>
               </div>
