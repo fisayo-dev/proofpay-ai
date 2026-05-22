@@ -12,7 +12,7 @@ export function SiteHeader() {
   const closeMenu = () => setIsMenuOpen(false);
 
   return (
-    <header className="fixed z-30 w-full bg-transparent py-6 backdrop-blur-lg">
+    <header className="fixed z-30 w-full bg-background/95 py-3">
       <div className="app-container relative">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-4 lg:gap-8">
