@@ -5,10 +5,10 @@ export function SiteFooter() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="relative mt-24 border-t border-border/70">
+    <footer className="relative mt-24">
       <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-primary/30 to-transparent" />
 
-      <div className="app-container py-10 sm:py-12">
+      <div className="border-t border-border/20 py-10 sm:py-12">
         <div className="flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
           <div className="max-w-md space-y-3">
             <p className="text-sm font-medium uppercase tracking-[0.24em] text-primary/80">
