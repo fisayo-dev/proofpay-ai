@@ -16,9 +16,9 @@ export function SiteHeader() {
       <div className="app-container relative">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-4 lg:gap-8">
-            <h2 className="text-2xl font-extrabold text-primary sm:text-3xl">
+            <Link href="/" className="text-2xl font-extrabold text-primary sm:text-3xl">
               Proof Pay
-            </h2>
+            </Link>
             {/* Links*/}
             <div className="hidden items-center text-sm lg:flex">
               {header_links.map((link, index) => (
