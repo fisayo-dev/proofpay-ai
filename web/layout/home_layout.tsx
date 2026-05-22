@@ -4,7 +4,7 @@ const HomeLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <div>
       <SiteHeader />
-      <div className="py-32 app-container">{children}</div>
+      <main className="app-container pt-32">{children}</main>
     </div>
   );
 };
