@@ -1,6 +1,7 @@
+import { SignupVendorPayload } from "@/types/auth";
 import api from "../axios";
 
-const signupVendor = async (data: any) => {
+const signupVendor = async (data: SignupVendorPayload) => {
   try {
     const response = await api.post("/vendors", data);
     return response.data;

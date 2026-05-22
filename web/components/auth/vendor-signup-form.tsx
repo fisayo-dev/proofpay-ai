@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { ChangeEvent, FormEvent, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Check, Store, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import signupVendor from "@/lib/actions/auth";
 import { cn } from "@/lib/utils";
 
 const steps = [
@@ -23,77 +24,139 @@ const steps = [
   },
 ] as const;
 
-const profileFields = [
-  {
-    id: "first_name",
-    label: "First name",
-    placeholder: "Favour",
-    type: "text",
-    autoComplete: "given-name",
-  },
-  {
-    id: "last_name",
-    label: "Last name",
-    placeholder: "Okafor",
-    type: "text",
-    autoComplete: "family-name",
-  },
-  {
-    id: "email",
-    label: "Email",
-    placeholder: "favour@example.com",
-    type: "email",
-    autoComplete: "email",
-  },
-  {
-    id: "password",
-    label: "Password",
-    placeholder: "Create a strong password",
-    type: "password",
-    autoComplete: "new-password",
-  },
-] as const;
-
-const vendorFields = [
-  {
-    id: "business_name",
-    label: "Business name",
-    placeholder: "Favour Fits",
-    type: "text",
-  },
-  {
-    id: "category",
-    label: "Category",
-    placeholder: "Fashion",
-    type: "text",
-  },
-  {
-    id: "phone",
-    label: "Phone",
-    placeholder: "+234 801 234 5678",
-    type: "tel",
-  },
-  {
-    id: "social_handle",
-    label: "Social handle",
-    placeholder: "@favourfits",
-    type: "text",
-  },
-  {
-    id: "bank_account_name",
-    label: "Bank account name",
-    placeholder: "Favour Fits Ventures",
-    type: "text",
-  },
-] as const;
-
 const VendorSignupForm = () => {
   const [currentStep, setCurrentStep] = useState(0);
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [businessName, setBusinessName] = useState("");
+  const [category, setCategory] = useState("");
+  const [phone, setPhone] = useState("");
+  const [socialHandle, setSocialHandle] = useState("");
+  const [bankAccountName, setBankAccountName] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isProfileStep = currentStep === 0;
-  const activeFields = isProfileStep ? profileFields : vendorFields;
   const activeStep = steps[currentStep];
   const ActiveStepIcon = activeStep.icon;
+
+  const resetMessages = () => {
+    setErrorMessage("");
+    setSuccessMessage("");
+  };
+
+  const handleContinue = () => {
+    resetMessages();
+
+    if (!firstName.trim()) {
+      setErrorMessage("First name is required.");
+      return;
+    }
+
+    if (!lastName.trim()) {
+      setErrorMessage("Last name is required.");
+      return;
+    }
+
+    if (!email.trim()) {
+      setErrorMessage("Email is required.");
+      return;
+    }
+
+    if (!password.trim()) {
+      setErrorMessage("Password is required.");
+      return;
+    }
+
+    if (password.trim().length < 8) {
+      setErrorMessage("Password must be at least 8 characters.");
+      return;
+    }
+
+    setCurrentStep(1);
+  };
+
+  const handleBack = () => {
+    resetMessages();
+    setCurrentStep(0);
+  };
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    resetMessages();
+
+    if (!businessName.trim()) {
+      setErrorMessage("Business name is required.");
+      return;
+    }
+
+    if (!category.trim()) {
+      setErrorMessage("Category is required.");
+      return;
+    }
+
+    if (!phone.trim()) {
+      setErrorMessage("Phone is required.");
+      return;
+    }
+
+    if (!socialHandle.trim()) {
+      setErrorMessage("Social handle is required.");
+      return;
+    }
+
+    if (!bankAccountName.trim()) {
+      setErrorMessage("Bank account name is required.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      await signupVendor({
+        full_name: `${firstName.trim()} ${lastName.trim()}`,
+        email: email.trim(),
+        password: password.trim(),
+        business_name: businessName.trim(),
+        category: category.trim(),
+        phone: phone.trim(),
+        social_handle: socialHandle.trim(),
+        bank_account_name: bankAccountName.trim(),
+      });
+
+      setSuccessMessage("Vendor account created successfully.");
+      setFirstName("");
+      setLastName("");
+      setEmail("");
+      setPassword("");
+      setBusinessName("");
+      setCategory("");
+      setPhone("");
+      setSocialHandle("");
+      setBankAccountName("");
+      setCurrentStep(0);
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Failed to create vendor account.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleInputChange =
+    (setter: (value: string) => void) =>
+    (event: ChangeEvent<HTMLInputElement>) => {
+      setter(event.target.value);
+      if (errorMessage || successMessage) {
+        resetMessages();
+      }
+    };
 
   return (
     <main>
@@ -106,7 +169,7 @@ const VendorSignupForm = () => {
           Back to home
         </Link>
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch w-full justify-center">
+        <div className="flex w-full flex-col justify-center gap-3 sm:flex-row sm:items-stretch">
           {steps.map((step, index) => {
             const Icon = step.icon;
             const isActive = currentStep === index;
@@ -124,7 +187,7 @@ const VendorSignupForm = () => {
                 >
                   <div
                     className={cn(
-                      "flex size-10 shrink-0 items-center justify-center border rounded-full text-sm font-semibold transition-colors",
+                      "flex size-10 shrink-0 items-center justify-center rounded-full border text-sm font-semibold transition-colors",
                       isComplete
                         ? "border-primary bg-primary text-primary-foreground"
                         : isActive
@@ -153,7 +216,8 @@ const VendorSignupForm = () => {
             );
           })}
         </div>
-        <section className="grid gap-6  md:justify-between md:gap-8 md:grid-cols-2">
+
+        <section className="grid gap-6 md:grid-cols-2 md:justify-between md:gap-8">
           <div className="space-y-4">
             <div className="space-y-4">
               <h1 className="max-w-xl text-4xl font-semibold tracking-tight sm:text-5xl">
@@ -169,39 +233,174 @@ const VendorSignupForm = () => {
           <div className="space-y-4">
             <Card className="border border-border/70 bg-background shadow-[0_24px_80px_-48px_rgba(14,30,86,0.28)] md:max-w-2xl md:flex-1">
               <CardHeader className="space-y-5 px-5 sm:px-6">
-                <h2 className="text-3xl font-medium ">
-                  {currentStep == 0
-                    ? "We want to know you? "
+                <h2 className="text-3xl font-medium">
+                  {isProfileStep
+                    ? "We want to know you?"
                     : "Complete your seller profile"}
                 </h2>
+                <div className="flex items-center gap-3 rounded-2xl border border-border/60 bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+                  <ActiveStepIcon className="size-4 shrink-0 text-primary" />
+                  <span>{activeStep.description}</span>
+                </div>
               </CardHeader>
 
               <CardContent className="px-5 sm:px-6">
-                <form className="space-y-7">
-                  <div className="grid gap-4 py-4 sm:grid-cols-2">
-                    {activeFields.map((field) => (
-                      <label
-                        key={field.id}
-                        htmlFor={field.id}
-                        className={cn(
-                          "space-y-2",
-                          field.id === "bank_account_name" && "sm:col-span-2",
-                        )}
-                      >
+                <form onSubmit={handleSubmit} className="space-y-7">
+                  {errorMessage ? (
+                    <div className="rounded-2xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+                      {errorMessage}
+                    </div>
+                  ) : null}
+
+                  {successMessage ? (
+                    <div className="rounded-2xl border border-primary/30 bg-primary/5 px-4 py-3 text-sm text-primary">
+                      {successMessage}
+                    </div>
+                  ) : null}
+
+                  {isProfileStep ? (
+                    <div className="grid gap-4 py-4 sm:grid-cols-2">
+                      <label htmlFor="first_name" className="space-y-2">
                         <span className="block text-sm font-medium">
-                          {field.label}
+                          First name
                         </span>
                         <Input
-                          id={field.id}
-                          name={field.id}
-                          type={field.type}
-                          placeholder={field.placeholder}
-                          autoComplete="off"
+                          id="first_name"
+                          name="first_name"
+                          type="text"
+                          placeholder="Favour"
+                          autoComplete="given-name"
                           className="text-sm"
+                          value={firstName}
+                          onChange={handleInputChange(setFirstName)}
                         />
                       </label>
-                    ))}
-                  </div>
+
+                      <label htmlFor="last_name" className="space-y-2">
+                        <span className="block text-sm font-medium">
+                          Last name
+                        </span>
+                        <Input
+                          id="last_name"
+                          name="last_name"
+                          type="text"
+                          placeholder="Okafor"
+                          autoComplete="family-name"
+                          className="text-sm"
+                          value={lastName}
+                          onChange={handleInputChange(setLastName)}
+                        />
+                      </label>
+
+                      <label htmlFor="email" className="space-y-2">
+                        <span className="block text-sm font-medium">Email</span>
+                        <Input
+                          id="email"
+                          name="email"
+                          type="email"
+                          placeholder="favour@example.com"
+                          autoComplete="email"
+                          className="text-sm"
+                          value={email}
+                          onChange={handleInputChange(setEmail)}
+                        />
+                      </label>
+
+                      <label htmlFor="password" className="space-y-2">
+                        <span className="block text-sm font-medium">
+                          Password
+                        </span>
+                        <Input
+                          id="password"
+                          name="password"
+                          type="password"
+                          placeholder="Create a strong password"
+                          autoComplete="new-password"
+                          className="text-sm"
+                          value={password}
+                          onChange={handleInputChange(setPassword)}
+                        />
+                      </label>
+                    </div>
+                  ) : (
+                    <div className="grid gap-4 py-4 sm:grid-cols-2">
+                      <label htmlFor="business_name" className="space-y-2">
+                        <span className="block text-sm font-medium">
+                          Business name
+                        </span>
+                        <Input
+                          id="business_name"
+                          name="business_name"
+                          type="text"
+                          placeholder="Favour Fits"
+                          className="text-sm"
+                          value={businessName}
+                          onChange={handleInputChange(setBusinessName)}
+                        />
+                      </label>
+
+                      <label htmlFor="category" className="space-y-2">
+                        <span className="block text-sm font-medium">
+                          Category
+                        </span>
+                        <Input
+                          id="category"
+                          name="category"
+                          type="text"
+                          placeholder="Fashion"
+                          className="text-sm"
+                          value={category}
+                          onChange={handleInputChange(setCategory)}
+                        />
+                      </label>
+
+                      <label htmlFor="phone" className="space-y-2">
+                        <span className="block text-sm font-medium">Phone</span>
+                        <Input
+                          id="phone"
+                          name="phone"
+                          type="tel"
+                          placeholder="+234 801 234 5678"
+                          className="text-sm"
+                          value={phone}
+                          onChange={handleInputChange(setPhone)}
+                        />
+                      </label>
+
+                      <label htmlFor="social_handle" className="space-y-2">
+                        <span className="block text-sm font-medium">
+                          Social handle
+                        </span>
+                        <Input
+                          id="social_handle"
+                          name="social_handle"
+                          type="text"
+                          placeholder="@favourfits"
+                          className="text-sm"
+                          value={socialHandle}
+                          onChange={handleInputChange(setSocialHandle)}
+                        />
+                      </label>
+
+                      <label
+                        htmlFor="bank_account_name"
+                        className="space-y-2 sm:col-span-2"
+                      >
+                        <span className="block text-sm font-medium">
+                          Bank account name
+                        </span>
+                        <Input
+                          id="bank_account_name"
+                          name="bank_account_name"
+                          type="text"
+                          placeholder="Favour Fits Ventures"
+                          className="text-sm"
+                          value={bankAccountName}
+                          onChange={handleInputChange(setBankAccountName)}
+                        />
+                      </label>
+                    </div>
+                  )}
 
                   <div className="flex flex-col gap-3 border-t border-border/60 pt-5 sm:flex-row sm:items-center sm:justify-between">
                     <div className="text-sm text-muted-foreground">
@@ -213,18 +412,27 @@ const VendorSignupForm = () => {
                         <Button
                           type="button"
                           variant="outline"
-                          onClick={() => setCurrentStep(0)}
+                          disabled={isSubmitting}
+                          onClick={handleBack}
                         >
                           Back
                         </Button>
                       ) : null}
 
                       {isProfileStep ? (
-                        <Button type="button" onClick={() => setCurrentStep(1)}>
+                        <Button
+                          type="button"
+                          disabled={isSubmitting}
+                          onClick={handleContinue}
+                        >
                           Continue to vendor details
                         </Button>
                       ) : (
-                        <Button type="submit">Start selling</Button>
+                        <Button type="submit" disabled={isSubmitting}>
+                          {isSubmitting
+                            ? "Creating account..."
+                            : "Start selling"}
+                        </Button>
                       )}
                     </div>
                   </div>
