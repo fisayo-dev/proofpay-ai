@@ -121,7 +121,7 @@ export default function VendorSignupPage() {
 
                 <div className="flex gap-3 border-t border-border/60 pt-5 sm:flex-row sm:items-center sm:justify-between">
                   <Button type="submit" className="w-full">
-                    Create profile
+                    Start selling
                   </Button>
                 </div>
               </form>
