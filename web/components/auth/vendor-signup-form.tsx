@@ -1,8 +1,7 @@
 "use client";
 
 import { ChangeEvent, FormEvent, useState } from "react";
-import Link from "next/link";
-import { ArrowLeft, Check, Store, UserRound } from "lucide-react";
+import { Check, Store, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
