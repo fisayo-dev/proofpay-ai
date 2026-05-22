@@ -165,7 +165,7 @@ const VendorSection = () => {
                   </p>
                 </CardHeader>
 
-                <CardContent className="space-y-4 px-5 pb-5">
+                <CardContent className="space-y-4 px-5">
                   <div className="flex flex-wrap gap-2">
                     <Badge variant="outline" className="gap-1">
                       <Users2 className="size-3.5" />

@@ -12,13 +12,13 @@ export function SiteHeader() {
   const closeMenu = () => setIsMenuOpen(false);
 
   return (
-    <header className="fixed z-30 w-full bg-transparent py-6 backdrop-blur-lg">
+    <header className="fixed z-30 w-full bg-background/95 py-3">
       <div className="app-container relative">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-4 lg:gap-8">
-            <h2 className="text-2xl font-extrabold text-primary sm:text-3xl">
+            <Link href="/" className="text-2xl font-extrabold text-primary sm:text-3xl">
               Proof Pay
-            </h2>
+            </Link>
             {/* Links*/}
             <div className="hidden items-center text-sm lg:flex">
               {header_links.map((link, index) => (
@@ -34,9 +34,11 @@ export function SiteHeader() {
           </div>
 
           <div className="hidden items-center space-x-4 lg:flex">
-            <Button>
-              <User2 />
-              Signup as vendor
+            <Button asChild>
+              <Link href="/vendors/signup">
+                <User2 />
+                Signup as vendor
+              </Link>
             </Button>
             <Button variant="outline">Login</Button>
           </div>
@@ -75,9 +77,11 @@ export function SiteHeader() {
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row">
-              <Button className="w-full sm:flex-1">
-                <User2 />
-                Signup as vendor
+              <Button asChild className="w-full sm:flex-1">
+                <Link href="/vendors/signup" onClick={closeMenu}>
+                  <User2 />
+                  Signup as vendor
+                </Link>
               </Button>
               <Button variant="outline" className="w-full sm:flex-1">
                 Login
