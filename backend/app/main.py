@@ -11,11 +11,21 @@ from app.api.v1.routes_payment_requests import router as payment_router
 from app.api.v1.routes_payments import router as payments_router
 from app.api.v1.routes_vendor import router as vendor_router
 from app.api.v1.routes_webhooks import router as webhooks_router
+from app.core.config import settings
 from app.core.error_handlers import (
     database_exception_handler,
     general_exception_handler,
     validation_exception_handler,
 )
+
+
+def get_allowed_origins() -> list[str]:
+    origins = {
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        settings.frontend_base_url.rstrip("/"),
+    }
+    return sorted(origin for origin in origins if origin)
 
 app = FastAPI(
     title="ProofPay AI",
@@ -25,7 +35,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=get_allowed_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

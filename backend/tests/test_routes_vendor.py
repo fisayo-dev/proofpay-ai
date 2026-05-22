@@ -46,6 +46,35 @@ class VendorRouteTest(unittest.TestCase):
         self.assertIn("proofpay_session=signed-token", set_cookie)
         self.assertIn("HttpOnly", set_cookie)
 
+    def test_create_vendor_sets_cross_site_cookie_attrs_in_production(self):
+        body = routes_vendor.CreateVendorRequest(
+            full_name="Favour Ade",
+            email="favour@example.com",
+            password="StrongPass123!",
+            business_name="Favour Fits",
+            category="fashion",
+        )
+        vendor = {
+            "id": "vendor_123",
+            "user_id": "user_123",
+            "full_name": "Favour Ade",
+            "email": "favour@example.com",
+            "business_name": "Favour Fits",
+            "trust_score": Decimal("50"),
+            "created_at": "2026-05-22T08:00:00+00:00",
+        }
+
+        with (
+            patch.object(routes_vendor, "create_vendor", return_value=vendor),
+            patch.object(routes_vendor, "create_session_token", return_value="signed-token"),
+            patch.object(routes_vendor.settings, "env", "production"),
+        ):
+            response = routes_vendor.create_vendor_endpoint(body)
+
+        set_cookie = response.headers["set-cookie"]
+        self.assertIn("secure", set_cookie.lower())
+        self.assertIn("samesite=none", set_cookie.lower())
+
     def test_create_vendor_preserves_database_operational_error(self):
         body = routes_vendor.CreateVendorRequest(
             business_name="Favour Fits",

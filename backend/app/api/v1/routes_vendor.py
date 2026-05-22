@@ -47,7 +47,7 @@ def create_vendor_endpoint(body: CreateVendorRequest):
             value=token,
             httponly=True,
             secure=settings.env == "production",
-            samesite="strict",
+            samesite="none" if settings.env == "production" else "lax",
             max_age=60 * 60 * 24,
         )
         return response
