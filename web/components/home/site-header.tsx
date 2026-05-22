@@ -36,7 +36,7 @@ export function SiteHeader() {
           <div className="hidden items-center space-x-4 lg:flex">
             <Button>
               <User2 />
-              Signup as vendor/buyer
+              Signup as vendor
             </Button>
             <Button variant="outline">Login</Button>
           </div>
@@ -77,7 +77,7 @@ export function SiteHeader() {
             <div className="flex flex-col gap-3 sm:flex-row">
               <Button className="w-full sm:flex-1">
                 <User2 />
-                Signup as vendor/buyer
+                Signup as vendor
               </Button>
               <Button variant="outline" className="w-full sm:flex-1">
                 Login
