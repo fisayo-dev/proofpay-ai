@@ -3,6 +3,8 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, EmailStr
 from typing import Optional
+import psycopg
+
 from app.services.payment_request_service import (
     amount_kobo_to_naira,
     create_payment_request,
@@ -10,7 +12,8 @@ from app.services.payment_request_service import (
     get_payment_request_by_slug,
     get_trust_check_by_payment_request_id,
 )
-from app.services.vendor_service import get_vendor_by_id
+from app.services.trust_score_service import calculate_trust_score
+from app.services.vendor_service import get_vendor_by_id, get_vendor_for_scoring
 
 router = APIRouter(prefix="/api/v1", tags=["Payment Requests"])
 
@@ -37,8 +40,51 @@ def create_request_endpoint(body: CreatePaymentRequestBody):
             status_code=404,
             detail={"code": "VENDOR_NOT_FOUND", "message": str(e)}
         )
+    except psycopg.OperationalError:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/trust/score")
+def refresh_trust_score(body: dict):
+    """
+    Generates or refreshes a trust score for a vendor + payment context.
+    Used by frontend to show live trust score before request is created.
+    """
+    vendor_id = body.get("vendor_id")
+    if not vendor_id:
+        raise HTTPException(
+            status_code=400,
+            detail={"code": "VALIDATION_ERROR", "message": "vendor_id is required."}
+        )
+
+    vendor = get_vendor_for_scoring(vendor_id)
+    if not vendor:
+        raise HTTPException(
+            status_code=404,
+            detail={"code": "VENDOR_NOT_FOUND", "message": "Vendor not found."}
+        )
+
+    payment_context = {
+        "amount_kobo": body.get("amount_kobo", 0),
+        "currency": body.get("currency", "NGN"),
+        "item_name": body.get("item_name", ""),
+    }
+
+    try:
+        trust = calculate_trust_score(vendor, payment_context)
+    except Exception:
+        trust = {
+            "score": None,
+            "verdict": "Manual Review Needed",
+            "confidence": "low",
+            "reasons": ["Trust scoring unavailable. Review vendor manually."],
+            "features": {},
+            "model_version": "rules-v1-anomaly",
+        }
+
+    return trust
 
 
 @router.get("/payment-requests/{request_id}")

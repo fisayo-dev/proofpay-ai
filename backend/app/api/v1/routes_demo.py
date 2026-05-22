@@ -1,8 +1,13 @@
 # backend/app/api/v1/routes_demo.py
 
-from fastapi import APIRouter
+from datetime import datetime, timezone
 
+from fastapi import APIRouter, HTTPException
+
+from app.db.connection import get_connection
+from app.services.payment_request_service import create_payment_request
 from app.services.trust_score_service import calculate_trust_score
+from app.services.vendor_service import create_vendor
 
 router = APIRouter(prefix="/api/v1", tags=["Demo"])
 
@@ -112,3 +117,65 @@ def demo_scenarios():
         "note": "Three scoring scenarios for ProofPay AI demo.",
         "scenarios": results,
     }
+
+
+@router.post("/demo/seed")
+def seed_demo_data():
+    """
+    Creates a fresh demo vendor and payment request.
+    Use this to reset demo data before presentation.
+    """
+    try:
+        vendor = create_vendor({
+            "business_name": "Favour Fits",
+            "category": "fashion",
+            "phone": "+2348012345678",
+            "social_handle": "@favourfits",
+            "bank_account_name": "FAVOUR ADE",
+        })
+        vendor_id = str(vendor["id"])
+
+        conn = get_connection()
+        cursor = conn.cursor()
+        now = datetime.now(timezone.utc).isoformat()
+        cursor.execute(
+            """
+            UPDATE vendors
+            SET completed_transactions = 14,
+                total_transactions = 15,
+                dispute_count = 0,
+                updated_at = %s
+            WHERE id = %s
+            """,
+            (now, vendor_id),
+        )
+        conn.commit()
+        conn.close()
+
+        result = create_payment_request({
+            "vendor_id": vendor_id,
+            "buyer_name": "Daniel",
+            "buyer_email": "daniel@example.com",
+            "item_name": "Black hoodie",
+            "item_description": "Oversized black hoodie, size L",
+            "amount_kobo": 750000,
+            "currency": "NGN",
+            "delivery_method": "CU hostel delivery",
+            "expected_delivery_date": "2026-05-25",
+        })
+
+        return {
+            "message": "Demo data seeded successfully.",
+            "vendor_id": vendor_id,
+            "payment_request_id": result["payment_request_id"],
+            "public_slug": result["public_slug"],
+            "public_url": result["public_url"],
+            "kora_reference": result["kora_reference"],
+            "trust": result["trust"],
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail={"code": "SEED_FAILED", "message": str(e)},
+        )

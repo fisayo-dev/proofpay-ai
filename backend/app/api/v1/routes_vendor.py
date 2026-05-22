@@ -3,6 +3,8 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional
+import psycopg
+
 from app.services.vendor_service import create_vendor, get_vendor_by_id
 
 router = APIRouter(prefix="/api/v1", tags=["Vendors"])
@@ -26,6 +28,8 @@ def create_vendor_endpoint(body: CreateVendorRequest):
             "trust_score": vendor["trust_score"],
             "created_at": str(vendor["created_at"])
         }
+    except psycopg.OperationalError:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

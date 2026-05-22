@@ -1,9 +1,38 @@
 # backend/app/services/webhook_service.py
 
+import hashlib
+import hmac
 import json
 from datetime import datetime, timezone
 
 from app.db.connection import get_connection
+
+
+def _canonical_json(payload_data: dict) -> str:
+    return json.dumps(payload_data, separators=(",", ":"), ensure_ascii=False)
+
+
+def verify_kora_signature(
+    payload_data: dict,
+    received_signature: str | None,
+    secret_key: str,
+) -> bool:
+    message = _canonical_json(payload_data)
+    expected = hmac.new(
+        secret_key.encode("utf-8"),
+        message.encode("utf-8"),
+        hashlib.sha256,
+    ).hexdigest()
+    return hmac.compare_digest(expected, received_signature or "")
+
+
+def generate_kora_signature_for_test(payload_data: dict, secret_key: str) -> str:
+    message = _canonical_json(payload_data)
+    return hmac.new(
+        secret_key.encode("utf-8"),
+        message.encode("utf-8"),
+        hashlib.sha256,
+    ).hexdigest()
 
 
 def save_webhook_event(

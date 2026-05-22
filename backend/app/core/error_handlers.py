@@ -36,3 +36,16 @@ async def general_exception_handler(request: Request, exc: Exception):
             }
         },
     )
+
+
+async def database_exception_handler(request: Request, exc: Exception):
+    return JSONResponse(
+        status_code=503,
+        content={
+            "error": {
+                "code": "DATABASE_UNAVAILABLE",
+                "message": "ProofPay is having trouble connecting. Please try again.",
+                "details": {},
+            }
+        },
+    )

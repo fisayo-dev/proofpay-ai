@@ -33,6 +33,65 @@ class FakeConnection:
 
 
 class WebhookServiceTest(unittest.TestCase):
+    def test_verify_kora_signature_accepts_matching_signature(self):
+        payload = {
+            "event": "charge.success",
+            "data": {
+                "amount": 7500,
+                "reference": "PPAY-123",
+                "status": "success",
+            },
+        }
+        signature = webhook_service.generate_kora_signature_for_test(
+            payload,
+            "test_secret",
+        )
+
+        result = webhook_service.verify_kora_signature(
+            payload,
+            signature,
+            "test_secret",
+        )
+
+        self.assertTrue(result)
+
+    def test_verify_kora_signature_rejects_tampered_payload(self):
+        payload = {
+            "event": "charge.success",
+            "data": {
+                "amount": 7500,
+                "reference": "PPAY-123",
+                "status": "success",
+            },
+        }
+        signature = webhook_service.generate_kora_signature_for_test(
+            payload,
+            "test_secret",
+        )
+        tampered_payload = {
+            "event": "charge.success",
+            "data": {
+                "amount": 999999,
+                "reference": "PPAY-123",
+                "status": "success",
+            },
+        }
+
+        result = webhook_service.verify_kora_signature(
+            tampered_payload,
+            signature,
+            "test_secret",
+        )
+
+        self.assertFalse(result)
+
+    def test_verify_kora_signature_rejects_missing_signature(self):
+        payload = {"event": "charge.success"}
+
+        result = webhook_service.verify_kora_signature(payload, None, "test_secret")
+
+        self.assertFalse(result)
+
     def test_save_webhook_event_inserts_payload_once(self):
         cursor = FakeCursor()
         conn = FakeConnection(cursor)

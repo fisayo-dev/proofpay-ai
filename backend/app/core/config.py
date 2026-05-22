@@ -2,6 +2,9 @@
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+DB_QUERY_TIMEOUT_SECONDS = 10
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=(".env", "backend/.env"),
