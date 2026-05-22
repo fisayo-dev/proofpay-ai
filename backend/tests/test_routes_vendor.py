@@ -1,5 +1,6 @@
 import unittest
 import json
+from decimal import Decimal
 from unittest.mock import patch
 
 import psycopg
@@ -25,7 +26,7 @@ class VendorRouteTest(unittest.TestCase):
             "full_name": "Favour Ade",
             "email": "favour@example.com",
             "business_name": "Favour Fits",
-            "trust_score": 50,
+            "trust_score": Decimal("50"),
             "created_at": "2026-05-22T08:00:00+00:00",
         }
 

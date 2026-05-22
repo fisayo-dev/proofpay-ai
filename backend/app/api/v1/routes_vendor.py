@@ -33,7 +33,7 @@ def create_vendor_endpoint(body: CreateVendorRequest):
             "full_name": vendor.get("full_name"),
             "email": vendor.get("email"),
             "business_name": vendor["business_name"],
-            "trust_score": vendor["trust_score"],
+            "trust_score": float(vendor["trust_score"]) if vendor.get("trust_score") is not None else None,
             "created_at": str(vendor["created_at"]),
         }
         response = JSONResponse(status_code=201, content=payload)
