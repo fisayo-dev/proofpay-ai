@@ -34,9 +34,11 @@ export function SiteHeader() {
           </div>
 
           <div className="hidden items-center space-x-4 lg:flex">
-            <Button>
-              <User2 />
-              Signup as vendor
+            <Button asChild>
+              <Link href="/vendors/signup">
+                <User2 />
+                Signup as vendor
+              </Link>
             </Button>
             <Button variant="outline">Login</Button>
           </div>
@@ -75,9 +77,11 @@ export function SiteHeader() {
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row">
-              <Button className="w-full sm:flex-1">
-                <User2 />
-                Signup as vendor
+              <Button asChild className="w-full sm:flex-1">
+                <Link href="/vendors/signup" onClick={closeMenu}>
+                  <User2 />
+                  Signup as vendor
+                </Link>
               </Button>
               <Button variant="outline" className="w-full sm:flex-1">
                 Login
