@@ -38,7 +38,7 @@ const VendorSection = () => {
   const FeaturedIcon = verdictStyles[featuredVendor.verdict].icon;
 
   return (
-    <section id="vendors" className="py-20 sm:py-24">
+    <section id="vendors" className="pt-20 sm:pt-24">
       <div className="grid md:grid-cols-12 gap-10 lg:items-start">
         <div className="md:col-span-7 space-y-8">
           <div className="space-y-4">

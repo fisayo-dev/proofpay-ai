@@ -14,7 +14,7 @@ import { nairaFormatter } from "@/utils/store";
 
 const StoreSection = () => {
   return (
-    <section id="store" className="relative py-20 sm:py-24">
+    <section id="store" className="relative pt-20 sm:pt-24">
       <div className="absolute inset-x-0 top-8 -z-10 mx-auto h-64 w-64 rounded-full bg-primary/10 blur-3xl" />
 
       <div className="space-y-5 text-center">
