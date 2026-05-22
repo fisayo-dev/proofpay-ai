@@ -161,14 +161,6 @@ const VendorSignupForm = () => {
   return (
     <main>
       <div className="mx-auto grid gap-10 pb-20 sm:pb-24">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <ArrowLeft className="size-4" />
-          Back to home
-        </Link>
-
         <div className="flex w-full flex-col justify-center gap-3 sm:flex-row sm:items-stretch">
           {steps.map((step, index) => {
             const Icon = step.icon;
