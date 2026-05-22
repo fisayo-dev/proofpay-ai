@@ -7,23 +7,39 @@ from app.db.connection import get_connection
 
 def create_vendor(data: dict) -> dict:
     vendor_id = str(uuid.uuid4())
+    user_id = str(uuid.uuid4()) if data.get("full_name") and data.get("email") else None
     now = datetime.now(timezone.utc).isoformat()
 
     conn = get_connection()
     cursor = conn.cursor()
 
+    user = None
+    if user_id:
+        cursor.execute("""
+            INSERT INTO users (id, full_name, email, role, created_at)
+            VALUES (%s, %s, %s, 'vendor', %s)
+            RETURNING id, full_name, email
+        """, (
+            user_id,
+            data["full_name"],
+            data["email"],
+            now,
+        ))
+        user = dict(cursor.fetchone())
+
     cursor.execute("""
         INSERT INTO vendors (
-            id, business_name, category, phone,
+            id, user_id, business_name, category, phone,
             social_handle, bank_account_name,
             trust_score, total_transactions,
             completed_transactions, dispute_count,
             created_at, updated_at
         )
-        VALUES (%s, %s, %s, %s, %s, %s, 50, 0, 0, 0, %s, %s)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, 50, 0, 0, 0, %s, %s)
         RETURNING *
     """, (
         vendor_id,
+        user_id,
         data["business_name"],
         data["category"],
         data.get("phone"),
@@ -33,6 +49,10 @@ def create_vendor(data: dict) -> dict:
     ))
 
     vendor = dict(cursor.fetchone())
+    if user:
+        vendor["full_name"] = user["full_name"]
+        vendor["email"] = user["email"]
+
     conn.commit()
     conn.close()
     return vendor
