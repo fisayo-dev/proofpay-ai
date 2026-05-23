@@ -1,6 +1,7 @@
 "use client";
 
 import { ChangeEvent, FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Check, Store, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -24,6 +25,7 @@ const steps = [
 ] as const;
 
 const VendorSignupForm = () => {
+  const router = useRouter();
   const [currentStep, setCurrentStep] = useState(0);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -127,18 +129,8 @@ const VendorSignupForm = () => {
       });
 
       localStorage.setItem("vendor_id", vendor.vendor_id);
-
       setSuccessMessage("Vendor account created successfully.");
-      setFirstName("");
-      setLastName("");
-      setEmail("");
-      setPassword("");
-      setBusinessName("");
-      setCategory("");
-      setPhone("");
-      setSocialHandle("");
-      setBankAccountName("");
-      setCurrentStep(0);
+      router.push("/vendors/new-product");
     } catch (error) {
       setErrorMessage(
         error instanceof Error
