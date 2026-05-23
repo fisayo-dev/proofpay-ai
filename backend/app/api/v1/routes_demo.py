@@ -8,6 +8,12 @@ from app.db.connection import get_connection
 from app.services.payment_request_service import create_payment_request
 from app.services.trust_score_service import calculate_trust_score
 from app.services.vendor_service import create_vendor
+from app.services.webhook_service import (
+    already_processed,
+    mark_payment_paid,
+    mark_webhook_processed,
+    save_webhook_event,
+)
 
 router = APIRouter(prefix="/api/v1", tags=["Demo"])
 
@@ -179,3 +185,88 @@ def seed_demo_data():
             status_code=500,
             detail={"code": "SEED_FAILED", "message": str(e)},
         )
+
+
+@router.post("/demo/simulate-payment")
+def simulate_payment_success(body: dict):
+    """
+    DEMO ONLY - Simulates a successful Kora webhook for a payment request.
+    Use this during hackathon presentation if live Kora payment is unstable.
+    Never expose this in production.
+    """
+    payment_request_id = body.get("payment_request_id")
+    if not payment_request_id:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "code": "VALIDATION_ERROR",
+                "message": "payment_request_id is required.",
+            },
+        )
+
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+        SELECT kora_reference, status, amount_kobo
+        FROM payment_requests
+        WHERE id = %s
+        """,
+        (payment_request_id,),
+    )
+    row = cursor.fetchone()
+    conn.close()
+
+    if not row:
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "code": "PAYMENT_REQUEST_NOT_FOUND",
+                "message": "Payment request not found.",
+            },
+        )
+
+    row = dict(row)
+
+    if row["status"] == "paid":
+        return {
+            "message": "Payment already confirmed.",
+            "status": "paid",
+            "kora_reference": row["kora_reference"],
+        }
+
+    kora_reference = row["kora_reference"]
+    amount_naira = row["amount_kobo"] / 100
+    event_type = "charge.success"
+
+    simulated_payload = {
+        "event": event_type,
+        "data": {
+            "amount": amount_naira,
+            "status": "success",
+            "currency": "NGN",
+            "reference": kora_reference,
+            "payment_reference": kora_reference,
+            "payment_method": "card",
+            "simulated": True,
+        },
+    }
+
+    if already_processed(event_type, kora_reference):
+        return {
+            "message": "Payment already processed.",
+            "status": "paid",
+            "kora_reference": kora_reference,
+        }
+
+    save_webhook_event(event_type, kora_reference, simulated_payload, True)
+    mark_payment_paid(kora_reference, simulated_payload)
+    mark_webhook_processed(event_type, kora_reference)
+
+    return {
+        "message": "Payment simulated successfully. Status updated to paid.",
+        "status": "paid",
+        "kora_reference": kora_reference,
+        "payment_request_id": payment_request_id,
+        "note": "DEMO ONLY - This endpoint simulates Kora webhook for presentation.",
+    }

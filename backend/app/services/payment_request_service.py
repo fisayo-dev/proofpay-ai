@@ -17,6 +17,10 @@ def amount_kobo_to_naira(amount_kobo: int) -> float:
     return round(amount_kobo / 100, 2)
 
 
+def build_public_url(frontend_base_url: str, public_slug: str) -> str:
+    return f"{frontend_base_url.rstrip('/')}/r/{public_slug}"
+
+
 def create_payment_request(data: dict) -> dict:
     vendor_id = data["vendor_id"]
     amount_kobo = data["amount_kobo"]
@@ -45,7 +49,7 @@ def create_payment_request(data: dict) -> dict:
         }
 
     # Step 4: Build public URL
-    public_url = f"{settings.frontend_base_url}/r/{public_slug}"
+    public_url = build_public_url(settings.frontend_base_url, public_slug)
 
     # Step 5: Insert payment request
     request_id = str(uuid.uuid4())
