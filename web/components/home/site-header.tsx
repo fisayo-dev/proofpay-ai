@@ -40,7 +40,6 @@ export function SiteHeader() {
                 Signup as vendor
               </Link>
             </Button>
-            <Button variant="outline">Login</Button>
           </div>
 
           <Button
@@ -82,9 +81,6 @@ export function SiteHeader() {
                   <User2 />
                   Signup as vendor
                 </Link>
-              </Button>
-              <Button variant="outline" className="w-full sm:flex-1">
-                Login
               </Button>
             </div>
           </div>
