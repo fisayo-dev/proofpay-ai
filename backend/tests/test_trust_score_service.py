@@ -105,6 +105,32 @@ class TrustScoreServiceTest(unittest.TestCase):
         self.assertEqual(result["features"]["risk_multiplier"], 1.0)
         self.assertEqual(result["features"]["anomaly_flags"], [])
 
+    def test_zero_amount_returns_valid_manual_review_score(self):
+        vendor = {
+            "business_name": "Test",
+            "category": "food",
+            "completed_transactions": 0,
+            "total_transactions": 0,
+            "dispute_count": 0,
+        }
+        payment_request = {"amount_kobo": 0}
+
+        result = calculate_trust_score(vendor, payment_request)
+
+        self.assertIsInstance(result["score"], int)
+        self.assertEqual(result["verdict"], "Manual Review Needed")
+        self.assertEqual(result["features"]["amount_naira"], 0)
+        self.assertEqual(result["model_version"], "rules-v1-anomaly")
+
+    def test_empty_vendor_and_request_returns_manual_review_without_crashing(self):
+        result = calculate_trust_score({}, {})
+
+        self.assertIsInstance(result["score"], int)
+        self.assertEqual(result["verdict"], "Manual Review Needed")
+        self.assertEqual(result["confidence"], "low")
+        self.assertGreaterEqual(len(result["reasons"]), 5)
+        self.assertEqual(result["model_version"], "rules-v1-anomaly")
+
 
 if __name__ == "__main__":
     unittest.main()
