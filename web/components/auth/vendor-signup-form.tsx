@@ -115,7 +115,7 @@ const VendorSignupForm = () => {
     setIsSubmitting(true);
 
     try {
-      await signupVendor({
+      const vendor = await signupVendor({
         full_name: `${firstName.trim()} ${lastName.trim()}`,
         email: email.trim(),
         password: password.trim(),
@@ -125,6 +125,8 @@ const VendorSignupForm = () => {
         social_handle: socialHandle.trim(),
         bank_account_name: bankAccountName.trim(),
       });
+
+      localStorage.setItem("vendor_id", vendor.vendor_id);
 
       setSuccessMessage("Vendor account created successfully.");
       setFirstName("");
