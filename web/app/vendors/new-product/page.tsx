@@ -1,5 +1,7 @@
+import NewProductComponent from "@/components/vendors/NewProduct";
+
 const NewProductPage = () => {
-  return <div></div>;
+  return <NewProductComponent />
 };
 
 export default NewProductPage;

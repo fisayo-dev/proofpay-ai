@@ -1,7 +1,9 @@
 "use client";
 
 import { ChangeEvent, FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Check, Store, UserRound } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -24,6 +26,7 @@ const steps = [
 ] as const;
 
 const VendorSignupForm = () => {
+  const router = useRouter();
   const [currentStep, setCurrentStep] = useState(0);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -35,7 +38,6 @@ const VendorSignupForm = () => {
   const [socialHandle, setSocialHandle] = useState("");
   const [bankAccountName, setBankAccountName] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isProfileStep = currentStep === 0;
@@ -44,7 +46,6 @@ const VendorSignupForm = () => {
 
   const resetMessages = () => {
     setErrorMessage("");
-    setSuccessMessage("");
   };
 
   const handleContinue = () => {
@@ -127,18 +128,8 @@ const VendorSignupForm = () => {
       });
 
       localStorage.setItem("vendor_id", vendor.vendor_id);
-
-      setSuccessMessage("Vendor account created successfully.");
-      setFirstName("");
-      setLastName("");
-      setEmail("");
-      setPassword("");
-      setBusinessName("");
-      setCategory("");
-      setPhone("");
-      setSocialHandle("");
-      setBankAccountName("");
-      setCurrentStep(0);
+      toast.success("Vendor account created successfully.");
+      router.push("/vendors/new-product");
     } catch (error) {
       setErrorMessage(
         error instanceof Error
@@ -154,7 +145,7 @@ const VendorSignupForm = () => {
     (setter: (value: string) => void) =>
     (event: ChangeEvent<HTMLInputElement>) => {
       setter(event.target.value);
-      if (errorMessage || successMessage) {
+      if (errorMessage) {
         resetMessages();
       }
     };
@@ -239,12 +230,6 @@ const VendorSignupForm = () => {
                   {errorMessage ? (
                     <div className="rounded-2xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
                       {errorMessage}
-                    </div>
-                  ) : null}
-
-                  {successMessage ? (
-                    <div className="rounded-2xl border border-primary/30 bg-primary/5 px-4 py-3 text-sm text-primary">
-                      {successMessage}
                     </div>
                   ) : null}
 
