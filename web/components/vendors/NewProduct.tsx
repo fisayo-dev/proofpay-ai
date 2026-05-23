@@ -161,7 +161,7 @@ const NewProductComponent = () => {
       setAmount("");
       setDeliveryMethod(DEFAULT_DELIVERY_METHOD);
       setExpectedDeliveryDate(getDefaultExpectedDate());
-      router.push(res.public_url);
+      // router.push(res.public_url);
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : "Failed to create product.",
