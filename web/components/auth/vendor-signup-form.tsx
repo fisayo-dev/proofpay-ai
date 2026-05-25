@@ -37,39 +37,37 @@ const VendorSignupForm = () => {
   const [phone, setPhone] = useState("");
   const [socialHandle, setSocialHandle] = useState("");
   const [bankAccountName, setBankAccountName] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [serverError, setServerError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isProfileStep = currentStep === 0;
   const resetMessages = () => {
-    setErrorMessage("");
+    setErrors({});
+    setServerError("");
   };
 
   const handleContinue = () => {
     resetMessages();
 
+    const newErrors: Record<string, string> = {};
     if (!firstName.trim()) {
-      setErrorMessage("First name is required.");
-      return;
+      newErrors.first_name = "First name is required.";
     }
-
     if (!lastName.trim()) {
-      setErrorMessage("Last name is required.");
-      return;
+      newErrors.last_name = "Last name is required.";
     }
-
     if (!email.trim()) {
-      setErrorMessage("Email is required.");
-      return;
+      newErrors.email = "Email is required.";
     }
-
     if (!password.trim()) {
-      setErrorMessage("Password is required.");
-      return;
+      newErrors.password = "Password is required.";
+    } else if (password.trim().length < 8) {
+      newErrors.password = "Password must be at least 8 characters.";
     }
 
-    if (password.trim().length < 8) {
-      setErrorMessage("Password must be at least 8 characters.");
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
 
@@ -85,28 +83,25 @@ const VendorSignupForm = () => {
     event.preventDefault();
     resetMessages();
 
+    const newErrors: Record<string, string> = {};
     if (!businessName.trim()) {
-      setErrorMessage("Business name is required.");
-      return;
+      newErrors.business_name = "Business name is required.";
     }
-
     if (!category.trim()) {
-      setErrorMessage("Category is required.");
-      return;
+      newErrors.category = "Category is required.";
     }
-
     if (!phone.trim()) {
-      setErrorMessage("Phone is required.");
-      return;
+      newErrors.phone = "Phone is required.";
     }
-
     if (!socialHandle.trim()) {
-      setErrorMessage("Social handle is required.");
-      return;
+      newErrors.social_handle = "Social handle is required.";
+    }
+    if (!bankAccountName.trim()) {
+      newErrors.bank_account_name = "Bank account name is required.";
     }
 
-    if (!bankAccountName.trim()) {
-      setErrorMessage("Bank account name is required.");
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
 
@@ -128,23 +123,23 @@ const VendorSignupForm = () => {
       toast.success("Vendor account created successfully.");
       router.push("/vendors/new-product");
     } catch (error) {
-      setErrorMessage(
-        error instanceof Error ?
-          error.message
-        : "Failed to create vendor account.",
-      );
+      const msg = error instanceof Error ? error.message : "Failed to create vendor account.";
+      setServerError(msg);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleInputChange =
-    (setter: (value: string) => void) =>
+    (setter: (value: string) => void, field?: string) =>
     (event: ChangeEvent<HTMLInputElement>) => {
       setter(event.target.value);
-      if (errorMessage) {
-        resetMessages();
+      if (field && errors[field]) {
+        const copy = { ...errors };
+        delete copy[field];
+        setErrors(copy);
       }
+      if (serverError) setServerError("");
     };
 
   return (
@@ -217,11 +212,7 @@ const VendorSignupForm = () => {
 
           <CardContent className="px-5 sm:px-6">
             <form onSubmit={handleSubmit} className="space-y-7">
-              {errorMessage ?
-                <div className="rounded-2xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-                  {errorMessage}
-                </div>
-              : null}
+              {/* per-field error messages shown under each input */}
 
               {isProfileStep ?
                 <div className="grid gap-4 py-4 ">
@@ -237,8 +228,11 @@ const VendorSignupForm = () => {
                       autoComplete="given-name"
                       className="text-sm"
                       value={firstName}
-                      onChange={handleInputChange(setFirstName)}
+                      onChange={handleInputChange(setFirstName, "first_name")}
                     />
+                    {errors.first_name ? (
+                      <p className="text-xs text-destructive">{errors.first_name}</p>
+                    ) : null}
                   </label>
 
                   <label htmlFor="last_name" className="space-y-2">
@@ -251,8 +245,11 @@ const VendorSignupForm = () => {
                       autoComplete="family-name"
                       className="text-sm"
                       value={lastName}
-                      onChange={handleInputChange(setLastName)}
+                      onChange={handleInputChange(setLastName, "last_name")}
                     />
+                    {errors.last_name ? (
+                      <p className="text-xs text-destructive">{errors.last_name}</p>
+                    ) : null}
                   </label>
 
                   <label htmlFor="email" className="space-y-2">
@@ -265,8 +262,11 @@ const VendorSignupForm = () => {
                       autoComplete="email"
                       className="text-sm"
                       value={email}
-                      onChange={handleInputChange(setEmail)}
+                      onChange={handleInputChange(setEmail, "email")}
                     />
+                    {errors.email ? (
+                      <p className="text-xs text-destructive">{errors.email}</p>
+                    ) : null}
                   </label>
 
                   <label htmlFor="password" className="space-y-2">
@@ -279,8 +279,11 @@ const VendorSignupForm = () => {
                       autoComplete="new-password"
                       className="text-sm"
                       value={password}
-                      onChange={handleInputChange(setPassword)}
+                      onChange={handleInputChange(setPassword, "password")}
                     />
+                    {errors.password ? (
+                      <p className="text-xs text-destructive">{errors.password}</p>
+                    ) : null}
                   </label>
                 </div>
               : <div className="grid gap-4 py-4 sm:grid-cols-2">
@@ -295,8 +298,11 @@ const VendorSignupForm = () => {
                       placeholder="Favour Fits"
                       className="text-sm"
                       value={businessName}
-                      onChange={handleInputChange(setBusinessName)}
+                      onChange={handleInputChange(setBusinessName, "business_name")}
                     />
+                    {errors.business_name ? (
+                      <p className="text-xs text-destructive">{errors.business_name}</p>
+                    ) : null}
                   </label>
 
                   <label htmlFor="category" className="space-y-2">
@@ -308,8 +314,11 @@ const VendorSignupForm = () => {
                       placeholder="Fashion"
                       className="text-sm"
                       value={category}
-                      onChange={handleInputChange(setCategory)}
+                      onChange={handleInputChange(setCategory, "category")}
                     />
+                    {errors.category ? (
+                      <p className="text-xs text-destructive">{errors.category}</p>
+                    ) : null}
                   </label>
 
                   <label htmlFor="phone" className="space-y-2">
@@ -321,8 +330,11 @@ const VendorSignupForm = () => {
                       placeholder="+234 801 234 5678"
                       className="text-sm"
                       value={phone}
-                      onChange={handleInputChange(setPhone)}
+                      onChange={handleInputChange(setPhone, "phone")}
                     />
+                    {errors.phone ? (
+                      <p className="text-xs text-destructive">{errors.phone}</p>
+                    ) : null}
                   </label>
 
                   <label htmlFor="social_handle" className="space-y-2">
@@ -336,8 +348,11 @@ const VendorSignupForm = () => {
                       placeholder="@favourfits"
                       className="text-sm"
                       value={socialHandle}
-                      onChange={handleInputChange(setSocialHandle)}
+                      onChange={handleInputChange(setSocialHandle, "social_handle")}
                     />
+                    {errors.social_handle ? (
+                      <p className="text-xs text-destructive">{errors.social_handle}</p>
+                    ) : null}
                   </label>
 
                   <label
@@ -354,11 +369,18 @@ const VendorSignupForm = () => {
                       placeholder="Favour Fits Ventures"
                       className="text-sm"
                       value={bankAccountName}
-                      onChange={handleInputChange(setBankAccountName)}
+                      onChange={handleInputChange(setBankAccountName, "bank_account_name")}
                     />
+                    {errors.bank_account_name ? (
+                      <p className="text-xs text-destructive">{errors.bank_account_name}</p>
+                    ) : null}
                   </label>
                 </div>
               }
+
+              {serverError ? (
+                <div className="text-sm text-destructive">{serverError}</div>
+              ) : null}
 
               <div className="flex flex-col gap-3 border-t border-border/60 pt-5 sm:flex-row sm:items-center sm:justify-between">
                 <div className="text-sm text-muted-foreground">
