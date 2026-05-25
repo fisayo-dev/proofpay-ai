@@ -7,11 +7,10 @@ import {
   BadgeCheck,
   Building2,
   ChevronDown,
-  CircleDollarSign,
   ShieldCheck,
   ShoppingBag,
-  Sparkles,
   Store,
+  User2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -66,17 +65,46 @@ const getTrustTone = (score: number) => {
   };
 };
 
-const getStatusTone = (status: string) => {
-  switch (status.toLowerCase()) {
-    case "paid":
-    case "completed":
-      return "border-success/30 bg-success/12 text-success dark:bg-success/18";
-    case "created":
-    case "pending":
-      return "border-primary/20 bg-primary/10 text-primary";
-    default:
-      return "border-border bg-muted/60 text-foreground";
+const getTrustScoreStyle = (score: number) => {
+  if (score >= 70) {
+    return {
+      label: "Trusted",
+      className:
+        "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+    };
   }
+
+  if (score >= 40) {
+    return {
+      label: "Moderate",
+      className:
+        "border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-400",
+    };
+  }
+
+  return {
+    label: "Low",
+    className:
+      "border-red-500/20 bg-red-500/10 text-red-700 dark:text-red-400",
+  };
+};
+
+const TrustScorePill = ({ score }: { score: number }) => {
+  const style = getTrustScoreStyle(score);
+
+  return (
+    <div
+      className={cn(
+        "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold tracking-tight",
+        style.className,
+      )}
+    >
+      <span>{score}%</span>
+      <span className="text-[11px] font-medium uppercase tracking-[0.18em] opacity-80">
+        {style.label}
+      </span>
+    </div>
+  );
 };
 
 const BuyerPublicPage = ({ product }: BuyerPublicPageProps) => {
@@ -92,7 +120,7 @@ const BuyerPublicPage = ({ product }: BuyerPublicPageProps) => {
     <main className="relative overflow-hidden">
       <div className="absolute left-1/2 top-40 -z-10 h-72 w-72 -translate-x-1/2 rounded-full bg-primary/10 blur-3xl" />
 
-      <section className="app-container py-10 sm:py-14">
+      <section className="app-container py-5 sm:py-7">
         <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[1.08fr_0.92fr] lg:items-start">
           <div className="space-y-6">
             <div className="space-y-5">
@@ -148,9 +176,7 @@ const BuyerPublicPage = ({ product }: BuyerPublicPageProps) => {
                   </div>
 
                   <div className="bg-background/10 flex items-center gap-2">
-                    <p className="text-sm font-semibold">
-                      {product.trust.score}
-                    </p>
+                    <TrustScorePill score={product.trust.score} />
                   </div>
                 </div>
               </CardHeader>
@@ -217,7 +243,6 @@ const BuyerPublicPage = ({ product }: BuyerPublicPageProps) => {
                   <div className="flex items-center gap-3 rounded-2xl border border-border/60 px-4 py-3">
                     <Store className="mt-0.5 size-6 shrink-0 text-primary" />
                     <div className="space-y-1">
-                      {/*<p className="text-sm font-medium">Seller</p>*/}
                       <p className="text-sm text-muted-foreground">
                         {product.seller.business_name}
                       </p>
@@ -235,7 +260,7 @@ const BuyerPublicPage = ({ product }: BuyerPublicPageProps) => {
                   </div>
 
                   <div className="flex items-center gap-3 rounded-2xl border border-border/60 px-4 py-3">
-                    <ShieldCheck className="mt-0.5 size-6 shrink-0 text-primary" />
+                    <User2 className="mt-0.5 size-6 shrink-0 text-primary" />
                     <div className="space-y-1">
                       <p className="text-sm text-muted-foreground">
                         @{product.seller.social_handle}

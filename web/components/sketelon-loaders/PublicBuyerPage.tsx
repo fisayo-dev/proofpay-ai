@@ -4,7 +4,50 @@ const SkeletonBlock = ({ className }: { className: string }) => {
   return <div className={`animate-pulse rounded-full bg-muted ${className}`} />;
 };
 
+type TrustScoreTone = "trusted" | "moderate" | "low";
+
+const getTrustScoreTone = (score: number) => {
+  if (score >= 80) {
+    return {
+      tone: "trusted" as TrustScoreTone,
+      className:
+        "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+    };
+  }
+
+  if (score >= 50) {
+    return {
+      tone: "moderate" as TrustScoreTone,
+      className:
+        "border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-400",
+    };
+  }
+
+  return {
+    tone: "low" as TrustScoreTone,
+    className:
+      "border-red-500/20 bg-red-500/10 text-red-700 dark:text-red-400",
+  };
+};
+
+const TrustScorePill = ({ score }: { score: number }) => {
+  const { tone, className } = getTrustScoreTone(score);
+
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-sm font-semibold tracking-tight ${className}`}
+    >
+      <span>{score}%</span>
+      <span className="text-[11px] font-medium capitalize opacity-80">
+        {tone}
+      </span>
+    </span>
+  );
+};
+
 const PublicBuyerPageSkeleton = () => {
+  const demoTrustScore = 82;
+
   return (
     <main className="relative overflow-hidden">
       <div className="absolute inset-x-0 top-0 -z-10 h-[32rem] bg-[radial-gradient(circle_at_top,rgba(45,103,255,0.18),transparent_55%)]" />
@@ -51,9 +94,15 @@ const PublicBuyerPageSkeleton = () => {
                   </div>
 
                   <div className="min-w-32 rounded-3xl border border-border/70 bg-background/85 px-5 py-4">
-                    <SkeletonBlock className="h-3 w-20 rounded-md" />
-                    <SkeletonBlock className="mt-3 h-10 w-16 rounded-xl" />
-                    <SkeletonBlock className="mt-2 h-4 w-10 rounded-md" />
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Trust score
+                    </p>
+                    <div className="mt-3">
+                      <TrustScorePill score={demoTrustScore} />
+                    </div>
+                    <p className="mt-2 text-xs capitalize text-muted-foreground">
+                      {getTrustScoreTone(demoTrustScore).tone}
+                    </p>
                   </div>
                 </div>
               </CardHeader>
