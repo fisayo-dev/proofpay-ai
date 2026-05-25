@@ -1,7 +1,9 @@
 "use client";
 
 import { ChangeEvent, FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Check, Store, UserRound } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -24,6 +26,7 @@ const steps = [
 ] as const;
 
 const VendorSignupForm = () => {
+  const router = useRouter();
   const [currentStep, setCurrentStep] = useState(0);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -35,7 +38,6 @@ const VendorSignupForm = () => {
   const [socialHandle, setSocialHandle] = useState("");
   const [bankAccountName, setBankAccountName] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isProfileStep = currentStep === 0;
@@ -44,7 +46,6 @@ const VendorSignupForm = () => {
 
   const resetMessages = () => {
     setErrorMessage("");
-    setSuccessMessage("");
   };
 
   const handleContinue = () => {
@@ -115,7 +116,7 @@ const VendorSignupForm = () => {
     setIsSubmitting(true);
 
     try {
-      await signupVendor({
+      const vendor = await signupVendor({
         full_name: `${firstName.trim()} ${lastName.trim()}`,
         email: email.trim(),
         password: password.trim(),
@@ -126,17 +127,9 @@ const VendorSignupForm = () => {
         bank_account_name: bankAccountName.trim(),
       });
 
-      setSuccessMessage("Vendor account created successfully.");
-      setFirstName("");
-      setLastName("");
-      setEmail("");
-      setPassword("");
-      setBusinessName("");
-      setCategory("");
-      setPhone("");
-      setSocialHandle("");
-      setBankAccountName("");
-      setCurrentStep(0);
+      localStorage.setItem("vendor_id", vendor.vendor_id);
+      toast.success("Vendor account created successfully.");
+      router.push("/vendors/new-product");
     } catch (error) {
       setErrorMessage(
         error instanceof Error
@@ -152,7 +145,7 @@ const VendorSignupForm = () => {
     (setter: (value: string) => void) =>
     (event: ChangeEvent<HTMLInputElement>) => {
       setter(event.target.value);
-      if (errorMessage || successMessage) {
+      if (errorMessage) {
         resetMessages();
       }
     };
@@ -160,67 +153,64 @@ const VendorSignupForm = () => {
   return (
     <main>
       <div className="mx-auto grid gap-10 pb-20 sm:pb-24">
-        <div className="flex w-full flex-col justify-center gap-3 sm:flex-row sm:items-stretch">
-          {steps.map((step, index) => {
-            const Icon = step.icon;
-            const isActive = currentStep === index;
-            const isComplete = currentStep > index;
-
-            return (
-              <div key={step.id} className="grid items-center gap-3">
-                <div
-                  className={cn(
-                    "flex flex-1 items-center gap-3 rounded-2xl border px-4 py-3 transition-colors",
-                    isActive
-                      ? "border-primary/40 bg-primary/5"
-                      : "border-border/70 bg-muted/30",
-                  )}
-                >
-                  <div
-                    className={cn(
-                      "flex size-10 shrink-0 items-center justify-center rounded-full border text-sm font-semibold transition-colors",
-                      isComplete
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : isActive
-                          ? "border-primary/50 bg-background text-primary"
-                          : "border-border bg-background text-muted-foreground",
-                    )}
-                  >
-                    {isComplete ? (
-                      <Check className="size-4" />
-                    ) : (
-                      <Icon className="size-4" />
-                    )}
-                  </div>
-
-                  <div className="space-y-1">
-                    <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
-                      Step {index + 1}
-                    </p>
-                    <p className="text-sm font-semibold">{step.title}</p>
-                    <p className="text-sm leading-6 text-muted-foreground">
-                      {step.description}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+        <div className="space-y-4">
+          <h1 className="max-w-xl text-4xl font-semibold tracking-tight sm:text-5xl">
+            Signup as a Vendor
+          </h1>
+          <p className="max-w-2xl text-sm leading-7 text-muted-foreground sm:text-base">
+            Keep it simple. Start with your account details, then finish with
+            the business information ProofPay AI needs for your store.
+          </p>
         </div>
 
-        <section className="grid gap-6 md:grid-cols-2 md:justify-between md:gap-8">
-          <div className="space-y-4">
-            <div className="space-y-4">
-              <h1 className="max-w-xl text-4xl font-semibold tracking-tight sm:text-5xl">
-                Signup as a Vendor
-              </h1>
-              <p className="max-w-2xl text-sm leading-7 text-muted-foreground sm:text-base">
-                Keep it simple. Start with your account details, then finish
-                with the business information ProofPay AI needs for your store.
-              </p>
-            </div>
-          </div>
+        <section className="grid gap-6 md:grid-cols-2 md:justify-between md:gap-8 items-start">
+          <div className="grid w-full gap-4">
+            {steps.map((step, index) => {
+              const Icon = step.icon;
+              const isActive = currentStep === index;
+              const isComplete = currentStep > index;
 
+              return (
+                <div key={step.id} className="grid items-center gap-3">
+                  <div
+                    className={cn(
+                      "flex flex-1 items-center gap-3 rounded-2xl border px-4 py-3 transition-colors",
+                      isActive
+                        ? "border-primary/40 bg-primary/5"
+                        : "border-border/70 bg-muted/30",
+                    )}
+                  >
+                    <div
+                      className={cn(
+                        "flex size-10 shrink-0 items-center justify-center rounded-full border text-sm font-semibold transition-colors",
+                        isComplete
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : isActive
+                            ? "border-primary/50 bg-background text-primary"
+                            : "border-border bg-background text-muted-foreground",
+                      )}
+                    >
+                      {isComplete ? (
+                        <Check className="size-4" />
+                      ) : (
+                        <Icon className="size-4" />
+                      )}
+                    </div>
+
+                    <div className="space-y-1">
+                      <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
+                        Step {index + 1}
+                      </p>
+                      <p className="text-sm font-semibold">{step.title}</p>
+                      <p className="text-sm leading-6 text-muted-foreground">
+                        {step.description}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
           <div className="space-y-4">
             <Card className="border border-border/70 bg-background shadow-[0_24px_80px_-48px_rgba(14,30,86,0.28)] md:max-w-2xl md:flex-1">
               <CardHeader className="space-y-5 px-5 sm:px-6">
@@ -240,12 +230,6 @@ const VendorSignupForm = () => {
                   {errorMessage ? (
                     <div className="rounded-2xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
                       {errorMessage}
-                    </div>
-                  ) : null}
-
-                  {successMessage ? (
-                    <div className="rounded-2xl border border-primary/30 bg-primary/5 px-4 py-3 text-sm text-primary">
-                      {successMessage}
                     </div>
                   ) : null}
 
