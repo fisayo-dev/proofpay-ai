@@ -4,7 +4,7 @@ import { ChangeEvent, FormEvent, useState, useSyncExternalStore } from "react";
 import { Lock, Truck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import createPaymentRequest from "@/lib/actions/payment-requests";
+import { createPaymentRequest } from "@/lib/actions/payment-requests";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -162,6 +162,7 @@ const NewProductComponent = () => {
       setDeliveryMethod(DEFAULT_DELIVERY_METHOD);
       setExpectedDeliveryDate(getDefaultExpectedDate());
       router.push(res.public_url);
+      console.log(res.public_url); // log the public url
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : "Failed to create product.",
