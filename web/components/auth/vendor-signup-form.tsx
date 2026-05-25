@@ -37,14 +37,21 @@ const VendorSignupForm = () => {
   const [phone, setPhone] = useState("");
   const [socialHandle, setSocialHandle] = useState("");
   const [bankAccountName, setBankAccountName] = useState("");
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [profileErrors, setProfileErrors] = useState<Record<string, string>>({});
+  const [vendorErrors, setVendorErrors] = useState<Record<string, string>>({});
+  const [profileTouched, setProfileTouched] = useState<Record<string, boolean>>({});
+  const [vendorTouched, setVendorTouched] = useState<Record<string, boolean>>({});
   const [serverError, setServerError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isProfileStep = currentStep === 0;
+  
   const resetMessages = () => {
-    setErrors({});
+    setProfileErrors({});
+    setVendorErrors({});
     setServerError("");
+    setProfileTouched({});
+    setVendorTouched({});
   };
 
   const handleContinue = () => {
@@ -67,10 +74,22 @@ const VendorSignupForm = () => {
     }
 
     if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
+      setProfileErrors(newErrors);
+      setProfileTouched({
+        first_name: true,
+        last_name: true,
+        email: true,
+        password: true,
+      });
       return;
     }
 
+    // clear touched/errors when moving to next step
+    setProfileErrors({});
+    setProfileTouched({});
+    // also clear any vendor errors/touched so step 2 doesn't show stale errors
+    setVendorErrors({});
+    setVendorTouched({});
     setCurrentStep(1);
   };
 
@@ -101,7 +120,14 @@ const VendorSignupForm = () => {
     }
 
     if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
+      setVendorErrors(newErrors);
+      setVendorTouched({
+        business_name: true,
+        category: true,
+        phone: true,
+        social_handle: true,
+        bank_account_name: true,
+      });
       return;
     }
 
@@ -134,10 +160,28 @@ const VendorSignupForm = () => {
     (setter: (value: string) => void, field?: string) =>
     (event: ChangeEvent<HTMLInputElement>) => {
       setter(event.target.value);
-      if (field && errors[field]) {
-        const copy = { ...errors };
-        delete copy[field];
-        setErrors(copy);
+      if (field) {
+        const isVendorField = field.startsWith("business_") || field === "category" || field === "phone" || field === "social_handle" || field === "bank_account_name";
+        if (isVendorField) {
+          if (vendorErrors[field]) {
+            const copy = { ...vendorErrors };
+            delete copy[field];
+            setVendorErrors(copy);
+          }
+        } else {
+          if (profileErrors[field]) {
+            const copy = { ...profileErrors };
+            delete copy[field];
+            setProfileErrors(copy);
+          }
+        }
+      }
+      if (field) {
+        if (field.startsWith("business_") || field === "category" || field === "phone" || field === "social_handle" || field === "bank_account_name") {
+          setVendorTouched((t) => ({ ...t, [field]: true }));
+        } else {
+          setProfileTouched((t) => ({ ...t, [field]: true }));
+        }
       }
       if (serverError) setServerError("");
     };
@@ -230,9 +274,9 @@ const VendorSignupForm = () => {
                       value={firstName}
                       onChange={handleInputChange(setFirstName, "first_name")}
                     />
-                    {errors.first_name ? (
-                      <p className="text-xs text-destructive">{errors.first_name}</p>
-                    ) : null}
+                      {profileErrors.first_name && profileTouched.first_name ? (
+                        <p className="text-xs mt-1 text-destructive">{profileErrors.first_name}</p>
+                      ) : null}
                   </label>
 
                   <label htmlFor="last_name" className="space-y-2">
@@ -247,9 +291,9 @@ const VendorSignupForm = () => {
                       value={lastName}
                       onChange={handleInputChange(setLastName, "last_name")}
                     />
-                    {errors.last_name ? (
-                      <p className="text-xs text-destructive">{errors.last_name}</p>
-                    ) : null}
+                      {profileErrors.last_name && profileTouched.last_name ? (
+                        <p className="text-xs mt-1 text-destructive">{profileErrors.last_name}</p>
+                      ) : null}
                   </label>
 
                   <label htmlFor="email" className="space-y-2">
@@ -264,9 +308,9 @@ const VendorSignupForm = () => {
                       value={email}
                       onChange={handleInputChange(setEmail, "email")}
                     />
-                    {errors.email ? (
-                      <p className="text-xs text-destructive">{errors.email}</p>
-                    ) : null}
+                      {profileErrors.email && profileTouched.email ? (
+                        <p className="text-xs mt-1 text-destructive">{profileErrors.email}</p>
+                      ) : null}
                   </label>
 
                   <label htmlFor="password" className="space-y-2">
@@ -281,9 +325,9 @@ const VendorSignupForm = () => {
                       value={password}
                       onChange={handleInputChange(setPassword, "password")}
                     />
-                    {errors.password ? (
-                      <p className="text-xs text-destructive">{errors.password}</p>
-                    ) : null}
+                      {profileErrors.password && profileTouched.password ? (
+                        <p className="text-xs mt-1 text-destructive">{profileErrors.password}</p>
+                      ) : null}
                   </label>
                 </div>
               : <div className="grid gap-4 py-4 sm:grid-cols-2">
@@ -300,9 +344,9 @@ const VendorSignupForm = () => {
                       value={businessName}
                       onChange={handleInputChange(setBusinessName, "business_name")}
                     />
-                    {errors.business_name ? (
-                      <p className="text-xs text-destructive">{errors.business_name}</p>
-                    ) : null}
+                      {vendorErrors.business_name && vendorTouched.business_name ? (
+                        <p className="text-xs mt-1 text-destructive">{vendorErrors.business_name}</p>
+                      ) : null}
                   </label>
 
                   <label htmlFor="category" className="space-y-2">
@@ -316,9 +360,9 @@ const VendorSignupForm = () => {
                       value={category}
                       onChange={handleInputChange(setCategory, "category")}
                     />
-                    {errors.category ? (
-                      <p className="text-xs text-destructive">{errors.category}</p>
-                    ) : null}
+                      {vendorErrors.category && vendorTouched.category ? (
+                        <p className="text-xs mt-1 text-destructive">{vendorErrors.category}</p>
+                      ) : null}
                   </label>
 
                   <label htmlFor="phone" className="space-y-2">
@@ -332,9 +376,9 @@ const VendorSignupForm = () => {
                       value={phone}
                       onChange={handleInputChange(setPhone, "phone")}
                     />
-                    {errors.phone ? (
-                      <p className="text-xs text-destructive">{errors.phone}</p>
-                    ) : null}
+                      {vendorErrors.phone && vendorTouched.phone ? (
+                        <p className="text-xs mt-1 text-destructive">{vendorErrors.phone}</p>
+                      ) : null}
                   </label>
 
                   <label htmlFor="social_handle" className="space-y-2">
@@ -350,9 +394,9 @@ const VendorSignupForm = () => {
                       value={socialHandle}
                       onChange={handleInputChange(setSocialHandle, "social_handle")}
                     />
-                    {errors.social_handle ? (
-                      <p className="text-xs text-destructive">{errors.social_handle}</p>
-                    ) : null}
+                      {vendorErrors.social_handle && vendorTouched.social_handle ? (
+                        <p className="text-xs mt-1 text-destructive">{vendorErrors.social_handle}</p>
+                      ) : null}
                   </label>
 
                   <label
@@ -371,9 +415,9 @@ const VendorSignupForm = () => {
                       value={bankAccountName}
                       onChange={handleInputChange(setBankAccountName, "bank_account_name")}
                     />
-                    {errors.bank_account_name ? (
-                      <p className="text-xs text-destructive">{errors.bank_account_name}</p>
-                    ) : null}
+                      {vendorErrors.bank_account_name && vendorTouched.bank_account_name ? (
+                        <p className="text-xs mt-1 text-destructive">{vendorErrors.bank_account_name}</p>
+                      ) : null}
                   </label>
                 </div>
               }
