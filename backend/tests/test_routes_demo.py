@@ -64,7 +64,7 @@ class DemoRoutesTest(unittest.TestCase):
         self.assertEqual(labels, ["Trusted Vendor", "Caution Vendor", "High Risk Vendor"])
         self.assertIn("Trusted", verdicts)
         self.assertIn("Caution", verdicts)
-        self.assertIn("Manual Review Needed", verdicts)
+        self.assertIn("High Risk", verdicts)
 
         for scenario in response["scenarios"]:
             self.assertIsInstance(scenario["score"], int)

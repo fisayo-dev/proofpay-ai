@@ -104,7 +104,7 @@ def demo_scenarios():
                 "total_transactions": 0,
                 "dispute_count": 0,
             },
-            "request": {"amount_kobo": 25000000, "currency": "NGN"},
+            "request": {"amount_kobo": 5000000, "currency": "NGN"},
         },
     ]
 
