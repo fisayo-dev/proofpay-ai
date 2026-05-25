@@ -1,9 +1,12 @@
+"use client";
+
 import Link from "next/link";
 import {
   AlertTriangle,
   ArrowRight,
   BadgeCheck,
   Building2,
+  ChevronDown,
   CircleDollarSign,
   ShieldCheck,
   ShoppingBag,
@@ -20,32 +23,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-
-type BuyerPublicPageProps = {
-  product: {
-    payment_request_id: string;
-    payment_status: string;
-    kora_reference: string;
-    public_slug: string;
-    seller: {
-      business_name: string;
-      category: string;
-      social_handle: string;
-    };
-    item: {
-      name: string;
-      description: string;
-      amount: number;
-      currency: string;
-    };
-    trust: {
-      score: number;
-      verdict: string;
-      reasons: string[];
-      model_version: string;
-    };
-  };
-};
+import { BuyerPublicPageProps } from "@/types/product";
+import { useState } from "react";
 
 const formatCurrency = (amount: number, currency: string) => {
   return new Intl.NumberFormat("en-NG", {
@@ -81,8 +60,7 @@ const getTrustTone = (score: number) => {
   return {
     badgeClassName:
       "border-destructive/30 bg-destructive/10 text-destructive dark:bg-destructive/15",
-    panelClassName:
-      "border-destructive/20 bg-linear-to-br from-destructive/10 via-background to-background",
+    panelClassName: "border-destructive/10",
     Icon: AlertTriangle,
     label: "Higher-risk payment",
   };
@@ -102,6 +80,7 @@ const getStatusTone = (status: string) => {
 };
 
 const BuyerPublicPage = ({ product }: BuyerPublicPageProps) => {
+  const [toggleReason, setToggleReason] = useState(false);
   const trustTone = getTrustTone(product.trust.score);
   const TrustIcon = trustTone.Icon;
   const formattedAmount = formatCurrency(
@@ -111,7 +90,6 @@ const BuyerPublicPage = ({ product }: BuyerPublicPageProps) => {
 
   return (
     <main className="relative overflow-hidden">
-      <div className="absolute inset-x-0 top-0 -z-10 h-[32rem] bg-[radial-gradient(circle_at_top,rgba(45,103,255,0.18),transparent_55%)]" />
       <div className="absolute left-1/2 top-40 -z-10 h-72 w-72 -translate-x-1/2 rounded-full bg-primary/10 blur-3xl" />
 
       <section className="app-container py-10 sm:py-14">
@@ -121,45 +99,25 @@ const BuyerPublicPage = ({ product }: BuyerPublicPageProps) => {
               <div className="flex flex-wrap items-center gap-3">
                 <Badge className="border-primary/20 bg-primary/10 text-primary">
                   <ShoppingBag className="size-3.5" />
-                  <span>Public payment request</span>
-                </Badge>
-                <Badge
-                  variant="outline"
-                  className={getStatusTone(product.payment_status)}
-                >
-                  {product.payment_status}
+                  <span>AI-powered payment</span>
                 </Badge>
               </div>
 
               <div className="space-y-4">
                 <div className="grid gap-3">
                   <p className="text-sm font-medium text-muted-foreground">
-                    Sold by {product.seller.business_name}
+                    Sold by <b className="text-primary">{product.seller.business_name}</b>
                   </p>
                   <h1 className="max-w-3xl text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
-                    {product.item.name}
+                    {product.item.name.length > 50
+                      ? `${product.item.name.slice(0, 47)}...`
+                      : product.item.name}
                   </h1>
                   <p className="max-w-2xl text-sm leading-7 text-muted-foreground sm:text-base">
-                    {product.item.description}
+                    {product.item.description.length > 100
+                      ? `${product.item.description.slice(0, 97)}...`
+                      : product.item.description}
                   </p>
-                </div>
-
-                <div className="flex flex-wrap items-end gap-x-5 gap-y-3 rounded-3xl border border-border/70 bg-background/80 p-5 shadow-[0_24px_80px_-48px_rgba(14,30,86,0.28)] backdrop-blur">
-                  <div className="space-y-2">
-                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-                      Amount to pay
-                    </p>
-                    <p className="text-3xl font-semibold sm:text-4xl">
-                      {formattedAmount}
-                    </p>
-                  </div>
-                  <div className="h-10 w-px bg-border/70" />
-                  <div className="space-y-1">
-                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-                      Kora reference
-                    </p>
-                    <p className="font-medium">{product.kora_reference}</p>
-                  </div>
                 </div>
               </div>
             </div>
@@ -171,7 +129,7 @@ const BuyerPublicPage = ({ product }: BuyerPublicPageProps) => {
               )}
             >
               <CardHeader className="space-y-4">
-                <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="flex items-start justify-between gap-4">
                   <div className="space-y-2">
                     <Badge
                       variant="outline"
@@ -189,30 +147,39 @@ const BuyerPublicPage = ({ product }: BuyerPublicPageProps) => {
                     </CardDescription>
                   </div>
 
-                  <div className="min-w-32 rounded-3xl border border-border/70 bg-background/85 px-5 py-4 text-right backdrop-blur">
-                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-                      Trust score
-                    </p>
-                    <p className="mt-2 text-4xl font-semibold">
+                  <div className="bg-background/10 flex items-center gap-2">
+                    <p className="text-sm font-semibold">
                       {product.trust.score}
                     </p>
-                    <p className="text-sm text-muted-foreground">/ 100</p>
                   </div>
                 </div>
               </CardHeader>
 
               <CardContent className="grid gap-3">
-                {product.trust.reasons.map((reason) => (
-                  <div
-                    key={reason}
-                    className="flex items-start gap-3 rounded-2xl border border-border/60 bg-background/75 px-4 py-3"
-                  >
-                    <Sparkles className="mt-0.5 size-4 shrink-0 text-primary" />
-                    <p className="text-sm leading-6 text-foreground/90">
-                      {reason}
-                    </p>
-                  </div>
-                ))}
+                <div
+                  className="flex cursor-pointer items-center justify-between px-2"
+                  onClick={() => setToggleReason(!toggleReason)}
+                >
+                  <h2 className="font-semibold">
+                    Reasons {product.trust.reasons.length}
+                  </h2>
+                  <ChevronDown
+                    className={`size-4 ${toggleReason && "rotate-180"}`}
+                  />
+                </div>
+                <div className="grid gap-1">
+                  {toggleReason &&
+                    product.trust.reasons.map((reason) => (
+                      <div
+                        key={reason}
+                        className="border border-border/60 bg-background/75 px-3 py-2 rounded-xl"
+                      >
+                        <p className="text-sm leading-6 text-foreground/90">
+                          {reason}
+                        </p>
+                      </div>
+                    ))}
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -224,10 +191,10 @@ const BuyerPublicPage = ({ product }: BuyerPublicPageProps) => {
             >
               <CardHeader className="space-y-4">
                 <div className="flex items-center gap-3">
-                  <div className="rounded-2xl bg-primary/10 p-3 text-primary">
-                    <CircleDollarSign className="size-5" />
+                  <div className="rounded-full bg-primary/10 size-12 text-primary flex items-center justify-center text-2xl font-extrabold">
+                    ₦
                   </div>
-                  <div className="space-y-1">
+                  <div>
                     <CardTitle className="text-2xl">Checkout summary</CardTitle>
                     <CardDescription>
                       Review the key details before paying.
@@ -244,38 +211,34 @@ const BuyerPublicPage = ({ product }: BuyerPublicPageProps) => {
                   <p className="mt-2 text-4xl font-semibold">
                     {formattedAmount}
                   </p>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    Reference: {product.kora_reference}
-                  </p>
                 </div>
 
                 <div className="grid gap-3">
-                  <div className="flex items-start gap-3 rounded-2xl border border-border/60 px-4 py-3">
-                    <Store className="mt-0.5 size-4 shrink-0 text-primary" />
+                  <div className="flex items-center gap-3 rounded-2xl border border-border/60 px-4 py-3">
+                    <Store className="mt-0.5 size-6 shrink-0 text-primary" />
                     <div className="space-y-1">
-                      <p className="text-sm font-medium">Seller</p>
+                      {/*<p className="text-sm font-medium">Seller</p>*/}
                       <p className="text-sm text-muted-foreground">
                         {product.seller.business_name}
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-3 rounded-2xl border border-border/60 px-4 py-3">
-                    <Building2 className="mt-0.5 size-4 shrink-0 text-primary" />
+                  <div className="flex items-center gap-3 rounded-2xl border border-border/60 px-4 py-3">
+                    <Building2 className="mt-0.5 size-6 shrink-0 text-primary" />
                     <div className="space-y-1">
-                      <p className="text-sm font-medium">Category</p>
+                      {/*<p className="text-sm font-medium">Category</p>*/}
                       <p className="text-sm text-muted-foreground">
                         {product.seller.category}
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-3 rounded-2xl border border-border/60 px-4 py-3">
-                    <ShieldCheck className="mt-0.5 size-4 shrink-0 text-primary" />
+                  <div className="flex items-center gap-3 rounded-2xl border border-border/60 px-4 py-3">
+                    <ShieldCheck className="mt-0.5 size-6 shrink-0 text-primary" />
                     <div className="space-y-1">
-                      <p className="text-sm font-medium">Seller handle</p>
                       <p className="text-sm text-muted-foreground">
-                        {product.seller.social_handle}
+                        @{product.seller.social_handle}
                       </p>
                     </div>
                   </div>
@@ -288,19 +251,15 @@ const BuyerPublicPage = ({ product }: BuyerPublicPageProps) => {
                   </Link>
                 </Button>
 
-                <div
-                  id={`checkout-action-${product.public_slug}`}
-                  className="rounded-2xl border border-primary/15 bg-primary/5 px-4 py-3 text-sm text-muted-foreground"
-                >
-                  Checkout is ready for the payment flow connection tied to
-                  this request. Use the reference above for the next payment
-                  step.
-                </div>
-
-                <div className="grid gap-2 text-xs text-muted-foreground">
-                  <p>Request ID: {product.payment_request_id}</p>
-                  <p>Public slug: {product.public_slug}</p>
-                  <p>Model: {product.trust.model_version}</p>
+                <div className="rounded-2xl border border-primary/15 bg-primary/5 px-3 py-1 text-sm text-muted-foreground">
+                  All payments are Powered by{" "}
+                  <Link
+                    href="https://www.korahq.com"
+                    target="__blank"
+                    className="font-bold hover:underline"
+                  >
+                    Kora
+                  </Link>
                 </div>
               </CardContent>
             </Card>

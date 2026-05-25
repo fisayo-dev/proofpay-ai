@@ -2,8 +2,8 @@ import api from "@/lib/axios";
 import {
   CreatePaymentRequestPayload,
   CreatePaymentRequestResponse,
-  PublicProductResponse,
 } from "@/types/payment-request";
+import { PublicProductResponse } from "@/types/product";
 
 export const createPaymentRequest = async (
   data: CreatePaymentRequestPayload,
