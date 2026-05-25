@@ -89,6 +89,32 @@ class VendorRouteTest(unittest.TestCase):
             with self.assertRaises(psycopg.OperationalError):
                 routes_vendor.create_vendor_endpoint(body)
 
+    def test_create_vendor_returns_conflict_for_existing_email(self):
+        body = routes_vendor.CreateVendorRequest(
+            full_name="Favour Ade",
+            email="favour@example.com",
+            password="StrongPass123!",
+            business_name="Favour Fits",
+            category="fashion",
+        )
+
+        with patch.object(
+            routes_vendor,
+            "create_vendor",
+            side_effect=routes_vendor.VendorAlreadyExistsError(
+                "A user with this email already exists."
+            ),
+        ):
+            with self.assertRaises(routes_vendor.HTTPException) as context:
+                routes_vendor.create_vendor_endpoint(body)
+
+        self.assertEqual(context.exception.status_code, 409)
+        self.assertEqual(context.exception.detail["code"], "USER_ALREADY_EXISTS")
+        self.assertEqual(
+            context.exception.detail["message"],
+            "A user with this email already exists.",
+        )
+
     def test_get_vendor_preserves_database_operational_error(self):
         with patch.object(
             routes_vendor,

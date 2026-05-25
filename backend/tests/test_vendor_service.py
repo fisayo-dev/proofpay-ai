@@ -20,6 +20,7 @@ class FakeConnection:
     def __init__(self, cursor):
         self.cursor_instance = cursor
         self.committed = False
+        self.rolled_back = False
         self.closed = False
 
     def cursor(self):
@@ -27,6 +28,9 @@ class FakeConnection:
 
     def commit(self):
         self.committed = True
+
+    def rollback(self):
+        self.rolled_back = True
 
     def close(self):
         self.closed = True
@@ -68,6 +72,32 @@ class VendorServiceTest(unittest.TestCase):
         self.assertIn("INSERT INTO users", cursor.queries[0][0])
         self.assertIn("user_id, business_name", cursor.queries[1][0])
         self.assertTrue(conn.committed)
+        self.assertTrue(conn.closed)
+
+    def test_create_vendor_raises_domain_error_for_duplicate_email(self):
+        class DuplicateEmailCursor(FakeCursor):
+            def execute(self, query, params):
+                self.queries.append((query, params))
+                if "INSERT INTO users" in query:
+                    raise vendor_service.psycopg.errors.UniqueViolation(
+                        "duplicate key value violates unique constraint"
+                    )
+
+        cursor = DuplicateEmailCursor([])
+        conn = FakeConnection(cursor)
+
+        with patch.object(vendor_service, "get_connection", return_value=conn):
+            with self.assertRaises(vendor_service.VendorAlreadyExistsError):
+                vendor_service.create_vendor({
+                    "full_name": "Favour Ade",
+                    "email": "favour@example.com",
+                    "password": "StrongPass123!",
+                    "business_name": "Favour Fits",
+                    "category": "fashion",
+                })
+
+        self.assertFalse(conn.committed)
+        self.assertTrue(conn.rolled_back)
         self.assertTrue(conn.closed)
 
 

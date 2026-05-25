@@ -8,7 +8,11 @@ import psycopg
 
 from app.core.config import settings
 from app.services.auth_service import create_session_token
-from app.services.vendor_service import create_vendor, get_vendor_by_id
+from app.services.vendor_service import (
+    VendorAlreadyExistsError,
+    create_vendor,
+    get_vendor_by_id,
+)
 
 router = APIRouter(prefix="/api/v1", tags=["Vendors"])
 
@@ -53,6 +57,14 @@ def create_vendor_endpoint(body: CreateVendorRequest):
         return response
     except psycopg.OperationalError:
         raise
+    except VendorAlreadyExistsError:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": "USER_ALREADY_EXISTS",
+                "message": "A user with this email already exists."
+            },
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
