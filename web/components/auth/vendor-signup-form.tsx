@@ -187,7 +187,7 @@ const VendorSignupForm = () => {
     };
 
   return (
-    <main className="grid md:grid-cols-2 items-center md:gap-10 justify-between">
+    <main className="grid md:grid-cols-2 items-center md:gap-10 justify-between py-10">
       <div className="mx-auto grid gap-10 pb-20 sm:pb-24">
         <div className="space-y-4">
           <h1 className="max-w-xl text-4xl font-semibold tracking-tight sm:text-5xl">
