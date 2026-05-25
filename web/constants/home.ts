@@ -143,6 +143,144 @@ export const store_products: StoreProduct[] = [
       ],
     },
   },
+  {
+    id: "artisan-ceramics-mug",
+    image:
+      "https://images.unsplash.com/photo-1523986371872-9d3ba2e2f642?auto=format&fit=crop&w=900&q=80",
+    vendor: {
+      business_name: "Clay & Co",
+      category: "Home goods",
+      social_handle: "@clayandco",
+      completed_transactions: 21,
+    },
+    payment_request: {
+      item_name: "Handmade ceramic mug",
+      amount: 4200,
+      currency: "NGN",
+      delivery_method: "Campus pickup",
+    },
+    trust: {
+      score: 93,
+      verdict: "Trusted",
+      confidence: "High confidence",
+      reasons: ["Strong delivery history", "High-quality product photos"],
+    },
+  },
+  {
+    id: "eco-tote-bag",
+    image:
+      "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=900&q=80",
+    vendor: {
+      business_name: "Green Threads",
+      category: "Accessories",
+      social_handle: "@greenthreads",
+      completed_transactions: 8,
+    },
+    payment_request: {
+      item_name: "Organic cotton tote bag",
+      amount: 2300,
+      currency: "NGN",
+      delivery_method: "Local delivery",
+    },
+    trust: {
+      score: 85,
+      verdict: "Trusted",
+      confidence: "Moderate confidence",
+      reasons: ["Sustainable product focus", "Consistent messaging"],
+    },
+  },
+  {
+    id: "study-light-led",
+    image:
+      "https://images.unsplash.com/photo-1519710164239-da123dc03ef4?auto=format&fit=crop&w=900&q=80",
+    vendor: {
+      business_name: "BrightLab",
+      category: "Electronics",
+      social_handle: "@brightlabng",
+      completed_transactions: 6,
+    },
+    payment_request: {
+      item_name: "Adjustable LED study light",
+      amount: 9800,
+      currency: "NGN",
+      delivery_method: "Courier",
+    },
+    trust: {
+      score: 77,
+      verdict: "Caution",
+      confidence: "Moderate confidence",
+      reasons: ["Limited completed transactions", "Good product reviews"],
+    },
+  },
+  {
+    id: "fast-charge-usb-c",
+    image:
+      "https://images.unsplash.com/photo-1523475496153-3d6ccf9b7e0d?auto=format&fit=crop&w=900&q=80",
+    vendor: {
+      business_name: "Gadget Hub NG",
+      category: "Electronics",
+      social_handle: "@gadgethubng",
+      completed_transactions: 9,
+    },
+    payment_request: {
+      item_name: "Fast charge USB-C cable",
+      amount: 1500,
+      currency: "NGN",
+      delivery_method: "Same-day hostel dropoff",
+    },
+    trust: {
+      score: 88,
+      verdict: "Trusted",
+      confidence: "High confidence",
+      reasons: ["Vendor identity verified", "Popular accessory"],
+    },
+  },
+  {
+    id: "handmade-notebook",
+    image:
+      "https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?auto=format&fit=crop&w=900&q=80",
+    vendor: {
+      business_name: "Paper & Pen Co",
+      category: "Stationery",
+      social_handle: "@paperpenco",
+      completed_transactions: 3,
+    },
+    payment_request: {
+      item_name: "Handbound notebook",
+      amount: 2700,
+      currency: "NGN",
+      delivery_method: "Pickup",
+    },
+    trust: {
+      score: 64,
+      verdict: "Caution",
+      confidence: "Moderate confidence",
+      reasons: ["New seller", "Small number of transactions"],
+    },
+  },
+  {
+    id: "soy-scented-candle",
+    image:
+      "https://images.unsplash.com/photo-1509223197845-458d87318791?auto=format&fit=crop&w=900&q=80",
+    vendor: {
+      business_name: "Cozy Scents",
+      category: "Home goods",
+      social_handle: "@cozyscents",
+      completed_transactions: 11,
+    },
+    payment_request: {
+      item_name: "Soy scented candle - lavender",
+      amount: 3500,
+      currency: "NGN",
+      delivery_method: "Courier",
+    },
+    trust: {
+      score: 89,
+      verdict: "Trusted",
+      confidence: "High confidence",
+      reasons: ["Good transaction history", "Quality packaging"],
+    },
+  },
 ];
 
 export const vendors: Vendor[] = [

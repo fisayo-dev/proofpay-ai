@@ -37,45 +37,59 @@ const VendorSignupForm = () => {
   const [phone, setPhone] = useState("");
   const [socialHandle, setSocialHandle] = useState("");
   const [bankAccountName, setBankAccountName] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
+  const [profileErrors, setProfileErrors] = useState<Record<string, string>>({});
+  const [vendorErrors, setVendorErrors] = useState<Record<string, string>>({});
+  const [profileTouched, setProfileTouched] = useState<Record<string, boolean>>({});
+  const [vendorTouched, setVendorTouched] = useState<Record<string, boolean>>({});
+  const [serverError, setServerError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isProfileStep = currentStep === 0;
-  const activeStep = steps[currentStep];
-  const ActiveStepIcon = activeStep.icon;
-
+  
   const resetMessages = () => {
-    setErrorMessage("");
+    setProfileErrors({});
+    setVendorErrors({});
+    setServerError("");
+    setProfileTouched({});
+    setVendorTouched({});
   };
 
   const handleContinue = () => {
     resetMessages();
 
+    const newErrors: Record<string, string> = {};
     if (!firstName.trim()) {
-      setErrorMessage("First name is required.");
-      return;
+      newErrors.first_name = "First name is required.";
     }
-
     if (!lastName.trim()) {
-      setErrorMessage("Last name is required.");
-      return;
+      newErrors.last_name = "Last name is required.";
     }
-
     if (!email.trim()) {
-      setErrorMessage("Email is required.");
-      return;
+      newErrors.email = "Email is required.";
     }
-
     if (!password.trim()) {
-      setErrorMessage("Password is required.");
+      newErrors.password = "Password is required.";
+    } else if (password.trim().length < 8) {
+      newErrors.password = "Password must be at least 8 characters.";
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setProfileErrors(newErrors);
+      setProfileTouched({
+        first_name: true,
+        last_name: true,
+        email: true,
+        password: true,
+      });
       return;
     }
 
-    if (password.trim().length < 8) {
-      setErrorMessage("Password must be at least 8 characters.");
-      return;
-    }
-
+    // clear touched/errors when moving to next step
+    setProfileErrors({});
+    setProfileTouched({});
+    // also clear any vendor errors/touched so step 2 doesn't show stale errors
+    setVendorErrors({});
+    setVendorTouched({});
     setCurrentStep(1);
   };
 
@@ -88,28 +102,32 @@ const VendorSignupForm = () => {
     event.preventDefault();
     resetMessages();
 
+    const newErrors: Record<string, string> = {};
     if (!businessName.trim()) {
-      setErrorMessage("Business name is required.");
-      return;
+      newErrors.business_name = "Business name is required.";
     }
-
     if (!category.trim()) {
-      setErrorMessage("Category is required.");
-      return;
+      newErrors.category = "Category is required.";
     }
-
     if (!phone.trim()) {
-      setErrorMessage("Phone is required.");
-      return;
+      newErrors.phone = "Phone is required.";
     }
-
     if (!socialHandle.trim()) {
-      setErrorMessage("Social handle is required.");
-      return;
+      newErrors.social_handle = "Social handle is required.";
+    }
+    if (!bankAccountName.trim()) {
+      newErrors.bank_account_name = "Bank account name is required.";
     }
 
-    if (!bankAccountName.trim()) {
-      setErrorMessage("Bank account name is required.");
+    if (Object.keys(newErrors).length > 0) {
+      setVendorErrors(newErrors);
+      setVendorTouched({
+        business_name: true,
+        category: true,
+        phone: true,
+        social_handle: true,
+        bank_account_name: true,
+      });
       return;
     }
 
@@ -131,27 +149,45 @@ const VendorSignupForm = () => {
       toast.success("Vendor account created successfully.");
       router.push("/vendors/new-product");
     } catch (error) {
-      setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : "Failed to create vendor account.",
-      );
+      const msg = error instanceof Error ? error.message : "Failed to create vendor account.";
+      setServerError(msg);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleInputChange =
-    (setter: (value: string) => void) =>
+    (setter: (value: string) => void, field?: string) =>
     (event: ChangeEvent<HTMLInputElement>) => {
       setter(event.target.value);
-      if (errorMessage) {
-        resetMessages();
+      if (field) {
+        const isVendorField = field.startsWith("business_") || field === "category" || field === "phone" || field === "social_handle" || field === "bank_account_name";
+        if (isVendorField) {
+          if (vendorErrors[field]) {
+            const copy = { ...vendorErrors };
+            delete copy[field];
+            setVendorErrors(copy);
+          }
+        } else {
+          if (profileErrors[field]) {
+            const copy = { ...profileErrors };
+            delete copy[field];
+            setProfileErrors(copy);
+          }
+        }
       }
+      if (field) {
+        if (field.startsWith("business_") || field === "category" || field === "phone" || field === "social_handle" || field === "bank_account_name") {
+          setVendorTouched((t) => ({ ...t, [field]: true }));
+        } else {
+          setProfileTouched((t) => ({ ...t, [field]: true }));
+        }
+      }
+      if (serverError) setServerError("");
     };
 
   return (
-    <main>
+    <main className="grid md:grid-cols-2 items-center md:gap-10 justify-between py-10">
       <div className="mx-auto grid gap-10 pb-20 sm:pb-24">
         <div className="space-y-4">
           <h1 className="max-w-xl text-4xl font-semibold tracking-tight sm:text-5xl">
@@ -162,260 +198,268 @@ const VendorSignupForm = () => {
             the business information ProofPay AI needs for your store.
           </p>
         </div>
+        <div className="grid w-full gap-4">
+          {steps.map((step, index) => {
+            const Icon = step.icon;
+            const isActive = currentStep === index;
+            const isComplete = currentStep > index;
 
-        <section className="grid gap-6 md:grid-cols-2 md:justify-between md:gap-8 items-start">
-          <div className="grid w-full gap-4">
-            {steps.map((step, index) => {
-              const Icon = step.icon;
-              const isActive = currentStep === index;
-              const isComplete = currentStep > index;
-
-              return (
-                <div key={step.id} className="grid items-center gap-3">
+            return (
+              <div key={step.id} className="grid items-center gap-3">
+                <div
+                  className={cn(
+                    "flex flex-1 items-center gap-3 rounded-2xl border px-4 py-3 transition-colors",
+                    isActive ?
+                      "border-primary/40 bg-primary/5"
+                    : "border-border/70 bg-muted/30",
+                  )}
+                >
                   <div
                     className={cn(
-                      "flex flex-1 items-center gap-3 rounded-2xl border px-4 py-3 transition-colors",
-                      isActive
-                        ? "border-primary/40 bg-primary/5"
-                        : "border-border/70 bg-muted/30",
+                      "flex size-10 shrink-0 items-center justify-center rounded-full border text-sm font-semibold transition-colors",
+                      isComplete ?
+                        "border-primary bg-primary text-primary-foreground"
+                      : isActive ?
+                        "border-primary/50 bg-background text-primary"
+                      : "border-border bg-background text-muted-foreground",
                     )}
                   >
-                    <div
-                      className={cn(
-                        "flex size-10 shrink-0 items-center justify-center rounded-full border text-sm font-semibold transition-colors",
-                        isComplete
-                          ? "border-primary bg-primary text-primary-foreground"
-                          : isActive
-                            ? "border-primary/50 bg-background text-primary"
-                            : "border-border bg-background text-muted-foreground",
-                      )}
-                    >
-                      {isComplete ? (
-                        <Check className="size-4" />
-                      ) : (
-                        <Icon className="size-4" />
-                      )}
-                    </div>
+                    {isComplete ?
+                      <Check className="size-4" />
+                    : <Icon className="size-4" />}
+                  </div>
 
-                    <div className="space-y-1">
-                      <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
-                        Step {index + 1}
-                      </p>
-                      <p className="text-sm font-semibold">{step.title}</p>
-                      <p className="text-sm leading-6 text-muted-foreground">
-                        {step.description}
-                      </p>
-                    </div>
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
+                      Step {index + 1}
+                    </p>
+                    <p className="text-sm font-semibold">{step.title}</p>
+                    <p className="text-sm leading-6 text-muted-foreground">
+                      {step.description}
+                    </p>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-          <div className="space-y-4">
-            <Card className="border border-border/70 bg-background shadow-[0_24px_80px_-48px_rgba(14,30,86,0.28)] md:max-w-2xl md:flex-1">
-              <CardHeader className="space-y-5 px-5 sm:px-6">
-                <h2 className="text-3xl font-medium">
-                  {isProfileStep
-                    ? "We want to know you?"
-                    : "Complete your seller profile"}
-                </h2>
-                <div className="flex items-center gap-3 rounded-2xl border border-border/60 bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
-                  <ActiveStepIcon className="size-4 shrink-0 text-primary" />
-                  <span>{activeStep.description}</span>
-                </div>
-              </CardHeader>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      <div className="space-y-4">
+        <Card className="border border-border/70 bg-background shadow-[0_24px_80px_-48px_rgba(14,30,86,0.28)] md:max-w-2xl md:flex-1">
+          <CardHeader className="space-y-5 px-5 sm:px-6">
+            <h2 className="text-3xl font-medium">
+              {isProfileStep ?
+                "We want to know you?"
+              : "Complete your seller profile"}
+            </h2>
+          </CardHeader>
 
-              <CardContent className="px-5 sm:px-6">
-                <form onSubmit={handleSubmit} className="space-y-7">
-                  {errorMessage ? (
-                    <div className="rounded-2xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-                      {errorMessage}
-                    </div>
-                  ) : null}
+          <CardContent className="px-5 sm:px-6">
+            <form onSubmit={handleSubmit} className="space-y-7">
+              {/* per-field error messages shown under each input */}
 
-                  {isProfileStep ? (
-                    <div className="grid gap-4 py-4 sm:grid-cols-2">
-                      <label htmlFor="first_name" className="space-y-2">
-                        <span className="block text-sm font-medium">
-                          First name
-                        </span>
-                        <Input
-                          id="first_name"
-                          name="first_name"
-                          type="text"
-                          placeholder="Favour"
-                          autoComplete="given-name"
-                          className="text-sm"
-                          value={firstName}
-                          onChange={handleInputChange(setFirstName)}
-                        />
-                      </label>
-
-                      <label htmlFor="last_name" className="space-y-2">
-                        <span className="block text-sm font-medium">
-                          Last name
-                        </span>
-                        <Input
-                          id="last_name"
-                          name="last_name"
-                          type="text"
-                          placeholder="Okafor"
-                          autoComplete="family-name"
-                          className="text-sm"
-                          value={lastName}
-                          onChange={handleInputChange(setLastName)}
-                        />
-                      </label>
-
-                      <label htmlFor="email" className="space-y-2">
-                        <span className="block text-sm font-medium">Email</span>
-                        <Input
-                          id="email"
-                          name="email"
-                          type="email"
-                          placeholder="favour@example.com"
-                          autoComplete="email"
-                          className="text-sm"
-                          value={email}
-                          onChange={handleInputChange(setEmail)}
-                        />
-                      </label>
-
-                      <label htmlFor="password" className="space-y-2">
-                        <span className="block text-sm font-medium">
-                          Password
-                        </span>
-                        <Input
-                          id="password"
-                          name="password"
-                          type="password"
-                          placeholder="Create a strong password"
-                          autoComplete="new-password"
-                          className="text-sm"
-                          value={password}
-                          onChange={handleInputChange(setPassword)}
-                        />
-                      </label>
-                    </div>
-                  ) : (
-                    <div className="grid gap-4 py-4 sm:grid-cols-2">
-                      <label htmlFor="business_name" className="space-y-2">
-                        <span className="block text-sm font-medium">
-                          Business name
-                        </span>
-                        <Input
-                          id="business_name"
-                          name="business_name"
-                          type="text"
-                          placeholder="Favour Fits"
-                          className="text-sm"
-                          value={businessName}
-                          onChange={handleInputChange(setBusinessName)}
-                        />
-                      </label>
-
-                      <label htmlFor="category" className="space-y-2">
-                        <span className="block text-sm font-medium">
-                          Category
-                        </span>
-                        <Input
-                          id="category"
-                          name="category"
-                          type="text"
-                          placeholder="Fashion"
-                          className="text-sm"
-                          value={category}
-                          onChange={handleInputChange(setCategory)}
-                        />
-                      </label>
-
-                      <label htmlFor="phone" className="space-y-2">
-                        <span className="block text-sm font-medium">Phone</span>
-                        <Input
-                          id="phone"
-                          name="phone"
-                          type="tel"
-                          placeholder="+234 801 234 5678"
-                          className="text-sm"
-                          value={phone}
-                          onChange={handleInputChange(setPhone)}
-                        />
-                      </label>
-
-                      <label htmlFor="social_handle" className="space-y-2">
-                        <span className="block text-sm font-medium">
-                          Social handle
-                        </span>
-                        <Input
-                          id="social_handle"
-                          name="social_handle"
-                          type="text"
-                          placeholder="@favourfits"
-                          className="text-sm"
-                          value={socialHandle}
-                          onChange={handleInputChange(setSocialHandle)}
-                        />
-                      </label>
-
-                      <label
-                        htmlFor="bank_account_name"
-                        className="space-y-2 sm:col-span-2"
-                      >
-                        <span className="block text-sm font-medium">
-                          Bank account name
-                        </span>
-                        <Input
-                          id="bank_account_name"
-                          name="bank_account_name"
-                          type="text"
-                          placeholder="Favour Fits Ventures"
-                          className="text-sm"
-                          value={bankAccountName}
-                          onChange={handleInputChange(setBankAccountName)}
-                        />
-                      </label>
-                    </div>
-                  )}
-
-                  <div className="flex flex-col gap-3 border-t border-border/60 pt-5 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="text-sm text-muted-foreground">
-                      Step {currentStep + 1} of {steps.length}
-                    </div>
-
-                    <div className="flex flex-col gap-3 sm:flex-row">
-                      {!isProfileStep ? (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          disabled={isSubmitting}
-                          onClick={handleBack}
-                        >
-                          Back
-                        </Button>
+              {isProfileStep ?
+                <div className="grid gap-4 py-4 ">
+                  <label htmlFor="first_name" className="space-y-2">
+                    <span className="block text-sm font-medium">
+                      First name
+                    </span>
+                    <Input
+                      id="first_name"
+                      name="first_name"
+                      type="text"
+                      placeholder="Favour"
+                      autoComplete="given-name"
+                      className="text-sm"
+                      value={firstName}
+                      onChange={handleInputChange(setFirstName, "first_name")}
+                    />
+                      {profileErrors.first_name && profileTouched.first_name ? (
+                        <p className="text-xs mt-1 text-destructive">{profileErrors.first_name}</p>
                       ) : null}
+                  </label>
 
-                      {isProfileStep ? (
-                        <Button
-                          type="button"
-                          disabled={isSubmitting}
-                          onClick={handleContinue}
-                        >
-                          Continue to vendor details
-                        </Button>
-                      ) : (
-                        <Button type="submit" disabled={isSubmitting}>
-                          {isSubmitting
-                            ? "Creating account..."
-                            : "Start selling"}
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </form>
-              </CardContent>
-            </Card>
-          </div>
-        </section>
+                  <label htmlFor="last_name" className="space-y-2">
+                    <span className="block text-sm font-medium">Last name</span>
+                    <Input
+                      id="last_name"
+                      name="last_name"
+                      type="text"
+                      placeholder="Okafor"
+                      autoComplete="family-name"
+                      className="text-sm"
+                      value={lastName}
+                      onChange={handleInputChange(setLastName, "last_name")}
+                    />
+                      {profileErrors.last_name && profileTouched.last_name ? (
+                        <p className="text-xs mt-1 text-destructive">{profileErrors.last_name}</p>
+                      ) : null}
+                  </label>
+
+                  <label htmlFor="email" className="space-y-2">
+                    <span className="block text-sm font-medium">Email</span>
+                    <Input
+                      id="email"
+                      name="email"
+                      type="email"
+                      placeholder="favour@example.com"
+                      autoComplete="email"
+                      className="text-sm"
+                      value={email}
+                      onChange={handleInputChange(setEmail, "email")}
+                    />
+                      {profileErrors.email && profileTouched.email ? (
+                        <p className="text-xs mt-1 text-destructive">{profileErrors.email}</p>
+                      ) : null}
+                  </label>
+
+                  <label htmlFor="password" className="space-y-2">
+                    <span className="block text-sm font-medium">Password</span>
+                    <Input
+                      id="password"
+                      name="password"
+                      type="password"
+                      placeholder="Create a strong password"
+                      autoComplete="new-password"
+                      className="text-sm"
+                      value={password}
+                      onChange={handleInputChange(setPassword, "password")}
+                    />
+                      {profileErrors.password && profileTouched.password ? (
+                        <p className="text-xs mt-1 text-destructive">{profileErrors.password}</p>
+                      ) : null}
+                  </label>
+                </div>
+              : <div className="grid gap-4 py-4 sm:grid-cols-2">
+                  <label htmlFor="business_name" className="space-y-2">
+                    <span className="block text-sm font-medium">
+                      Business name
+                    </span>
+                    <Input
+                      id="business_name"
+                      name="business_name"
+                      type="text"
+                      placeholder="Favour Fits"
+                      className="text-sm"
+                      value={businessName}
+                      onChange={handleInputChange(setBusinessName, "business_name")}
+                    />
+                      {vendorErrors.business_name && vendorTouched.business_name ? (
+                        <p className="text-xs mt-1 text-destructive">{vendorErrors.business_name}</p>
+                      ) : null}
+                  </label>
+
+                  <label htmlFor="category" className="space-y-2">
+                    <span className="block text-sm font-medium">Category</span>
+                    <Input
+                      id="category"
+                      name="category"
+                      type="text"
+                      placeholder="Fashion"
+                      className="text-sm"
+                      value={category}
+                      onChange={handleInputChange(setCategory, "category")}
+                    />
+                      {vendorErrors.category && vendorTouched.category ? (
+                        <p className="text-xs mt-1 text-destructive">{vendorErrors.category}</p>
+                      ) : null}
+                  </label>
+
+                  <label htmlFor="phone" className="space-y-2">
+                    <span className="block text-sm font-medium">Phone</span>
+                    <Input
+                      id="phone"
+                      name="phone"
+                      type="tel"
+                      placeholder="+234 801 234 5678"
+                      className="text-sm"
+                      value={phone}
+                      onChange={handleInputChange(setPhone, "phone")}
+                    />
+                      {vendorErrors.phone && vendorTouched.phone ? (
+                        <p className="text-xs mt-1 text-destructive">{vendorErrors.phone}</p>
+                      ) : null}
+                  </label>
+
+                  <label htmlFor="social_handle" className="space-y-2">
+                    <span className="block text-sm font-medium">
+                      Social handle
+                    </span>
+                    <Input
+                      id="social_handle"
+                      name="social_handle"
+                      type="text"
+                      placeholder="@favourfits"
+                      className="text-sm"
+                      value={socialHandle}
+                      onChange={handleInputChange(setSocialHandle, "social_handle")}
+                    />
+                      {vendorErrors.social_handle && vendorTouched.social_handle ? (
+                        <p className="text-xs mt-1 text-destructive">{vendorErrors.social_handle}</p>
+                      ) : null}
+                  </label>
+
+                  <label
+                    htmlFor="bank_account_name"
+                    className="space-y-2 sm:col-span-2"
+                  >
+                    <span className="block text-sm font-medium">
+                      Bank account name
+                    </span>
+                    <Input
+                      id="bank_account_name"
+                      name="bank_account_name"
+                      type="text"
+                      placeholder="Favour Fits Ventures"
+                      className="text-sm"
+                      value={bankAccountName}
+                      onChange={handleInputChange(setBankAccountName, "bank_account_name")}
+                    />
+                      {vendorErrors.bank_account_name && vendorTouched.bank_account_name ? (
+                        <p className="text-xs mt-1 text-destructive">{vendorErrors.bank_account_name}</p>
+                      ) : null}
+                  </label>
+                </div>
+              }
+
+              {serverError ? (
+                <div className="text-sm text-destructive">{serverError}</div>
+              ) : null}
+
+              <div className="flex flex-col gap-3 border-t border-border/60 pt-5 sm:flex-row sm:items-center sm:justify-between">
+                <div className="text-sm text-muted-foreground">
+                  Step {currentStep + 1} of {steps.length}
+                </div>
+
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  {!isProfileStep ?
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={isSubmitting}
+                      onClick={handleBack}
+                    >
+                      Back
+                    </Button>
+                  : null}
+
+                  {isProfileStep ?
+                    <Button
+                      type="button"
+                      disabled={isSubmitting}
+                      onClick={handleContinue}
+                    >
+                      Continue to vendor details
+                    </Button>
+                  : <Button type="submit" disabled={isSubmitting}>
+                      {isSubmitting ? "Creating account..." : "Start selling"}
+                    </Button>
+                  }
+                </div>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
       </div>
     </main>
   );

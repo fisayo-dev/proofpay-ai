@@ -3,8 +3,9 @@ import {
   CreatePaymentRequestPayload,
   CreatePaymentRequestResponse,
 } from "@/types/payment-request";
+import { PublicProductResponse } from "@/types/product";
 
-const createPaymentRequest = async (
+export const createPaymentRequest = async (
   data: CreatePaymentRequestPayload,
 ): Promise<CreatePaymentRequestResponse> => {
   try {
@@ -19,4 +20,13 @@ const createPaymentRequest = async (
   }
 };
 
-export default createPaymentRequest;
+export const getPublicProduct = async (
+  productSlug: string,
+): Promise<PublicProductResponse> => {
+  try {
+    const response = await api.get(`/public/r/${productSlug}`);
+    return response.data;
+  } catch (err) {
+    throw new Error("Failed to fetch public product: " + err);
+  }
+};
