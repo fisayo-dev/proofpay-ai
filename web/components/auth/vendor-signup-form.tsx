@@ -41,9 +41,6 @@ const VendorSignupForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isProfileStep = currentStep === 0;
-  const activeStep = steps[currentStep];
-  const ActiveStepIcon = activeStep.icon;
-
   const resetMessages = () => {
     setErrorMessage("");
   };
@@ -132,9 +129,9 @@ const VendorSignupForm = () => {
       router.push("/vendors/new-product");
     } catch (error) {
       setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : "Failed to create vendor account.",
+        error instanceof Error ?
+          error.message
+        : "Failed to create vendor account.",
       );
     } finally {
       setIsSubmitting(false);
@@ -151,7 +148,7 @@ const VendorSignupForm = () => {
     };
 
   return (
-    <main>
+    <main className="grid md:grid-cols-2 items-center md:gap-10 justify-between">
       <div className="mx-auto grid gap-10 pb-20 sm:pb-24">
         <div className="space-y-4">
           <h1 className="max-w-xl text-4xl font-semibold tracking-tight sm:text-5xl">
@@ -162,260 +159,241 @@ const VendorSignupForm = () => {
             the business information ProofPay AI needs for your store.
           </p>
         </div>
+        <div className="grid w-full gap-4">
+          {steps.map((step, index) => {
+            const Icon = step.icon;
+            const isActive = currentStep === index;
+            const isComplete = currentStep > index;
 
-        <section className="grid gap-6 md:grid-cols-2 md:justify-between md:gap-8 items-start">
-          <div className="grid w-full gap-4">
-            {steps.map((step, index) => {
-              const Icon = step.icon;
-              const isActive = currentStep === index;
-              const isComplete = currentStep > index;
-
-              return (
-                <div key={step.id} className="grid items-center gap-3">
+            return (
+              <div key={step.id} className="grid items-center gap-3">
+                <div
+                  className={cn(
+                    "flex flex-1 items-center gap-3 rounded-2xl border px-4 py-3 transition-colors",
+                    isActive ?
+                      "border-primary/40 bg-primary/5"
+                    : "border-border/70 bg-muted/30",
+                  )}
+                >
                   <div
                     className={cn(
-                      "flex flex-1 items-center gap-3 rounded-2xl border px-4 py-3 transition-colors",
-                      isActive
-                        ? "border-primary/40 bg-primary/5"
-                        : "border-border/70 bg-muted/30",
+                      "flex size-10 shrink-0 items-center justify-center rounded-full border text-sm font-semibold transition-colors",
+                      isComplete ?
+                        "border-primary bg-primary text-primary-foreground"
+                      : isActive ?
+                        "border-primary/50 bg-background text-primary"
+                      : "border-border bg-background text-muted-foreground",
                     )}
                   >
-                    <div
-                      className={cn(
-                        "flex size-10 shrink-0 items-center justify-center rounded-full border text-sm font-semibold transition-colors",
-                        isComplete
-                          ? "border-primary bg-primary text-primary-foreground"
-                          : isActive
-                            ? "border-primary/50 bg-background text-primary"
-                            : "border-border bg-background text-muted-foreground",
-                      )}
+                    {isComplete ?
+                      <Check className="size-4" />
+                    : <Icon className="size-4" />}
+                  </div>
+
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
+                      Step {index + 1}
+                    </p>
+                    <p className="text-sm font-semibold">{step.title}</p>
+                    <p className="text-sm leading-6 text-muted-foreground">
+                      {step.description}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      <div className="space-y-4">
+        <Card className="border border-border/70 bg-background shadow-[0_24px_80px_-48px_rgba(14,30,86,0.28)] md:max-w-2xl md:flex-1">
+          <CardHeader className="space-y-5 px-5 sm:px-6">
+            <h2 className="text-3xl font-medium">
+              {isProfileStep ?
+                "We want to know you?"
+              : "Complete your seller profile"}
+            </h2>
+          </CardHeader>
+
+          <CardContent className="px-5 sm:px-6">
+            <form onSubmit={handleSubmit} className="space-y-7">
+              {errorMessage ?
+                <div className="rounded-2xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+                  {errorMessage}
+                </div>
+              : null}
+
+              {isProfileStep ?
+                <div className="grid gap-4 py-4 ">
+                  <label htmlFor="first_name" className="space-y-2">
+                    <span className="block text-sm font-medium">
+                      First name
+                    </span>
+                    <Input
+                      id="first_name"
+                      name="first_name"
+                      type="text"
+                      placeholder="Favour"
+                      autoComplete="given-name"
+                      className="text-sm"
+                      value={firstName}
+                      onChange={handleInputChange(setFirstName)}
+                    />
+                  </label>
+
+                  <label htmlFor="last_name" className="space-y-2">
+                    <span className="block text-sm font-medium">Last name</span>
+                    <Input
+                      id="last_name"
+                      name="last_name"
+                      type="text"
+                      placeholder="Okafor"
+                      autoComplete="family-name"
+                      className="text-sm"
+                      value={lastName}
+                      onChange={handleInputChange(setLastName)}
+                    />
+                  </label>
+
+                  <label htmlFor="email" className="space-y-2">
+                    <span className="block text-sm font-medium">Email</span>
+                    <Input
+                      id="email"
+                      name="email"
+                      type="email"
+                      placeholder="favour@example.com"
+                      autoComplete="email"
+                      className="text-sm"
+                      value={email}
+                      onChange={handleInputChange(setEmail)}
+                    />
+                  </label>
+
+                  <label htmlFor="password" className="space-y-2">
+                    <span className="block text-sm font-medium">Password</span>
+                    <Input
+                      id="password"
+                      name="password"
+                      type="password"
+                      placeholder="Create a strong password"
+                      autoComplete="new-password"
+                      className="text-sm"
+                      value={password}
+                      onChange={handleInputChange(setPassword)}
+                    />
+                  </label>
+                </div>
+              : <div className="grid gap-4 py-4 sm:grid-cols-2">
+                  <label htmlFor="business_name" className="space-y-2">
+                    <span className="block text-sm font-medium">
+                      Business name
+                    </span>
+                    <Input
+                      id="business_name"
+                      name="business_name"
+                      type="text"
+                      placeholder="Favour Fits"
+                      className="text-sm"
+                      value={businessName}
+                      onChange={handleInputChange(setBusinessName)}
+                    />
+                  </label>
+
+                  <label htmlFor="category" className="space-y-2">
+                    <span className="block text-sm font-medium">Category</span>
+                    <Input
+                      id="category"
+                      name="category"
+                      type="text"
+                      placeholder="Fashion"
+                      className="text-sm"
+                      value={category}
+                      onChange={handleInputChange(setCategory)}
+                    />
+                  </label>
+
+                  <label htmlFor="phone" className="space-y-2">
+                    <span className="block text-sm font-medium">Phone</span>
+                    <Input
+                      id="phone"
+                      name="phone"
+                      type="tel"
+                      placeholder="+234 801 234 5678"
+                      className="text-sm"
+                      value={phone}
+                      onChange={handleInputChange(setPhone)}
+                    />
+                  </label>
+
+                  <label htmlFor="social_handle" className="space-y-2">
+                    <span className="block text-sm font-medium">
+                      Social handle
+                    </span>
+                    <Input
+                      id="social_handle"
+                      name="social_handle"
+                      type="text"
+                      placeholder="@favourfits"
+                      className="text-sm"
+                      value={socialHandle}
+                      onChange={handleInputChange(setSocialHandle)}
+                    />
+                  </label>
+
+                  <label
+                    htmlFor="bank_account_name"
+                    className="space-y-2 sm:col-span-2"
+                  >
+                    <span className="block text-sm font-medium">
+                      Bank account name
+                    </span>
+                    <Input
+                      id="bank_account_name"
+                      name="bank_account_name"
+                      type="text"
+                      placeholder="Favour Fits Ventures"
+                      className="text-sm"
+                      value={bankAccountName}
+                      onChange={handleInputChange(setBankAccountName)}
+                    />
+                  </label>
+                </div>
+              }
+
+              <div className="flex flex-col gap-3 border-t border-border/60 pt-5 sm:flex-row sm:items-center sm:justify-between">
+                <div className="text-sm text-muted-foreground">
+                  Step {currentStep + 1} of {steps.length}
+                </div>
+
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  {!isProfileStep ?
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={isSubmitting}
+                      onClick={handleBack}
                     >
-                      {isComplete ? (
-                        <Check className="size-4" />
-                      ) : (
-                        <Icon className="size-4" />
-                      )}
-                    </div>
+                      Back
+                    </Button>
+                  : null}
 
-                    <div className="space-y-1">
-                      <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
-                        Step {index + 1}
-                      </p>
-                      <p className="text-sm font-semibold">{step.title}</p>
-                      <p className="text-sm leading-6 text-muted-foreground">
-                        {step.description}
-                      </p>
-                    </div>
-                  </div>
+                  {isProfileStep ?
+                    <Button
+                      type="button"
+                      disabled={isSubmitting}
+                      onClick={handleContinue}
+                    >
+                      Continue to vendor details
+                    </Button>
+                  : <Button type="submit" disabled={isSubmitting}>
+                      {isSubmitting ? "Creating account..." : "Start selling"}
+                    </Button>
+                  }
                 </div>
-              );
-            })}
-          </div>
-          <div className="space-y-4">
-            <Card className="border border-border/70 bg-background shadow-[0_24px_80px_-48px_rgba(14,30,86,0.28)] md:max-w-2xl md:flex-1">
-              <CardHeader className="space-y-5 px-5 sm:px-6">
-                <h2 className="text-3xl font-medium">
-                  {isProfileStep
-                    ? "We want to know you?"
-                    : "Complete your seller profile"}
-                </h2>
-                <div className="flex items-center gap-3 rounded-2xl border border-border/60 bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
-                  <ActiveStepIcon className="size-4 shrink-0 text-primary" />
-                  <span>{activeStep.description}</span>
-                </div>
-              </CardHeader>
-
-              <CardContent className="px-5 sm:px-6">
-                <form onSubmit={handleSubmit} className="space-y-7">
-                  {errorMessage ? (
-                    <div className="rounded-2xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-                      {errorMessage}
-                    </div>
-                  ) : null}
-
-                  {isProfileStep ? (
-                    <div className="grid gap-4 py-4 sm:grid-cols-2">
-                      <label htmlFor="first_name" className="space-y-2">
-                        <span className="block text-sm font-medium">
-                          First name
-                        </span>
-                        <Input
-                          id="first_name"
-                          name="first_name"
-                          type="text"
-                          placeholder="Favour"
-                          autoComplete="given-name"
-                          className="text-sm"
-                          value={firstName}
-                          onChange={handleInputChange(setFirstName)}
-                        />
-                      </label>
-
-                      <label htmlFor="last_name" className="space-y-2">
-                        <span className="block text-sm font-medium">
-                          Last name
-                        </span>
-                        <Input
-                          id="last_name"
-                          name="last_name"
-                          type="text"
-                          placeholder="Okafor"
-                          autoComplete="family-name"
-                          className="text-sm"
-                          value={lastName}
-                          onChange={handleInputChange(setLastName)}
-                        />
-                      </label>
-
-                      <label htmlFor="email" className="space-y-2">
-                        <span className="block text-sm font-medium">Email</span>
-                        <Input
-                          id="email"
-                          name="email"
-                          type="email"
-                          placeholder="favour@example.com"
-                          autoComplete="email"
-                          className="text-sm"
-                          value={email}
-                          onChange={handleInputChange(setEmail)}
-                        />
-                      </label>
-
-                      <label htmlFor="password" className="space-y-2">
-                        <span className="block text-sm font-medium">
-                          Password
-                        </span>
-                        <Input
-                          id="password"
-                          name="password"
-                          type="password"
-                          placeholder="Create a strong password"
-                          autoComplete="new-password"
-                          className="text-sm"
-                          value={password}
-                          onChange={handleInputChange(setPassword)}
-                        />
-                      </label>
-                    </div>
-                  ) : (
-                    <div className="grid gap-4 py-4 sm:grid-cols-2">
-                      <label htmlFor="business_name" className="space-y-2">
-                        <span className="block text-sm font-medium">
-                          Business name
-                        </span>
-                        <Input
-                          id="business_name"
-                          name="business_name"
-                          type="text"
-                          placeholder="Favour Fits"
-                          className="text-sm"
-                          value={businessName}
-                          onChange={handleInputChange(setBusinessName)}
-                        />
-                      </label>
-
-                      <label htmlFor="category" className="space-y-2">
-                        <span className="block text-sm font-medium">
-                          Category
-                        </span>
-                        <Input
-                          id="category"
-                          name="category"
-                          type="text"
-                          placeholder="Fashion"
-                          className="text-sm"
-                          value={category}
-                          onChange={handleInputChange(setCategory)}
-                        />
-                      </label>
-
-                      <label htmlFor="phone" className="space-y-2">
-                        <span className="block text-sm font-medium">Phone</span>
-                        <Input
-                          id="phone"
-                          name="phone"
-                          type="tel"
-                          placeholder="+234 801 234 5678"
-                          className="text-sm"
-                          value={phone}
-                          onChange={handleInputChange(setPhone)}
-                        />
-                      </label>
-
-                      <label htmlFor="social_handle" className="space-y-2">
-                        <span className="block text-sm font-medium">
-                          Social handle
-                        </span>
-                        <Input
-                          id="social_handle"
-                          name="social_handle"
-                          type="text"
-                          placeholder="@favourfits"
-                          className="text-sm"
-                          value={socialHandle}
-                          onChange={handleInputChange(setSocialHandle)}
-                        />
-                      </label>
-
-                      <label
-                        htmlFor="bank_account_name"
-                        className="space-y-2 sm:col-span-2"
-                      >
-                        <span className="block text-sm font-medium">
-                          Bank account name
-                        </span>
-                        <Input
-                          id="bank_account_name"
-                          name="bank_account_name"
-                          type="text"
-                          placeholder="Favour Fits Ventures"
-                          className="text-sm"
-                          value={bankAccountName}
-                          onChange={handleInputChange(setBankAccountName)}
-                        />
-                      </label>
-                    </div>
-                  )}
-
-                  <div className="flex flex-col gap-3 border-t border-border/60 pt-5 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="text-sm text-muted-foreground">
-                      Step {currentStep + 1} of {steps.length}
-                    </div>
-
-                    <div className="flex flex-col gap-3 sm:flex-row">
-                      {!isProfileStep ? (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          disabled={isSubmitting}
-                          onClick={handleBack}
-                        >
-                          Back
-                        </Button>
-                      ) : null}
-
-                      {isProfileStep ? (
-                        <Button
-                          type="button"
-                          disabled={isSubmitting}
-                          onClick={handleContinue}
-                        >
-                          Continue to vendor details
-                        </Button>
-                      ) : (
-                        <Button type="submit" disabled={isSubmitting}>
-                          {isSubmitting
-                            ? "Creating account..."
-                            : "Start selling"}
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </form>
-              </CardContent>
-            </Card>
-          </div>
-        </section>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
       </div>
     </main>
   );
