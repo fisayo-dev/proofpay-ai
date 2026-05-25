@@ -24,7 +24,7 @@ def detect_anomalies(vendor: dict, payment_request: dict) -> dict:
 
     if amount_naira > 20000 and completed < 3:
         flags.append("Large payment requested from a vendor with very few transactions")
-        risk_multiplier *= 0.80
+        risk_multiplier *= 0.95
 
     if total > 0:
         dispute_rate = disputes / total
@@ -34,7 +34,7 @@ def detect_anomalies(vendor: dict, payment_request: dict) -> dict:
 
     if completed == 0 and amount_naira > 5000:
         flags.append("Vendor has no completed transactions - payment carries higher risk")
-        risk_multiplier *= 0.85
+        risk_multiplier *= 0.95
 
     profile_fields = [
         vendor.get("business_name"),
@@ -44,11 +44,11 @@ def detect_anomalies(vendor: dict, payment_request: dict) -> dict:
     filled = sum(1 for field in profile_fields if field and str(field).strip())
     if filled < 2 and amount_naira > 10000:
         flags.append("Vendor profile is incomplete for a payment of this size")
-        risk_multiplier *= 0.85
+        risk_multiplier *= 0.95
 
     if amount_naira >= 50000 and amount_naira % 10000 == 0:
         flags.append("Payment amount is a large round number - verify item details")
-        risk_multiplier *= 0.95
+        risk_multiplier *= 0.98
 
     return {
         "anomaly_flags": flags,

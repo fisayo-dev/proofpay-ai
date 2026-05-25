@@ -1,32 +1,43 @@
 {
-  "generated_at": "2026-05-23",
+  "seeded_at": "2026-05-25T12:44:06.9231312+01:00",
   "backend_base_url": "https://olatunjitobi-proofpay-ai-backend.hf.space",
   "frontend_base_url": "https://proofpay-ai.vercel.app",
-  "vendor_id": "a2251e16-835e-4d22-9de1-f9326486ca9e",
-  "payment_request_id": "a5dcf648-73ab-4398-a966-41c8a781c77d",
-  "public_slug": "ppai_LKIYWFEM",
-  "public_url": "https://proofpay-ai.vercel.app/r/ppai_LKIYWFEM",
-  "kora_reference": "PPAY-20260523-18FJWE2M",
-  "item_name": "Black hoodie",
-  "amount_naira": 7500,
+  "message": "Demo data seeded successfully.",
+  "vendor_id": "8722111e-ff20-48d8-9f9c-f35f6dab78ed",
+  "payment_request_id": "c8657d3a-8d95-4895-aade-20fc57a33804",
+  "public_slug": "ppai_XX1QFU5Q",
+  "public_url": "https://proofpay-ai.vercel.app/r/ppai_XX1QFU5Q",
+  "kora_reference": "PPAY-20260525-JB5UEAZU",
   "trust": {
     "score": 95,
     "verdict": "Trusted",
     "confidence": "high",
-    "model_version": "rules-v1-anomaly",
     "reasons": [
       "Vendor profile is fully complete",
       "Vendor has 14 completed transactions",
       "No disputes on record",
       "Account name is consistent with business name",
       "Payment amount is normal for this vendor category"
-    ]
+    ],
+    "features": {
+      "profile_completeness": 1.0,
+      "completed_transactions": 14,
+      "total_transactions": 15,
+      "dispute_count": 0,
+      "dispute_rate": 0.0,
+      "bank_account_name_provided": true,
+      "name_consistency": true,
+      "amount_naira": 7500.0,
+      "anomaly_flags": [],
+      "risk_multiplier": 1.0
+    },
+    "model_version": "rules-v1-anomaly"
   },
   "endpoints": {
     "health": "https://olatunjitobi-proofpay-ai-backend.hf.space/api/v1/health",
     "demo_seed": "https://olatunjitobi-proofpay-ai-backend.hf.space/api/v1/demo/seed",
     "simulate_payment": "https://olatunjitobi-proofpay-ai-backend.hf.space/api/v1/demo/simulate-payment",
-    "payment_status": "https://olatunjitobi-proofpay-ai-backend.hf.space/api/v1/payments/a5dcf648-73ab-4398-a966-41c8a781c77d/status",
-    "public_request_api": "https://olatunjitobi-proofpay-ai-backend.hf.space/api/v1/public/r/ppai_LKIYWFEM"
+    "payment_status": "https://olatunjitobi-proofpay-ai-backend.hf.space/api/v1/payments/c8657d3a-8d95-4895-aade-20fc57a33804/status",
+    "public_request_api": "https://olatunjitobi-proofpay-ai-backend.hf.space/api/v1/public/r/ppai_XX1QFU5Q"
   }
 }

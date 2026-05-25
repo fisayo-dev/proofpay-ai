@@ -27,7 +27,7 @@ class TrustScoreServiceTest(unittest.TestCase):
             "total_transactions": 5,
             "dispute_count": 1,
         }
-        request_b = {"amount_kobo": 5000000}
+        request_b = {"amount_kobo": 3000000}
 
         vendor_c = {
             "business_name": "Fresh Eats",
@@ -49,11 +49,11 @@ class TrustScoreServiceTest(unittest.TestCase):
         self.assertEqual(result_a["verdict"], "Trusted")
         self.assertEqual(result_a["confidence"], "high")
 
-        self.assertTrue(40 <= result_b["score"] <= 55)
-        self.assertEqual(result_b["verdict"], "High Risk")
+        self.assertTrue(55 <= result_b["score"] <= 79)
+        self.assertEqual(result_b["verdict"], "Caution")
 
-        self.assertTrue(20 <= result_c["score"] <= 30)
-        self.assertEqual(result_c["verdict"], "Manual Review Needed")
+        self.assertTrue(30 <= result_c["score"] <= 54)
+        self.assertEqual(result_c["verdict"], "High Risk")
 
         verdicts = {result_a["verdict"], result_b["verdict"], result_c["verdict"]}
         self.assertEqual(len(verdicts), 3)
@@ -76,9 +76,9 @@ class TrustScoreServiceTest(unittest.TestCase):
 
         result = calculate_trust_score(vendor, payment_request)
 
-        self.assertEqual(result["score"], 14)
-        self.assertEqual(result["verdict"], "Manual Review Needed")
-        self.assertEqual(result["features"]["risk_multiplier"], 0.549)
+        self.assertEqual(result["score"], 30)
+        self.assertEqual(result["verdict"], "High Risk")
+        self.assertEqual(result["features"]["risk_multiplier"], 0.84)
         self.assertEqual(len(result["features"]["anomaly_flags"]), 4)
         self.assertIn(
             "Large payment requested from a vendor with very few transactions",

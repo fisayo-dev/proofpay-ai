@@ -53,7 +53,7 @@ def calculate_trust_score(vendor: dict, payment_request: dict) -> dict:
         score += 14
         reasons.append(f"Vendor has {completed} completed transactions - growing history")
     elif completed >= 3:
-        score += 10
+        score += 15
         reasons.append(f"Vendor has {completed} completed transactions - early history")
     elif completed >= 1:
         score += 7
@@ -69,7 +69,7 @@ def calculate_trust_score(vendor: dict, payment_request: dict) -> dict:
     features["dispute_rate"] = round(dispute_rate, 3)
 
     if total == 0:
-        score += 5
+        score += 15
         reasons.append("No dispute history yet - not enough completed transactions")
     elif disputes == 0:
         score += 25
@@ -81,7 +81,7 @@ def calculate_trust_score(vendor: dict, payment_request: dict) -> dict:
         score += 12
         reasons.append("Some disputes on record - review before paying")
     elif dispute_rate <= 0.30:
-        score += 5
+        score += 13
         reasons.append("Notable dispute history - proceed carefully")
     else:
         score += 0
@@ -125,7 +125,10 @@ def calculate_trust_score(vendor: dict, payment_request: dict) -> dict:
     }
     low, high = category_ranges.get(category, (500, 100000))
 
-    if low <= amount_naira <= high:
+    if amount_naira <= 0:
+        score += 0
+        reasons.append("Payment amount is missing or invalid")
+    elif low <= amount_naira <= high:
         score += 15
         reasons.append("Payment amount is normal for this vendor category")
     elif amount_naira < low:

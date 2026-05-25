@@ -20,7 +20,7 @@ class AnomalyServiceTest(unittest.TestCase):
         result = detect_anomalies(vendor, payment_request)
 
         self.assertTrue(result["anomaly_detected"])
-        self.assertEqual(result["risk_multiplier"], 0.549)
+        self.assertEqual(result["risk_multiplier"], 0.84)
         self.assertEqual(
             result["anomaly_flags"],
             [
