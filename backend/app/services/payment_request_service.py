@@ -21,6 +21,28 @@ def build_public_url(frontend_base_url: str, public_slug: str) -> str:
     return f"{frontend_base_url.rstrip('/')}/r/{public_slug}"
 
 
+def build_checkout_config(
+    kora_public_key: str,
+    kora_webhook_url: str,
+    kora_reference: str,
+    amount_kobo: int,
+    currency: str,
+    buyer_name: str | None,
+    buyer_email: str | None,
+) -> dict:
+    return {
+        "key": kora_public_key,
+        "reference": kora_reference,
+        "amount": amount_kobo_to_naira(amount_kobo),
+        "currency": currency,
+        "customer": {
+            "name": buyer_name or "",
+            "email": buyer_email or "",
+        },
+        "notification_url": kora_webhook_url,
+    }
+
+
 def create_payment_request(data: dict) -> dict:
     vendor_id = data["vendor_id"]
     amount_kobo = data["amount_kobo"]
@@ -134,17 +156,15 @@ def create_payment_request(data: dict) -> dict:
     conn.close()
 
     # Step 8: Build checkout config for Fisayo
-    checkout_config = {
-        "key": settings.kora_public_key,
-        "reference": kora_reference,
-        "amount": amount_kobo_to_naira(amount_kobo),
-        "currency": data.get("currency", "NGN"),
-        "customer": {
-            "name": data.get("buyer_name", ""),
-            "email": data.get("buyer_email", "")
-        },
-        "notification_url": settings.kora_webhook_url
-    }
+    checkout_config = build_checkout_config(
+        settings.kora_public_key,
+        settings.kora_webhook_url,
+        kora_reference,
+        amount_kobo,
+        data.get("currency", "NGN"),
+        data.get("buyer_name"),
+        data.get("buyer_email"),
+    )
 
     return {
         "payment_request_id": request_id,
