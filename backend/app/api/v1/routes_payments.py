@@ -1,6 +1,8 @@
 # backend/app/api/v1/routes_payments.py
 
 from fastapi import APIRouter, HTTPException
+from app.core.config import settings
+from app.services.payment_request_service import build_checkout_config, get_payment_request_by_id
 from app.services.payment_status_service import (
     get_payment_status,
     get_vendor_payment_requests,
@@ -21,6 +23,35 @@ def get_payment_status_endpoint(payment_request_id: str):
             },
         )
     return result
+
+
+@router.get("/payments/kora/config/{payment_request_id}")
+def get_kora_checkout_config_endpoint(payment_request_id: str):
+    request = get_payment_request_by_id(payment_request_id)
+    if not request:
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "code": "PAYMENT_REQUEST_NOT_FOUND",
+                "message": "Payment request not found.",
+            },
+        )
+
+    checkout_config = build_checkout_config(
+        settings.kora_public_key,
+        settings.kora_webhook_url,
+        request["kora_reference"],
+        request["amount_kobo"],
+        request.get("currency", "NGN"),
+        request.get("buyer_name"),
+        request.get("buyer_email"),
+    )
+
+    return {
+        "payment_request_id": str(request["id"]),
+        "kora_reference": request["kora_reference"],
+        "checkout_config": checkout_config,
+    }
 
 
 @router.get("/vendors/{vendor_id}/requests")

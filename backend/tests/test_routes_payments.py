@@ -29,6 +29,38 @@ class PaymentsRouteTest(unittest.TestCase):
         self.assertEqual(context.exception.status_code, 404)
         self.assertEqual(context.exception.detail["code"], "PAYMENT_REQUEST_NOT_FOUND")
 
+    def test_kora_checkout_config_endpoint_returns_checkout_payload(self):
+        request = {
+            "id": "req_123",
+            "kora_reference": "PPAY-20260520-DEMO",
+            "amount_kobo": 750000,
+            "currency": "NGN",
+            "buyer_name": "Daniel",
+            "buyer_email": "daniel@example.com",
+        }
+
+        with (
+            patch.object(routes_payments, "get_payment_request_by_id", return_value=request),
+            patch.object(routes_payments.settings, "kora_public_key", "pk_test_demo"),
+            patch.object(routes_payments.settings, "kora_webhook_url", "https://example.com/webhook"),
+        ):
+            result = routes_payments.get_kora_checkout_config_endpoint("req_123")
+
+        self.assertEqual(result["payment_request_id"], "req_123")
+        self.assertEqual(result["kora_reference"], "PPAY-20260520-DEMO")
+        self.assertEqual(result["checkout_config"]["key"], "pk_test_demo")
+        self.assertEqual(result["checkout_config"]["reference"], "PPAY-20260520-DEMO")
+        self.assertEqual(result["checkout_config"]["amount"], 7500.0)
+        self.assertEqual(result["checkout_config"]["notification_url"], "https://example.com/webhook")
+
+    def test_kora_checkout_config_endpoint_raises_404_when_missing(self):
+        with patch.object(routes_payments, "get_payment_request_by_id", return_value=None):
+            with self.assertRaises(HTTPException) as context:
+                routes_payments.get_kora_checkout_config_endpoint("missing")
+
+        self.assertEqual(context.exception.status_code, 404)
+        self.assertEqual(context.exception.detail["code"], "PAYMENT_REQUEST_NOT_FOUND")
+
     def test_vendor_requests_endpoint_returns_dashboard_payload(self):
         requests = [
             {

@@ -17,7 +17,6 @@ def _session_secret() -> str:
     return (
         settings.session_secret
         or settings.supabase_service_role_key
-        or settings.kora_secret_key
         or "dev-proofpay-session-secret"
     )
 
