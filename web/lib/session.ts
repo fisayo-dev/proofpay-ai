@@ -73,3 +73,22 @@ export function isSessionExpired(): boolean {
 export function isAuthenticated(): boolean {
   return !isSessionExpired();
 }
+
+let _sessionCache: VendorSession | null = null;
+let _vendorIdCache: string | null = null;
+
+export function getCachedSession(): VendorSession | null {
+  const next = getSession();
+  if (JSON.stringify(next) !== JSON.stringify(_sessionCache)) {
+    _sessionCache = next;
+  }
+  return _sessionCache;
+}
+
+export function getCachedVendorId(): string | null {
+  const next = getVendorId();
+  if (next !== _vendorIdCache) {
+    _vendorIdCache = next;
+  }
+  return _vendorIdCache;
+}

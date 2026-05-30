@@ -1,13 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useSyncExternalStore, useState } from "react";
 import { header_links } from "@/constants/home";
+import { getCachedSession } from "@/lib/session";
 import { Button } from "../ui/button";
 import Link from "next/link";
 import { Menu, User2, X } from "lucide-react";
 
 export function SiteHeader() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const session = useSyncExternalStore(
+    () => () => {},
+    () => getCachedSession(),
+    () => null,
+  );
 
   const closeMenu = () => setIsMenuOpen(false);
 
@@ -34,12 +40,20 @@ export function SiteHeader() {
           </div>
 
           <div className="hidden items-center space-x-4 lg:flex">
-            <Button asChild>
-              <Link href="/vendors/signup">
-                <User2 />
-                Signup as vendor
-              </Link>
-            </Button>
+            {session ?
+              <Button variant="outline" asChild>
+                <Link href="/vendors/profile">
+                  <User2 />
+                  {session.full_name}
+                </Link>
+              </Button>
+            : <Button asChild>
+                <Link href="/vendors/signup">
+                  <User2 />
+                  Signup as vendor
+                </Link>
+              </Button>
+            }
           </div>
 
           <Button
@@ -76,12 +90,20 @@ export function SiteHeader() {
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row">
-              <Button asChild className="w-full sm:flex-1">
-                <Link href="/vendors/signup" onClick={closeMenu}>
-                  <User2 />
-                  Signup as vendor
-                </Link>
-              </Button>
+              {session ?
+                <Button variant="outline" asChild className="w-full sm:flex-1">
+                  <Link href="/vendors/profile" onClick={closeMenu}>
+                    <User2 />
+                    {session.full_name}
+                  </Link>
+                </Button>
+              : <Button asChild className="w-full sm:flex-1">
+                  <Link href="/vendors/signup" onClick={closeMenu}>
+                    <User2 />
+                    Signup as vendor
+                  </Link>
+                </Button>
+              }
             </div>
           </div>
         </div>

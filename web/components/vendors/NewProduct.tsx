@@ -5,7 +5,7 @@ import { Lock, Truck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { createPaymentRequest } from "@/lib/actions/payment-requests";
-import { getVendorId } from "@/lib/session";
+import { getCachedVendorId } from "@/lib/session";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -56,7 +56,7 @@ const NewProductComponent = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const vendorId = useSyncExternalStore(
     () => () => {},
-    () => getVendorId(),
+    () => getCachedVendorId(),
     () => null,
   );
 
