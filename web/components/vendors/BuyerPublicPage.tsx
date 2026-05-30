@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import Script from "next/script";
 import {
@@ -8,6 +9,10 @@ import {
   BadgeCheck,
   Building2,
   ChevronDown,
+  CircleDollarSign,
+  LockKeyhole,
+  PackageCheck,
+  ReceiptText,
   ShieldCheck,
   Store,
   User2,
@@ -182,7 +187,7 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
   };
 
   return (
-    <main className="relative overflow-hidden">
+    <main className="bg-background">
       <Script
         src="https://korablobstorage.blob.core.windows.net/modal-bucket/korapay-collections.min.js"
         strategy="afterInteractive"
@@ -191,142 +196,192 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
           setCheckoutError("Kora checkout could not load. Refresh and try again.")
         }
       />
-      <section className="app-container py-5 sm:py-7">
-        <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[1.08fr_0.92fr] lg:items-start">
+      <section className="app-container py-6 sm:py-10">
+        <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[minmax(0,1fr)_390px] lg:items-start">
           <div className="space-y-6">
-            <div className="space-y-5">
-              <div className="space-y-4">
-                <div className="grid gap-3">
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Sold by <b className="text-primary">{product.seller.business_name}</b>
-                  </p>
-                  <h1 className="max-w-3xl text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
+            <section className="overflow-hidden rounded-xl border border-border/70 bg-card shadow-[0_24px_80px_-52px_rgba(15,23,42,0.35)]">
+              <div className="relative aspect-[4/3] w-full bg-muted sm:aspect-[16/9]">
+                <Image
+                  src="/images/products/ceramic-mug.jpg"
+                  alt={`${product.item.name} product preview`}
+                  fill
+                  priority
+                  sizes="(min-width: 1024px) 720px, 100vw"
+                  className="object-cover"
+                />
+              </div>
+
+              <div className="grid gap-5 p-5 sm:p-6">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant="outline" className="gap-2 rounded-md px-2.5 py-1">
+                    <Store className="size-3.5" />
+                    {product.seller.business_name}
+                  </Badge>
+                  <Badge
+                    variant="secondary"
+                    className="rounded-md px-2.5 py-1 text-muted-foreground"
+                  >
+                    {product.seller.category}
+                  </Badge>
+                </div>
+
+                <div className="space-y-3">
+                  <h1 className="max-w-3xl text-3xl font-semibold tracking-tight text-balance sm:text-5xl">
                     {product.item.name.length > 50
                       ? `${product.item.name.slice(0, 47)}...`
                       : product.item.name}
                   </h1>
                   <p className="max-w-2xl text-sm leading-7 text-muted-foreground sm:text-base">
-                    {product.item.description.length > 100
-                      ? `${product.item.description.slice(0, 97)}...`
+                    {product.item.description.length > 160
+                      ? `${product.item.description.slice(0, 157)}...`
                       : product.item.description}
                   </p>
                 </div>
+
+                <div className="grid gap-3 border-t border-border/70 pt-5 sm:flex justify-between">
+                  <div className="flex items-center gap-3">
+                    <PackageCheck className="size-5 text-primary" />
+                    <div>
+                      <p className="text-sm font-medium">Product checked</p>
+                      <p className="text-xs text-muted-foreground">Request reviewed</p>
+                    </div>
+                  </div>
+                  {/*<div className="flex items-center gap-3">
+                    <ReceiptText className="size-5 text-primary" />
+                    <div>
+                      <p className="text-sm font-medium">Reference ready</p>
+                      <p className="text-xs text-muted-foreground">
+                        {paymentConfig.kora_reference}
+                      </p>
+                    </div>
+                  </div>*/}
+                  <div className="flex items-center gap-3">
+                    <LockKeyhole className="size-5 text-primary" />
+                    <div>
+                      <p className="text-sm font-medium">Secure checkout</p>
+                      <p className="text-xs text-muted-foreground">Powered by Kora</p>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
+            </section>
 
             <Card
               className={cn(
-                "border shadow-[0_24px_80px_-48px_rgba(14,30,86,0.28)]",
+                "border border-border/70 bg-card shadow-[0_24px_80px_-56px_rgba(15,23,42,0.3)]",
                 trustTone.panelClassName,
               )}
             >
-              <CardHeader className="space-y-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="space-y-2">
+              <CardHeader className="gap-4 px-5 sm:px-6">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="space-y-3">
                     <Badge
                       variant="outline"
-                      className={cn("gap-2", trustTone.badgeClassName)}
+                      className={cn("w-fit gap-2 rounded-md", trustTone.badgeClassName)}
                     >
                       <TrustIcon className="size-3.5" />
                       <span>{trustTone.label}</span>
                     </Badge>
-                    <CardTitle className="text-2xl sm:text-3xl">
-                      {product.trust.verdict}
-                    </CardTitle>
-                    <CardDescription className="max-w-2xl text-sm leading-7">
-                      ProofPay AI reviewed this payment request using seller
-                      profile data and transaction context before checkout.
-                    </CardDescription>
+                    <div className="space-y-2">
+                      <CardTitle className="text-2xl sm:text-3xl">
+                        {product.trust.verdict}
+                      </CardTitle>
+                      <CardDescription className="max-w-2xl text-sm leading-7">
+                        ProofPay AI reviewed seller signals, payment context, and
+                        request details before sending you to checkout.
+                      </CardDescription>
+                    </div>
                   </div>
 
-                  <div className="bg-background/10 flex items-center gap-2">
-                    <TrustScorePill score={product.trust.score} />
-                  </div>
+                  <TrustScorePill score={product.trust.score} />
                 </div>
               </CardHeader>
 
-              <CardContent className="grid gap-3">
-                <div
-                  className="flex cursor-pointer items-center justify-between px-2"
+              <CardContent className="grid gap-3 px-5 pb-5 sm:px-6">
+                <button
+                  type="button"
+                  className="flex w-full items-center justify-between rounded-lg border border-border/70 bg-background px-4 py-3 text-left transition-colors hover:bg-muted/50"
                   onClick={() => setToggleReason(!toggleReason)}
+                  aria-expanded={toggleReason}
                 >
-                  <h2 className="font-semibold">
-                    Reasons {product.trust.reasons.length}
-                  </h2>
+                  <span className="font-semibold">
+                    Verification notes ({product.trust.reasons.length})
+                  </span>
                   <ChevronDown
-                    className={`size-4 ${toggleReason && "rotate-180"}`}
+                    className={cn(
+                      "size-4 transition-transform",
+                      toggleReason && "rotate-180",
+                    )}
                   />
-                </div>
-                <div className="grid gap-1">
-                  {toggleReason &&
-                    product.trust.reasons.map((reason) => (
+                </button>
+                {toggleReason ? (
+                  <div className="grid gap-2">
+                    {product.trust.reasons.map((reason) => (
                       <div
                         key={reason}
-                        className="border border-border/60 bg-background/75 px-3 py-2 rounded-xl"
+                        className="rounded-lg border border-border/60 bg-background px-4 py-3"
                       >
                         <p className="text-sm leading-6 text-foreground/90">
                           {reason}
                         </p>
                       </div>
                     ))}
-                </div>
+                  </div>
+                ) : null}
               </CardContent>
             </Card>
           </div>
 
-          <div className="lg:sticky lg:top-24">
+          <aside className="lg:sticky lg:top-24">
             <Card
               id="checkout"
-              className="border border-border/70 bg-background shadow-[0_24px_80px_-48px_rgba(14,30,86,0.28)]"
+              className="border border-border/70 bg-card shadow-[0_24px_80px_-52px_rgba(15,23,42,0.35)]"
             >
-              <CardHeader className="space-y-4">
+              <CardHeader className="gap-4 px-5 sm:px-6">
                 <div className="flex items-center gap-3">
-                  <div className="rounded-full bg-primary/10 size-12 text-primary flex items-center justify-center text-2xl font-extrabold">
-                    ₦
-                  </div>
                   <div>
                     <CardTitle className="text-2xl">Checkout summary</CardTitle>
-                    <CardDescription>
-                      Review the key details before paying.
-                    </CardDescription>
+                    <CardDescription>Confirm the request before payment.</CardDescription>
                   </div>
                 </div>
               </CardHeader>
 
-              <CardContent className="space-y-5">
-                <div className="rounded-3xl border border-border/70 bg-muted/30 p-5">
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-                    You will pay
+              <CardContent className="space-y-5 px-5 pb-5 sm:px-6">
+                <div className="rounded-lg border border-border/70 bg-muted/30 p-5">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    Total due
                   </p>
-                  <p className="mt-2 text-4xl font-semibold">
+                  <p className="mt-2 text-4xl font-semibold tracking-tight">
                     {formattedAmount}
                   </p>
                 </div>
 
                 <div className="grid gap-3">
-                  <div className="flex items-center gap-3 rounded-2xl border border-border/60 px-4 py-3">
-                    <Store className="mt-0.5 size-6 shrink-0 text-primary" />
-                    <div className="space-y-1">
-                      <p className="text-sm text-muted-foreground">
+                  <div className="flex items-center gap-3 rounded-lg border border-border/60 px-4 py-3">
+                    <Store className="size-5 shrink-0 text-primary" />
+                    <div className="min-w-0">
+                      <p className="text-xs text-muted-foreground">Seller</p>
+                      <p className="truncate text-sm font-medium">
                         {product.seller.business_name}
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 rounded-2xl border border-border/60 px-4 py-3">
-                    <Building2 className="mt-0.5 size-6 shrink-0 text-primary" />
-                    <div className="space-y-1">
-                      {/*<p className="text-sm font-medium">Category</p>*/}
-                      <p className="text-sm text-muted-foreground">
+                  <div className="flex items-center gap-3 rounded-lg border border-border/60 px-4 py-3">
+                    <Building2 className="size-5 shrink-0 text-primary" />
+                    <div className="min-w-0">
+                      <p className="text-xs text-muted-foreground">Category</p>
+                      <p className="truncate text-sm font-medium">
                         {product.seller.category}
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 rounded-2xl border border-border/60 px-4 py-3">
-                    <User2 className="mt-0.5 size-6 shrink-0 text-primary" />
-                    <div className="space-y-1">
-                      <p className="text-sm text-muted-foreground">
+                  <div className="flex items-center gap-3 rounded-lg border border-border/60 px-4 py-3">
+                    <User2 className="size-5 shrink-0 text-primary" />
+                    <div className="min-w-0">
+                      <p className="text-xs text-muted-foreground">Social handle</p>
+                      <p className="truncate text-sm font-medium">
                         @{product.seller.social_handle}
                       </p>
                     </div>
@@ -402,19 +457,9 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
                   </AlertDialogContent>
                 </AlertDialog>
 
-                <div className="rounded-2xl border border-primary/15 bg-primary/5 px-3 py-1 text-sm text-muted-foreground">
-                  All payments are Powered by{" "}
-                  <Link
-                    href="https://www.korahq.com"
-                    target="__blank"
-                    className="font-bold hover:underline"
-                  >
-                    Kora
-                  </Link>
-                </div>
               </CardContent>
             </Card>
-          </div>
+          </aside>
         </div>
       </section>
     </main>
