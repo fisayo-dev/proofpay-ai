@@ -30,3 +30,12 @@ export const getPublicProduct = async (
     throw new Error("Failed to fetch public product: " + err);
   }
 };
+
+export const getPaymentConfigUrl = async (paymentRequestId: string) => {
+  try {
+    const response = await api.get(`/payments/kora/config/${paymentRequestId}`);
+    return response.data;
+  } catch (err) {
+    throw new Error("Failed to fetch payment config: " + err);
+  }
+};

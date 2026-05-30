@@ -107,7 +107,7 @@ const TrustScorePill = ({ score }: { score: number }) => {
   );
 };
 
-const BuyerPublicPage = ({ product }: BuyerPublicPageProps) => {
+const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
   const [toggleReason, setToggleReason] = useState(false);
   const trustTone = getTrustTone(product.trust.score);
   const TrustIcon = trustTone.Icon;
