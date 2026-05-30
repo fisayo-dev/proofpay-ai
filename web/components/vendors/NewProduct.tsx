@@ -1,8 +1,14 @@
 "use client";
 
 import { ChangeEvent, FormEvent, useSyncExternalStore, useState } from "react";
-import { Lock, Truck } from "lucide-react";
-import { useRouter } from "next/navigation";
+import {
+  CheckCircle2,
+  Copy,
+  ExternalLink,
+  Lock,
+  Plus,
+  Truck,
+} from "lucide-react";
 import { toast } from "sonner";
 import { createPaymentRequest } from "@/lib/actions/payment-requests";
 import { getCachedVendorId } from "@/lib/session";
@@ -34,6 +40,12 @@ const DELIVERY_METHODS = [
 const CURRENCY = "NGN";
 const DEFAULT_DELIVERY_METHOD = DELIVERY_METHODS[0];
 
+type CreatedProduct = {
+  name: string;
+  description: string;
+  publicUrl: string;
+};
+
 const getDefaultExpectedDate = () => {
   const date = new Date();
   date.setDate(date.getDate() + 2);
@@ -42,7 +54,6 @@ const getDefaultExpectedDate = () => {
 };
 
 const NewProductComponent = () => {
-  const router = useRouter();
   const [itemName, setItemName] = useState("");
   const [itemDescription, setItemDescription] = useState("");
   const [amount, setAmount] = useState("");
@@ -52,6 +63,11 @@ const NewProductComponent = () => {
   const [expectedDeliveryDate, setExpectedDeliveryDate] = useState(
     getDefaultExpectedDate,
   );
+  const [createdProduct, setCreatedProduct] = useState<CreatedProduct | null>({
+    name: "",
+    description: "",
+    publicUrl: "https://github.com/",
+  });
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const vendorId = useSyncExternalStore(
@@ -84,6 +100,32 @@ const NewProductComponent = () => {
 
   const resetMessages = () => {
     setErrorMessage("");
+  };
+
+  const getPublicUrl = (publicUrl: string) => {
+    try {
+      return new URL(publicUrl, window.location.origin).toString();
+    } catch {
+      return publicUrl;
+    }
+  };
+
+  const handleCopyPublicUrl = async () => {
+    if (!createdProduct) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(createdProduct.publicUrl);
+      toast.success("Public URL copied to clipboard.");
+    } catch {
+      toast.error("Could not copy the public URL.");
+    }
+  };
+
+  const handleCreateAnotherProduct = () => {
+    setCreatedProduct(null);
+    resetMessages();
   };
 
   const handleInputChange =
@@ -142,6 +184,11 @@ const NewProductComponent = () => {
         expected_delivery_date: expectedDeliveryDate,
       });
 
+      setCreatedProduct({
+        name: itemName.trim(),
+        description: itemDescription.trim(),
+        publicUrl: getPublicUrl(res.public_url),
+      });
       toast.success(
         "Product created successfully. Your payment request is now live.",
       );
@@ -150,8 +197,6 @@ const NewProductComponent = () => {
       setAmount("");
       setDeliveryMethod(DEFAULT_DELIVERY_METHOD);
       setExpectedDeliveryDate(getDefaultExpectedDate());
-      router.push(res.public_url);
-      console.log(res.public_url); // log the public url
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : "Failed to create product.",
@@ -160,6 +205,88 @@ const NewProductComponent = () => {
       setIsSubmitting(false);
     }
   };
+
+  if (createdProduct) {
+    return (
+      <section className="mx-auto flex max-w-xl justify-center pb-20 sm:pb-24">
+        <Card className="w-full border border-border/70 bg-background shadow-[0_24px_80px_-48px_rgba(14,30,86,0.28)]">
+          <CardHeader className="items-center space-y-4 px-5 text-center sm:px-8">
+            <div className="flex size-28 items-center justify-center rounded-full mx-auto bg-primary/10">
+              <CheckCircle2 className="size-12 md:size-16 text-primary" />
+            </div>
+            <div className="space-y-2">
+              <CardTitle className="text-3xl font-medium">
+                Product request created
+              </CardTitle>
+              <CardDescription className="text-sm leading-7">
+                Your public payment request is live and ready to share.
+              </CardDescription>
+            </div>
+          </CardHeader>
+
+          <CardContent className="space-y-6 px-5 pb-6 sm:px-8">
+            <div className="rounded-2xl border border-border/70 bg-muted/20 p-4 sm:p-5">
+              <p className="mb-2 text-xs font-medium uppercase text-muted-foreground">
+                Product
+              </p>
+              <h2
+                className="text-2xl font-semibold tracking-tight"
+                title={createdProduct.name}
+              >
+                {createdProduct.name}
+              </h2>
+              <p
+                className="line-clamp-3 text-sm leading-7 text-muted-foreground"
+                title={createdProduct.description}
+              >
+                {createdProduct.description}
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="public_url" className="block text-sm font-medium">
+                Public URL
+              </label>
+              <div className="flex gap-2">
+                {createdProduct.publicUrl && (
+                  <div className="border px-5 py-2 rounded-full w-full flex items-center justify-between">
+                    <span className="text-sm truncate">
+                      {createdProduct.publicUrl}
+                    </span>
+                    <div className="flex items-center gap-1 hover:cursor-pointer hover:bg-muted p-2 rounded-full">
+                      <Copy className="size-4" />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Button asChild className="w-full">
+                <a
+                  href={createdProduct.publicUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Visit public page
+                  <ExternalLink className="size-4" />
+                </a>
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={handleCreateAnotherProduct}
+              >
+                <Plus className="size-4" />
+                Create another product
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </section>
+    );
+  }
 
   return (
     <section className="mx-auto grid max-w-6xl gap-8 pb-20 sm:pb-24 lg:grid-cols-[0.95fr_1.05fr] lg:items-start">
