@@ -63,11 +63,9 @@ const NewProductComponent = () => {
   const [expectedDeliveryDate, setExpectedDeliveryDate] = useState(
     getDefaultExpectedDate,
   );
-  const [createdProduct, setCreatedProduct] = useState<CreatedProduct | null>({
-    name: "",
-    description: "",
-    publicUrl: "https://github.com/",
-  });
+  const [createdProduct, setCreatedProduct] = useState<CreatedProduct | null>(
+    null,
+  );
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const vendorId = useSyncExternalStore(
@@ -189,9 +187,6 @@ const NewProductComponent = () => {
         description: itemDescription.trim(),
         publicUrl: getPublicUrl(res.public_url),
       });
-      toast.success(
-        "Product created successfully. Your payment request is now live.",
-      );
       setItemName("");
       setItemDescription("");
       setAmount("");

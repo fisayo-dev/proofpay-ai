@@ -9,7 +9,6 @@ import {
   Building2,
   ChevronDown,
   ShieldCheck,
-  ShoppingBag,
   Store,
   User2,
 } from "lucide-react";
@@ -58,8 +57,7 @@ const getTrustTone = (score: number) => {
     return {
       badgeClassName:
         "border-success/30 bg-success/12 text-success dark:bg-success/18",
-      panelClassName:
-        "border-success/20 bg-linear-to-br from-success/10 via-background to-background",
+      panelClassName: "border-success/20 bg-success/5",
       Icon: BadgeCheck,
       label: "Strong trust signal",
     };
@@ -69,8 +67,7 @@ const getTrustTone = (score: number) => {
     return {
       badgeClassName:
         "border-warning/30 bg-warning/15 text-warning-foreground dark:bg-warning/20",
-      panelClassName:
-        "border-warning/20 bg-linear-to-br from-warning/10 via-background to-background",
+      panelClassName: "border-warning/20 bg-warning/5",
       Icon: ShieldCheck,
       label: "Moderate trust signal",
     };
@@ -140,6 +137,11 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
     product.item.amount,
     product.item.currency,
   );
+  const callbackUrl = `/payments/callback/${paymentConfig.payment_request_id}`;
+
+  const redirectToCallback = () => {
+    window.location.assign(callbackUrl);
+  };
 
   const handleCheckout = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -172,6 +174,10 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
         name: fullName,
         email,
       },
+      onClose: redirectToCallback,
+      onSuccess: redirectToCallback,
+      onFailed: redirectToCallback,
+      onPending: redirectToCallback,
     });
   };
 
@@ -185,9 +191,6 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
           setCheckoutError("Kora checkout could not load. Refresh and try again.")
         }
       />
-
-      <div className="absolute left-1/2 top-40 -z-10 h-72 w-72 -translate-x-1/2 rounded-full bg-primary/10 blur-3xl" />
-
       <section className="app-container py-5 sm:py-7">
         <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[1.08fr_0.92fr] lg:items-start">
           <div className="space-y-6">

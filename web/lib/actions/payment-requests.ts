@@ -2,6 +2,7 @@ import api from "@/lib/axios";
 import {
   CreatePaymentRequestPayload,
   CreatePaymentRequestResponse,
+  PaymentStatusResponse,
 } from "@/types/payment-request";
 import { PublicProductResponse } from "@/types/product";
 
@@ -37,5 +38,19 @@ export const getPaymentConfigUrl = async (paymentRequestId: string) => {
     return response.data;
   } catch (err) {
     throw new Error("Failed to fetch payment config: " + err);
+  }
+};
+
+export const getPaymentStatus = async (
+  paymentId: string,
+): Promise<PaymentStatusResponse> => {
+  try {
+    const response = await api.get<PaymentStatusResponse>(
+      `/payments/${paymentId}/status`,
+    );
+
+    return response.data;
+  } catch (err) {
+    throw new Error("Failed to fetch payment status: " + err);
   }
 };
