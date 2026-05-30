@@ -5,7 +5,7 @@ import { header_links } from "@/constants/home";
 import { getCachedSession } from "@/lib/session";
 import { Button } from "../ui/button";
 import Link from "next/link";
-import { Menu, User2, X } from "lucide-react";
+import { Menu, Plus, User2, X } from "lucide-react";
 
 export function SiteHeader() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -41,12 +41,20 @@ export function SiteHeader() {
 
           <div className="hidden items-center space-x-4 lg:flex">
             {session ?
-              <Button variant="outline" asChild>
-                <Link href="/vendors/profile">
-                  <User2 />
-                  {session.full_name}
-                </Link>
-              </Button>
+              <>
+                <Button variant="outline" asChild>
+                  <Link href="/vendors/new-product">
+                    <Plus />
+                    Create Product
+                  </Link>
+                </Button>
+                <Button variant="outline" asChild>
+                  <Link href="/vendors/profile">
+                    <User2 />
+                    {session.full_name}
+                  </Link>
+                </Button>
+              </>
             : <Button asChild>
                 <Link href="/vendors/signup">
                   <User2 />
