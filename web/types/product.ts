@@ -46,4 +46,16 @@ export type BuyerPublicPageProps = {
       model_version: string;
     };
   };
+  paymentConfig: {
+    payment_request_id: string;
+    kora_reference: string;
+    checkout_config: {
+      key: string;
+      reference: string;
+      amount: number;
+      currency: string;
+      customer: { name: string; email: string };
+      notification_url: string;
+    };
+  };
 };

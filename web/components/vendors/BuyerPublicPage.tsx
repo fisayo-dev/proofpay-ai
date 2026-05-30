@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Script from "next/script";
 import {
   AlertTriangle,
   ArrowRight,
@@ -8,10 +9,20 @@ import {
   Building2,
   ChevronDown,
   ShieldCheck,
-  ShoppingBag,
   Store,
   User2,
 } from "lucide-react";
+import { useState, type FormEvent } from "react";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,9 +32,17 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { BuyerPublicPageProps } from "@/types/product";
-import { useState } from "react";
+
+declare global {
+  interface Window {
+    Korapay?: {
+      initialize: (config: Record<string, unknown>) => void;
+    };
+  }
+}
 
 const formatCurrency = (amount: number, currency: string) => {
   return new Intl.NumberFormat("en-NG", {
@@ -38,8 +57,7 @@ const getTrustTone = (score: number) => {
     return {
       badgeClassName:
         "border-success/30 bg-success/12 text-success dark:bg-success/18",
-      panelClassName:
-        "border-success/20 bg-linear-to-br from-success/10 via-background to-background",
+      panelClassName: "border-success/20 bg-success/5",
       Icon: BadgeCheck,
       label: "Strong trust signal",
     };
@@ -49,8 +67,7 @@ const getTrustTone = (score: number) => {
     return {
       badgeClassName:
         "border-warning/30 bg-warning/15 text-warning-foreground dark:bg-warning/20",
-      panelClassName:
-        "border-warning/20 bg-linear-to-br from-warning/10 via-background to-background",
+      panelClassName: "border-warning/20 bg-warning/5",
       Icon: ShieldCheck,
       label: "Moderate trust signal",
     };
@@ -107,30 +124,77 @@ const TrustScorePill = ({ score }: { score: number }) => {
   );
 };
 
-const BuyerPublicPage = ({ product }: BuyerPublicPageProps) => {
+const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
   const [toggleReason, setToggleReason] = useState(false);
+  const [isCheckoutDialogOpen, setIsCheckoutDialogOpen] = useState(false);
+  const [buyerName, setBuyerName] = useState("");
+  const [buyerEmail, setBuyerEmail] = useState("");
+  const [checkoutError, setCheckoutError] = useState("");
+  const [isKoraScriptReady, setIsKoraScriptReady] = useState(false);
   const trustTone = getTrustTone(product.trust.score);
   const TrustIcon = trustTone.Icon;
   const formattedAmount = formatCurrency(
     product.item.amount,
     product.item.currency,
   );
+  const callbackUrl = `/payments/callback/${paymentConfig.payment_request_id}`;
+
+  const redirectToCallback = () => {
+    window.location.assign(callbackUrl);
+  };
+
+  const handleCheckout = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const fullName = buyerName.trim();
+    const email = buyerEmail.trim();
+
+    if (!fullName) {
+      setCheckoutError("Enter your full name to continue.");
+      return;
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setCheckoutError("Enter a valid email address to continue.");
+      return;
+    }
+
+    if (!window.Korapay || !isKoraScriptReady) {
+      setCheckoutError("Kora checkout is still loading. Try again in a moment.");
+      return;
+    }
+
+    setCheckoutError("");
+    setIsCheckoutDialogOpen(false);
+
+    window.Korapay.initialize({
+      ...paymentConfig.checkout_config,
+      customer: {
+        ...paymentConfig.checkout_config.customer,
+        name: fullName,
+        email,
+      },
+      onClose: redirectToCallback,
+      onSuccess: redirectToCallback,
+      onFailed: redirectToCallback,
+      onPending: redirectToCallback,
+    });
+  };
 
   return (
     <main className="relative overflow-hidden">
-      <div className="absolute left-1/2 top-40 -z-10 h-72 w-72 -translate-x-1/2 rounded-full bg-primary/10 blur-3xl" />
-
+      <Script
+        src="https://korablobstorage.blob.core.windows.net/modal-bucket/korapay-collections.min.js"
+        strategy="afterInteractive"
+        onLoad={() => setIsKoraScriptReady(true)}
+        onError={() =>
+          setCheckoutError("Kora checkout could not load. Refresh and try again.")
+        }
+      />
       <section className="app-container py-5 sm:py-7">
         <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[1.08fr_0.92fr] lg:items-start">
           <div className="space-y-6">
             <div className="space-y-5">
-              <div className="flex flex-wrap items-center gap-3">
-                <Badge className="border-primary/20 bg-primary/10 text-primary">
-                  <ShoppingBag className="size-3.5" />
-                  <span>AI-powered payment</span>
-                </Badge>
-              </div>
-
               <div className="space-y-4">
                 <div className="grid gap-3">
                   <p className="text-sm font-medium text-muted-foreground">
@@ -269,12 +333,74 @@ const BuyerPublicPage = ({ product }: BuyerPublicPageProps) => {
                   </div>
                 </div>
 
-                <Button asChild className="w-full">
-                  <Link href={`#checkout-action-${product.public_slug}`}>
-                    <span>Buy now</span>
-                    <ArrowRight />
-                  </Link>
-                </Button>
+                <AlertDialog
+                  open={isCheckoutDialogOpen}
+                  onOpenChange={(open) => {
+                    setIsCheckoutDialogOpen(open);
+
+                    if (open) {
+                      setCheckoutError("");
+                    }
+                  }}
+                >
+                  <AlertDialogTrigger asChild>
+                    <Button className="w-full">
+                      <span>Buy now</span>
+                      <ArrowRight />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <form onSubmit={handleCheckout} className="grid gap-4">
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Checkout details</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Enter your details so Kora can attach them to this
+                          payment.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+
+                      <div className="grid gap-3">
+                        <label className="grid gap-1.5 text-sm font-medium">
+                          <span>Full name</span>
+                          <Input
+                            value={buyerName}
+                            onChange={(event) => setBuyerName(event.target.value)}
+                            placeholder="Jane Doe"
+                            autoComplete="name"
+                            aria-invalid={checkoutError.includes("full name")}
+                          />
+                        </label>
+                        <label className="grid gap-1.5 text-sm font-medium">
+                          <span>Email</span>
+                          <Input
+                            type="email"
+                            value={buyerEmail}
+                            onChange={(event) =>
+                              setBuyerEmail(event.target.value)
+                            }
+                            placeholder="jane@example.com"
+                            autoComplete="email"
+                            aria-invalid={checkoutError.includes("email")}
+                          />
+                        </label>
+
+                        {checkoutError ? (
+                          <p className="text-sm text-destructive">
+                            {checkoutError}
+                          </p>
+                        ) : null}
+                      </div>
+
+                      <AlertDialogFooter>
+                        <AlertDialogCancel type="button">Cancel</AlertDialogCancel>
+                        <Button type="submit">
+                          Proceed to checkout
+                          <ArrowRight />
+                        </Button>
+                      </AlertDialogFooter>
+                    </form>
+                  </AlertDialogContent>
+                </AlertDialog>
 
                 <div className="rounded-2xl border border-primary/15 bg-primary/5 px-3 py-1 text-sm text-muted-foreground">
                   All payments are Powered by{" "}
