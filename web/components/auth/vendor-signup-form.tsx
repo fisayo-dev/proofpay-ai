@@ -134,7 +134,7 @@ const VendorSignupForm = () => {
     setIsSubmitting(true);
 
     try {
-      const vendor = await signupVendor({
+      await signupVendor({
         full_name: `${firstName.trim()} ${lastName.trim()}`,
         email: email.trim(),
         password: password.trim(),
@@ -145,7 +145,6 @@ const VendorSignupForm = () => {
         bank_account_name: bankAccountName.trim(),
       });
 
-      localStorage.setItem("vendor_id", vendor.vendor_id);
       toast.success("Vendor account created successfully.");
       router.push("/vendors/new-product");
     } catch (error) {
