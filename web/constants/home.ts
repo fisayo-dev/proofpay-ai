@@ -146,7 +146,7 @@ export const store_products: StoreProduct[] = [
   {
     id: "artisan-ceramics-mug",
     image:
-      "https://images.unsplash.com/photo-1523986371872-9d3ba2e2f642?auto=format&fit=crop&w=900&q=80",
+      "/images/products/ceramic-mug.jpg",
     vendor: {
       business_name: "Clay & Co",
       category: "Home goods",
@@ -215,7 +215,7 @@ export const store_products: StoreProduct[] = [
   {
     id: "fast-charge-usb-c",
     image:
-      "https://images.unsplash.com/photo-1523475496153-3d6ccf9b7e0d?auto=format&fit=crop&w=900&q=80",
+      "/images/products/usb-c-cable.jpg",
     vendor: {
       business_name: "Gadget Hub NG",
       category: "Electronics",
