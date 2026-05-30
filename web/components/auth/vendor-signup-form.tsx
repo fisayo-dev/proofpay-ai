@@ -1,13 +1,14 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useState } from "react";
+import { ChangeEvent, FormEvent, useSyncExternalStore, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Store, UserRound } from "lucide-react";
+import { Check, LogIn, Store, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import signupVendor from "@/lib/actions/auth";
+import { isAuthenticated } from "@/lib/session";
 import { cn } from "@/lib/utils";
 
 const steps = [
@@ -43,6 +44,11 @@ const VendorSignupForm = () => {
   const [vendorTouched, setVendorTouched] = useState<Record<string, boolean>>({});
   const [serverError, setServerError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const alreadyLoggedIn = useSyncExternalStore(
+    () => () => {},
+    () => isAuthenticated(),
+    () => false,
+  );
 
   const isProfileStep = currentStep === 0;
   
@@ -134,7 +140,7 @@ const VendorSignupForm = () => {
     setIsSubmitting(true);
 
     try {
-      const vendor = await signupVendor({
+      await signupVendor({
         full_name: `${firstName.trim()} ${lastName.trim()}`,
         email: email.trim(),
         password: password.trim(),
@@ -145,7 +151,6 @@ const VendorSignupForm = () => {
         bank_account_name: bankAccountName.trim(),
       });
 
-      localStorage.setItem("vendor_id", vendor.vendor_id);
       toast.success("Vendor account created successfully.");
       router.push("/vendors/new-product");
     } catch (error) {
@@ -245,6 +250,12 @@ const VendorSignupForm = () => {
         </div>
       </div>
       <div className="space-y-4">
+        {alreadyLoggedIn ? (
+          <div className="flex items-center gap-3 rounded-2xl border border-primary/30 bg-primary/5 px-5 py-4 text-sm">
+            <LogIn className="size-5 text-primary shrink-0" />
+            <span>You are already signed in. Signup is disabled.</span>
+          </div>
+        ) : null}
         <Card className="border border-border/70 bg-background shadow-[0_24px_80px_-48px_rgba(14,30,86,0.28)] md:max-w-2xl md:flex-1">
           <CardHeader className="space-y-5 px-5 sm:px-6">
             <h2 className="text-3xl font-medium">
@@ -436,7 +447,7 @@ const VendorSignupForm = () => {
                     <Button
                       type="button"
                       variant="outline"
-                      disabled={isSubmitting}
+                      disabled={isSubmitting || alreadyLoggedIn}
                       onClick={handleBack}
                     >
                       Back
@@ -446,12 +457,12 @@ const VendorSignupForm = () => {
                   {isProfileStep ?
                     <Button
                       type="button"
-                      disabled={isSubmitting}
+                      disabled={isSubmitting || alreadyLoggedIn}
                       onClick={handleContinue}
                     >
                       Continue to vendor details
                     </Button>
-                  : <Button type="submit" disabled={isSubmitting}>
+                  : <Button type="submit" disabled={isSubmitting || alreadyLoggedIn}>
                       {isSubmitting ? "Creating account..." : "Start selling"}
                     </Button>
                   }

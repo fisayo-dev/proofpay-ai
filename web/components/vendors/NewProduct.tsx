@@ -1,10 +1,11 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useState, useSyncExternalStore } from "react";
+import { ChangeEvent, FormEvent, useSyncExternalStore, useState } from "react";
 import { Lock, Truck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { createPaymentRequest } from "@/lib/actions/payment-requests";
+import { getVendorId } from "@/lib/session";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -40,18 +41,6 @@ const getDefaultExpectedDate = () => {
   return date.toISOString().split("T")[0];
 };
 
-const subscribeToVendorId = (callback: () => void) => {
-  window.addEventListener("storage", callback);
-
-  return () => {
-    window.removeEventListener("storage", callback);
-  };
-};
-
-const getVendorIdSnapshot = () => window.localStorage.getItem("vendor_id");
-
-const getVendorIdServerSnapshot = () => null;
-
 const NewProductComponent = () => {
   const router = useRouter();
   const [itemName, setItemName] = useState("");
@@ -66,9 +55,9 @@ const NewProductComponent = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const vendorId = useSyncExternalStore(
-    subscribeToVendorId,
-    getVendorIdSnapshot,
-    getVendorIdServerSnapshot,
+    () => () => {},
+    () => getVendorId(),
+    () => null,
   );
 
   const amountKobo = (() => {
