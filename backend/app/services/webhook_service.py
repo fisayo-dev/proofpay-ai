@@ -26,6 +26,19 @@ def verify_kora_signature(
     return hmac.compare_digest(expected, received_signature or "")
 
 
+def verify_kora_signature_from_body(
+    raw_body: bytes,
+    received_signature: str | None,
+    secret_key: str,
+) -> bool:
+    expected = hmac.new(
+        secret_key.encode("utf-8"),
+        raw_body,
+        hashlib.sha256,
+    ).hexdigest()
+    return hmac.compare_digest(expected, received_signature or "")
+
+
 def generate_kora_signature_for_test(payload_data: dict, secret_key: str) -> str:
     message = _canonical_json(payload_data)
     return hmac.new(
