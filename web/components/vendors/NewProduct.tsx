@@ -248,7 +248,7 @@ const NewProductComponent = () => {
                     <span className="text-sm truncate">
                       {createdProduct.publicUrl}
                     </span>
-                    <div className="flex items-center gap-1 hover:cursor-pointer hover:bg-muted p-2 rounded-full">
+                    <div onClick={() => handleCopyPublicUrl()} className="flex items-center gap-1 hover:cursor-pointer hover:bg-muted p-2 rounded-full">
                       <Copy className="size-4" />
                     </div>
                   </div>
