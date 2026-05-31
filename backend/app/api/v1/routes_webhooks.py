@@ -1,6 +1,8 @@
 # backend/app/api/v1/routes_webhooks.py
 
-from fastapi import APIRouter, Header, Request
+import json
+
+from fastapi import APIRouter, Header, HTTPException, Request
 
 from app.core.config import settings
 from app.services.webhook_service import (
@@ -9,6 +11,7 @@ from app.services.webhook_service import (
     mark_payment_paid,
     mark_webhook_processed,
     save_webhook_event,
+    verify_kora_signature_from_body,
     verify_kora_signature,
 )
 
@@ -30,14 +33,25 @@ def _is_failed_event(payload: dict) -> bool:
     return payload.get("event") == "charge.failed" or data.get("status") == "failed"
 
 
-def process_kora_webhook_event(payload: dict, received_signature: str | None) -> dict:
+def process_kora_webhook_event(
+    payload: dict,
+    received_signature: str | None,
+    raw_body: bytes | None = None,
+) -> dict:
     event_type = payload.get("event", "unknown")
     kora_reference = _extract_kora_reference(payload)
-    signature_valid = verify_kora_signature(
-        payload,
-        received_signature,
-        settings.kora_secret_key,
-    )
+    if raw_body is not None:
+        signature_valid = verify_kora_signature_from_body(
+            raw_body,
+            received_signature,
+            settings.kora_secret_key,
+        )
+    else:
+        signature_valid = verify_kora_signature(
+            payload,
+            received_signature,
+            settings.kora_secret_key,
+        )
 
     save_webhook_event(event_type, kora_reference, payload, signature_valid)
 
@@ -77,5 +91,11 @@ async def kora_webhook_endpoint(
     request: Request,
     x_korapay_signature: str | None = Header(default=None),
 ):
-    payload = await request.json()
-    return process_kora_webhook_event(payload, x_korapay_signature)
+    raw_body = await request.body()
+
+    try:
+        payload = json.loads(raw_body.decode("utf-8"))
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status_code=400, detail="Invalid JSON payload.") from exc
+
+    return process_kora_webhook_event(payload, x_korapay_signature, raw_body)
