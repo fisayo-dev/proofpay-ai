@@ -24,7 +24,9 @@ class CreatePaymentRequestBody(BaseModel):
     buyer_email: Optional[str] = None
     item_name: str
     item_description: Optional[str] = None
-    amount_kobo: int
+    # Accept either `amount_kobo` (int) or `amount` (naira as float/int).
+    amount_kobo: Optional[int] = None
+    amount: Optional[float] = None
     currency: str = "NGN"
     delivery_method: Optional[str] = None
     expected_delivery_date: Optional[str] = None
@@ -32,8 +34,25 @@ class CreatePaymentRequestBody(BaseModel):
 
 @router.post("/payment-requests", status_code=201)
 def create_request_endpoint(body: CreatePaymentRequestBody):
+    # Normalize amount: prefer amount_kobo if provided, otherwise convert `amount` (naira) -> kobo
+    payload = body.model_dump()
+    if payload.get("amount_kobo") is None:
+        amt = payload.get("amount")
+        if amt is None:
+            raise HTTPException(
+                status_code=400,
+                detail={"code": "VALIDATION_ERROR", "message": "amount or amount_kobo is required."},
+            )
+        try:
+            payload["amount_kobo"] = int(round(float(amt) * 100))
+        except Exception:
+            raise HTTPException(
+                status_code=400,
+                detail={"code": "VALIDATION_ERROR", "message": "invalid amount value."},
+            )
+
     try:
-        result = create_payment_request(body.model_dump())
+        result = create_payment_request(payload)
         return result
     except ValueError as e:
         raise HTTPException(

@@ -109,6 +109,25 @@ class PublicPaymentRequestRouteTest(unittest.TestCase):
             with self.assertRaises(psycopg.OperationalError):
                 routes_payment_requests.create_request_endpoint(body)
 
+    def test_create_request_accepts_amount_naira_and_converts(self):
+        body = routes_payment_requests.CreatePaymentRequestBody(
+            vendor_id="vendor_123",
+            item_name="Black hoodie",
+            amount=7500.5,
+        )
+
+        captured = {}
+
+        def fake_create(payload):
+            captured.update(payload)
+            return {"id": "req_123", "amount_kobo": payload["amount_kobo"]}
+
+        with patch.object(routes_payment_requests, "create_payment_request", side_effect=fake_create):
+            result = routes_payment_requests.create_request_endpoint(body)
+
+        self.assertIn("amount_kobo", captured)
+        self.assertEqual(captured["amount_kobo"], 750050)
+
     def test_refresh_trust_score_preserves_database_operational_error(self):
         with patch.object(
             routes_payment_requests,
