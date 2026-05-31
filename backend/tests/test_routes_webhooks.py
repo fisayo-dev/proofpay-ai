@@ -17,6 +17,17 @@ class KoraWebhookRouteTest(unittest.TestCase):
             },
         }
 
+    def test_kora_webhook_probe_returns_ok(self):
+        from app.api.v1 import routes_webhooks
+
+        self.assertEqual(
+            routes_webhooks.get_kora_webhook_probe(),
+            {
+                "status": "ok",
+                "service": "proofpay-kora-webhook",
+            },
+        )
+
     def test_valid_success_webhook_marks_payment_once(self):
         from app.api.v1 import routes_webhooks
 

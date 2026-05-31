@@ -86,7 +86,21 @@ def process_kora_webhook_event(
     }
 
 
+def get_kora_webhook_probe() -> dict:
+    return {
+        "status": "ok",
+        "service": "proofpay-kora-webhook",
+    }
+
+
+@router.api_route("/payments/kora/webhook", methods=["GET", "HEAD"])
+@router.api_route("/payments/kora/webhook/", methods=["GET", "HEAD"])
+def kora_webhook_probe_endpoint():
+    return get_kora_webhook_probe()
+
+
 @router.post("/payments/kora/webhook")
+@router.post("/payments/kora/webhook/")
 async def kora_webhook_endpoint(
     request: Request,
     x_korapay_signature: str | None = Header(default=None),
