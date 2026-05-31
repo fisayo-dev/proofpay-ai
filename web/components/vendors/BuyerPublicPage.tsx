@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import Script from "next/script";
 import {
   AlertTriangle,
@@ -9,10 +8,8 @@ import {
   BadgeCheck,
   Building2,
   ChevronDown,
-  CircleDollarSign,
   LockKeyhole,
   PackageCheck,
-  ReceiptText,
   ShieldCheck,
   Store,
   User2,
@@ -58,37 +55,72 @@ const formatCurrency = (amount: number, currency: string) => {
 };
 
 const getTrustTone = (score: number) => {
-  if (score >= 70) {
+  const tone =
+    score >= 80
+      ? "trusted"
+      : score >= 55 && score < 80
+        ? "moderate"
+        : score >= 30 && score < 55
+          ? "high risk"
+          : score >= 0 && score < 30
+            ? "Manual Review"
+            : "low";
+
+  if (tone === "trusted") {
     return {
       badgeClassName:
         "border-success/30 bg-success/12 text-success dark:bg-success/18",
       panelClassName: "border-success/20 bg-success/5",
       Icon: BadgeCheck,
-      label: "Strong trust signal",
+      label: "Trusted",
+      tone,
     };
   }
 
-  if (score >= 40) {
+  if (tone === "moderate") {
     return {
       badgeClassName:
         "border-warning/30 bg-warning/15 text-warning-foreground dark:bg-warning/20",
       panelClassName: "border-warning/20 bg-warning/5",
       Icon: ShieldCheck,
-      label: "Moderate trust signal",
+      label: "Moderate",
+      tone,
+    };
+  }
+
+  if (tone === "high risk") {
+    return {
+      badgeClassName:
+        "border-destructive/30 bg-destructive/10 text-destructive dark:bg-destructive/15",
+      panelClassName: "border-destructive/20 bg-destructive/5",
+      Icon: AlertTriangle,
+      label: "High risk",
+      tone,
+    };
+  }
+
+  if (tone === "Manual Review") {
+    return {
+      badgeClassName:
+        "border-warning/35 bg-warning/15 text-warning-foreground dark:bg-warning/20",
+      panelClassName: "border-warning/20 bg-warning/5",
+      Icon: AlertTriangle,
+      label: "Manual Review",
+      tone,
     };
   }
 
   return {
-    badgeClassName:
-      "border-destructive/30 bg-destructive/10 text-destructive dark:bg-destructive/15",
-    panelClassName: "border-destructive/10",
+    badgeClassName: "border-border bg-muted text-muted-foreground",
+    panelClassName: "border-border bg-muted/20",
     Icon: AlertTriangle,
-    label: "Higher-risk payment",
+    label: "Low",
+    tone,
   };
 };
 
 const getTrustScoreStyle = (score: number) => {
-  if (score >= 70) {
+  if (score >= 80) {
     return {
       label: "Trusted",
       className:
@@ -96,7 +128,7 @@ const getTrustScoreStyle = (score: number) => {
     };
   }
 
-  if (score >= 40) {
+  if (score >= 55 && score < 80) {
     return {
       label: "Moderate",
       className:
@@ -104,10 +136,25 @@ const getTrustScoreStyle = (score: number) => {
     };
   }
 
+  if (score >= 30 && score < 55) {
+    return {
+      label: "High risk",
+      className:
+        "border-red-500/20 bg-red-500/10 text-red-700 dark:text-red-400",
+    };
+  }
+
+  if (score >= 0 && score < 30) {
+    return {
+      label: "Manual Review",
+      className:
+        "border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-400",
+    };
+  }
+
   return {
     label: "Low",
-    className:
-      "border-red-500/20 bg-red-500/10 text-red-700 dark:text-red-400",
+    className: "border-border bg-muted text-muted-foreground",
   };
 };
 
@@ -117,7 +164,7 @@ const TrustScorePill = ({ score }: { score: number }) => {
   return (
     <div
       className={cn(
-        "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold tracking-tight",
+        "flex items-center  gap-5 rounded-full border px-3 py-1.5 text-sm font-semibold tracking-tight",
         style.className,
       )}
     >
@@ -165,7 +212,9 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
     }
 
     if (!window.Korapay || !isKoraScriptReady) {
-      setCheckoutError("Kora checkout is still loading. Try again in a moment.");
+      setCheckoutError(
+        "Kora checkout is still loading. Try again in a moment.",
+      );
       return;
     }
 
@@ -193,14 +242,16 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
         strategy="afterInteractive"
         onLoad={() => setIsKoraScriptReady(true)}
         onError={() =>
-          setCheckoutError("Kora checkout could not load. Refresh and try again.")
+          setCheckoutError(
+            "Kora checkout could not load. Refresh and try again.",
+          )
         }
       />
       <section className="app-container py-6 sm:py-10">
         <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[minmax(0,1fr)_390px] lg:items-start">
           <div className="space-y-6">
             <section className="overflow-hidden rounded-xl border border-border/70 bg-card shadow-[0_24px_80px_-52px_rgba(15,23,42,0.35)]">
-              <div className="relative aspect-[4/3] w-full bg-muted sm:aspect-[16/9]">
+              <div className="relative aspect-4/3 w-full bg-muted sm:aspect-video">
                 <Image
                   src="/images/products/ceramic-mug.jpg"
                   alt={`${product.item.name} product preview`}
@@ -213,7 +264,10 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
 
               <div className="grid gap-5 p-5 sm:p-6">
                 <div className="flex flex-wrap items-center gap-2">
-                  <Badge variant="outline" className="gap-2 rounded-md px-2.5 py-1">
+                  <Badge
+                    variant="outline"
+                    className="gap-2 rounded-md px-2.5 py-1"
+                  >
                     <Store className="size-3.5" />
                     {product.seller.business_name}
                   </Badge>
@@ -243,23 +297,18 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
                     <PackageCheck className="size-5 text-primary" />
                     <div>
                       <p className="text-sm font-medium">Product checked</p>
-                      <p className="text-xs text-muted-foreground">Request reviewed</p>
-                    </div>
-                  </div>
-                  {/*<div className="flex items-center gap-3">
-                    <ReceiptText className="size-5 text-primary" />
-                    <div>
-                      <p className="text-sm font-medium">Reference ready</p>
                       <p className="text-xs text-muted-foreground">
-                        {paymentConfig.kora_reference}
+                        Request reviewed
                       </p>
                     </div>
-                  </div>*/}
+                  </div>
                   <div className="flex items-center gap-3">
                     <LockKeyhole className="size-5 text-primary" />
                     <div>
                       <p className="text-sm font-medium">Secure checkout</p>
-                      <p className="text-xs text-muted-foreground">Powered by Kora</p>
+                      <p className="text-xs text-muted-foreground">
+                        Powered by Kora
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -277,7 +326,10 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
                   <div className="space-y-3">
                     <Badge
                       variant="outline"
-                      className={cn("w-fit gap-2 rounded-md", trustTone.badgeClassName)}
+                      className={cn(
+                        "w-fit gap-2 rounded-md",
+                        trustTone.badgeClassName,
+                      )}
                     >
                       <TrustIcon className="size-3.5" />
                       <span>{trustTone.label}</span>
@@ -287,8 +339,8 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
                         {product.trust.verdict}
                       </CardTitle>
                       <CardDescription className="max-w-2xl text-sm leading-7">
-                        ProofPay AI reviewed seller signals, payment context, and
-                        request details before sending you to checkout.
+                        ProofPay AI reviewed seller signals, payment context,
+                        and request details before sending you to checkout.
                       </CardDescription>
                     </div>
                   </div>
@@ -305,7 +357,8 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
                   aria-expanded={toggleReason}
                 >
                   <span className="font-semibold">
-                    Why this score? ({product.trust.reasons.length} signals checked)
+                    Why this score? ({product.trust.reasons.length} signals
+                    checked)
                   </span>
                   <ChevronDown
                     className={cn(
@@ -316,7 +369,7 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
                 </button>
                 {toggleReason ? (
                   <div className="grid gap-2">
-                    {product.trust.reasons.slice(0,4).map((reason) => (
+                    {product.trust.reasons.slice(0, 4).map((reason) => (
                       <div
                         key={reason}
                         className="rounded-lg border border-border/60 bg-background px-4 py-3"
@@ -341,7 +394,9 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
                 <div className="flex items-center gap-3">
                   <div>
                     <CardTitle className="text-2xl">Checkout summary</CardTitle>
-                    <CardDescription>Confirm the request before payment.</CardDescription>
+                    <CardDescription>
+                      Confirm the request before payment.
+                    </CardDescription>
                   </div>
                 </div>
               </CardHeader>
@@ -380,7 +435,9 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
                   <div className="flex items-center gap-3 rounded-lg border border-border/60 px-4 py-3">
                     <User2 className="size-5 shrink-0 text-primary" />
                     <div className="min-w-0">
-                      <p className="text-xs text-muted-foreground">Social handle</p>
+                      <p className="text-xs text-muted-foreground">
+                        Social handle
+                      </p>
                       <p className="truncate text-sm font-medium">
                         @{product.seller.social_handle}
                       </p>
@@ -419,7 +476,9 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
                           <span>Full name</span>
                           <Input
                             value={buyerName}
-                            onChange={(event) => setBuyerName(event.target.value)}
+                            onChange={(event) =>
+                              setBuyerName(event.target.value)
+                            }
                             placeholder="Jane Doe"
                             autoComplete="name"
                             aria-invalid={checkoutError.includes("full name")}
@@ -447,7 +506,9 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
                       </div>
 
                       <AlertDialogFooter>
-                        <AlertDialogCancel type="button">Cancel</AlertDialogCancel>
+                        <AlertDialogCancel type="button">
+                          Cancel
+                        </AlertDialogCancel>
                         <Button type="submit">
                           Proceed to checkout
                           <ArrowRight />
@@ -456,7 +517,6 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
                     </form>
                   </AlertDialogContent>
                 </AlertDialog>
-
               </CardContent>
             </Card>
           </aside>
