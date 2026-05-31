@@ -9,7 +9,6 @@ const ProductPage = async ({
   const product = await getPublicProduct(product_slug);
   const paymentConfig = await getPaymentConfigUrl(product.payment_request_id);
 
-  console.log(`Payment Config`, paymentConfig)
   return <BuyerPublicPage product={product} paymentConfig={paymentConfig} />;
 };
 

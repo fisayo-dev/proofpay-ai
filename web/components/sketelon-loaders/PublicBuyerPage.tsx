@@ -1,173 +1,122 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
 const SkeletonBlock = ({ className }: { className: string }) => {
-  return <div className={`animate-pulse rounded-full bg-muted ${className}`} />;
+  return <div className={`animate-pulse bg-muted ${className}`} />;
 };
 
-type TrustScoreTone = "trusted" | "moderate" | "low";
-
-const getTrustScoreTone = (score: number) => {
-  if (score >= 80) {
-    return {
-      tone: "trusted" as TrustScoreTone,
-      className:
-        "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
-    };
-  }
-
-  if (score >= 50) {
-    return {
-      tone: "moderate" as TrustScoreTone,
-      className:
-        "border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-400",
-    };
-  }
-
-  return {
-    tone: "low" as TrustScoreTone,
-    className:
-      "border-red-500/20 bg-red-500/10 text-red-700 dark:text-red-400",
-  };
-};
-
-const TrustScorePill = ({ score }: { score: number }) => {
-  const { tone, className } = getTrustScoreTone(score);
-
-  return (
-    <span
-      className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-sm font-semibold tracking-tight ${className}`}
-    >
-      <span>{score}%</span>
-      <span className="text-[11px] font-medium capitalize opacity-80">
-        {tone}
-      </span>
-    </span>
-  );
+const SkeletonIcon = () => {
+  return <SkeletonBlock className="size-5 shrink-0 rounded-md" />;
 };
 
 const PublicBuyerPageSkeleton = () => {
-  const demoTrustScore = 82;
-
   return (
-    <main className="relative overflow-hidden">
-      <div className="absolute inset-x-0 top-0 -z-10 h-[32rem] bg-[radial-gradient(circle_at_top,rgba(45,103,255,0.18),transparent_55%)]" />
-      <div className="absolute left-1/2 top-40 -z-10 h-72 w-72 -translate-x-1/2 rounded-full bg-primary/10 blur-3xl" />
-
-      <section className="app-container py-10 sm:py-14">
-        <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[1.08fr_0.92fr] lg:items-start">
+    <main className="bg-background">
+      <section className="app-container py-6 sm:py-10">
+        <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[minmax(0,1fr)_390px] lg:items-start">
           <div className="space-y-6">
-            <div className="space-y-5">
-              <div className="flex flex-wrap items-center gap-3">
-                <SkeletonBlock className="h-7 w-44 rounded-4xl" />
-                <SkeletonBlock className="h-7 w-24 rounded-4xl" />
-              </div>
+            <section className="overflow-hidden rounded-xl border border-border/70 bg-card shadow-[0_24px_80px_-52px_rgba(15,23,42,0.35)]">
+              <SkeletonBlock className="aspect-[4/3] w-full rounded-none sm:aspect-[16/9]" />
 
-              <div className="space-y-4">
-                <div className="grid gap-3">
-                  <SkeletonBlock className="h-4 w-36 rounded-md" />
-                  <SkeletonBlock className="h-12 w-full max-w-2xl rounded-xl" />
-                  <SkeletonBlock className="h-12 w-full max-w-3xl rounded-xl" />
-                  <SkeletonBlock className="h-5 w-3/4 rounded-md" />
+              <div className="grid gap-5 p-5 sm:p-6">
+                <div className="flex flex-wrap items-center gap-2">
+                  <SkeletonBlock className="h-7 w-44 rounded-md" />
+                  <SkeletonBlock className="h-7 w-28 rounded-md" />
                 </div>
 
-                <div className="flex flex-wrap items-end gap-x-5 gap-y-3 rounded-3xl border border-border/70 bg-background/80 p-5 shadow-[0_24px_80px_-48px_rgba(14,30,86,0.28)] backdrop-blur">
-                  <div className="space-y-2">
-                    <SkeletonBlock className="h-3 w-24 rounded-md" />
-                    <SkeletonBlock className="h-10 w-44 rounded-xl" />
-                  </div>
-                  <div className="h-10 w-px bg-border/70" />
-                  <div className="space-y-2">
-                    <SkeletonBlock className="h-3 w-28 rounded-md" />
-                    <SkeletonBlock className="h-6 w-52 rounded-md" />
+                <div className="space-y-3">
+                  <SkeletonBlock className="h-10 w-full max-w-2xl rounded-lg sm:h-14" />
+                  <SkeletonBlock className="h-10 w-3/4 max-w-xl rounded-lg sm:h-14" />
+                  <div className="space-y-2 pt-1">
+                    <SkeletonBlock className="h-4 w-full max-w-2xl rounded-md" />
+                    <SkeletonBlock className="h-4 w-11/12 max-w-xl rounded-md" />
+                    <SkeletonBlock className="h-4 w-2/3 max-w-md rounded-md" />
                   </div>
                 </div>
-              </div>
-            </div>
 
-            <Card className="border border-border/70 bg-background shadow-[0_24px_80px_-48px_rgba(14,30,86,0.28)]">
-              <CardHeader className="space-y-4">
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div className="space-y-3">
-                    <SkeletonBlock className="h-7 w-40 rounded-4xl" />
-                    <SkeletonBlock className="h-10 w-72 rounded-xl" />
-                    <SkeletonBlock className="h-12 w-full max-w-2xl rounded-xl" />
-                  </div>
-
-                  <div className="min-w-32 rounded-3xl border border-border/70 bg-background/85 px-5 py-4">
-                    <p className="text-xs font-medium text-muted-foreground">
-                      Trust score
-                    </p>
-                    <div className="mt-3">
-                      <TrustScorePill score={demoTrustScore} />
+                <div className="grid gap-3 border-t border-border/70 pt-5 sm:flex sm:justify-between">
+                  {Array.from({ length: 2 }).map((_, index) => (
+                    <div key={index} className="flex items-center gap-3">
+                      <SkeletonIcon />
+                      <div className="space-y-2">
+                        <SkeletonBlock className="h-4 w-32 rounded-md" />
+                        <SkeletonBlock className="h-3 w-28 rounded-md" />
+                      </div>
                     </div>
-                    <p className="mt-2 text-xs capitalize text-muted-foreground">
-                      {getTrustScoreTone(demoTrustScore).tone}
-                    </p>
+                  ))}
+                </div>
+              </div>
+            </section>
+
+            <Card className="border border-border/70 bg-card shadow-[0_24px_80px_-56px_rgba(15,23,42,0.3)]">
+              <CardHeader className="gap-4 px-5 sm:px-6">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="space-y-3">
+                    <SkeletonBlock className="h-7 w-40 rounded-md" />
+                    <div className="space-y-2">
+                      <SkeletonBlock className="h-8 w-full max-w-md rounded-lg" />
+                      <SkeletonBlock className="h-4 w-full max-w-2xl rounded-md" />
+                      <SkeletonBlock className="h-4 w-4/5 max-w-xl rounded-md" />
+                    </div>
                   </div>
+
+                  <SkeletonBlock className="h-8 w-28 rounded-full" />
                 </div>
               </CardHeader>
 
-              <CardContent className="grid gap-3">
-                {Array.from({ length: 5 }).map((_, index) => (
-                  <div
-                    key={index}
-                    className="rounded-2xl border border-border/60 bg-background/75 px-4 py-4"
-                  >
-                    <SkeletonBlock className="h-5 w-full rounded-md" />
-                  </div>
-                ))}
+              <CardContent className="grid gap-3 px-5 pb-5 sm:px-6">
+                <div className="flex w-full items-center justify-between rounded-lg border border-border/70 bg-background px-4 py-3">
+                  <SkeletonBlock className="h-5 w-48 rounded-md" />
+                  <SkeletonBlock className="size-4 rounded-md" />
+                </div>
+
+                <div className="grid gap-2">
+                  {Array.from({ length: 3 }).map((_, index) => (
+                    <div
+                      key={index}
+                      className="rounded-lg border border-border/60 bg-background px-4 py-3"
+                    >
+                      <SkeletonBlock className="h-4 w-full rounded-md" />
+                    </div>
+                  ))}
+                </div>
               </CardContent>
             </Card>
           </div>
 
-          <div className="lg:sticky lg:top-24">
-            <Card className="border border-border/70 bg-background shadow-[0_24px_80px_-48px_rgba(14,30,86,0.28)]">
-              <CardHeader className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="rounded-2xl bg-primary/10 p-3">
-                    <div className="h-5 w-5 animate-pulse rounded-md bg-primary/20" />
-                  </div>
-                  <div className="space-y-2">
-                    <SkeletonBlock className="h-8 w-44 rounded-lg" />
-                    <SkeletonBlock className="h-4 w-56 rounded-md" />
-                  </div>
+          <aside className="lg:sticky lg:top-24">
+            <Card className="border border-border/70 bg-card shadow-[0_24px_80px_-52px_rgba(15,23,42,0.35)]">
+              <CardHeader className="gap-4 px-5 sm:px-6">
+                <div className="space-y-2">
+                  <SkeletonBlock className="h-8 w-52 rounded-lg" />
+                  <SkeletonBlock className="h-4 w-60 rounded-md" />
                 </div>
               </CardHeader>
 
-              <CardContent className="space-y-5">
-                <div className="rounded-3xl border border-border/70 bg-muted/30 p-5">
+              <CardContent className="space-y-5 px-5 pb-5 sm:px-6">
+                <div className="rounded-lg border border-border/70 bg-muted/30 p-5">
                   <SkeletonBlock className="h-3 w-24 rounded-md" />
-                  <SkeletonBlock className="mt-3 h-10 w-40 rounded-xl" />
-                  <SkeletonBlock className="mt-3 h-4 w-48 rounded-md" />
+                  <SkeletonBlock className="mt-3 h-11 w-44 rounded-lg" />
                 </div>
 
                 <div className="grid gap-3">
                   {Array.from({ length: 3 }).map((_, index) => (
                     <div
                       key={index}
-                      className="rounded-2xl border border-border/60 px-4 py-4"
+                      className="flex items-center gap-3 rounded-lg border border-border/60 px-4 py-3"
                     >
-                      <SkeletonBlock className="h-4 w-20 rounded-md" />
-                      <SkeletonBlock className="mt-3 h-5 w-36 rounded-md" />
+                      <SkeletonIcon />
+                      <div className="min-w-0 flex-1 space-y-2">
+                        <SkeletonBlock className="h-3 w-24 rounded-md" />
+                        <SkeletonBlock className="h-4 w-3/4 rounded-md" />
+                      </div>
                     </div>
                   ))}
                 </div>
 
-                <div className="h-12 animate-pulse rounded-2xl bg-primary/18" />
-
-                <div className="rounded-2xl border border-primary/15 bg-primary/5 px-4 py-4">
-                  <SkeletonBlock className="h-4 w-full rounded-md" />
-                  <SkeletonBlock className="mt-2 h-4 w-5/6 rounded-md" />
-                </div>
-
-                <div className="grid gap-2">
-                  <SkeletonBlock className="h-3 w-40 rounded-md" />
-                  <SkeletonBlock className="h-3 w-36 rounded-md" />
-                  <SkeletonBlock className="h-3 w-28 rounded-md" />
-                </div>
+                <SkeletonBlock className="h-10 w-full rounded-lg bg-primary/20" />
               </CardContent>
             </Card>
-          </div>
+          </aside>
         </div>
       </section>
     </main>
