@@ -305,7 +305,7 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
                   aria-expanded={toggleReason}
                 >
                   <span className="font-semibold">
-                    Verification notes ({product.trust.reasons.length})
+                    Why this score? ({product.trust.reasons.length} signals checked)
                   </span>
                   <ChevronDown
                     className={cn(
@@ -316,7 +316,7 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
                 </button>
                 {toggleReason ? (
                   <div className="grid gap-2">
-                    {product.trust.reasons.map((reason) => (
+                    {product.trust.reasons.slice(0,4).map((reason) => (
                       <div
                         key={reason}
                         className="rounded-lg border border-border/60 bg-background px-4 py-3"
