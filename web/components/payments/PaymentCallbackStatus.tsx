@@ -11,6 +11,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { getPaymentStatus } from "@/lib/actions/payment-requests";
+import { getFriendlyApiErrorMessage } from "@/lib/api-error";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -121,9 +122,10 @@ const PaymentCallbackStatus = ({ paymentId }: PaymentCallbackStatusProps) => {
         }
 
         setRequestError(
-          error instanceof Error
-            ? error.message
-            : "Failed to fetch payment status.",
+          getFriendlyApiErrorMessage(
+            error,
+            "We could not check the payment status right now. Please try again.",
+          ),
         );
         setLastCheckedAt(new Date());
       }

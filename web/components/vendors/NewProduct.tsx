@@ -10,6 +10,7 @@ import {
   Truck,
 } from "lucide-react";
 import { toast } from "sonner";
+import { getFriendlyApiErrorMessage } from "@/lib/api-error";
 import { createPaymentRequest } from "@/lib/actions/payment-requests";
 import { getCachedVendorId } from "@/lib/session";
 import { Button } from "@/components/ui/button";
@@ -194,7 +195,10 @@ const NewProductComponent = () => {
       setExpectedDeliveryDate(getDefaultExpectedDate());
     } catch (error) {
       setErrorMessage(
-        error instanceof Error ? error.message : "Failed to create product.",
+        getFriendlyApiErrorMessage(
+          error,
+          "We could not create the payment request. Please try again.",
+        ),
       );
     } finally {
       setIsSubmitting(false);
