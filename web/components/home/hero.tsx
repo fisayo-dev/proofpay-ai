@@ -21,7 +21,7 @@ const Hero = () => {
     "payments.",
   ];
 
-  useHomeGsap(rootRef, (gsap, ScrollTrigger, prefersReducedMotion) => {
+  useHomeGsap(rootRef, (gsap, _ScrollTrigger, prefersReducedMotion) => {
     if (prefersReducedMotion) {
       gsap.set("[data-hero-animate]", { clearProps: "all" });
       return;
@@ -88,9 +88,9 @@ const Hero = () => {
       stagger: 0.25,
     });
 
-    gsap.to("[data-hero-net]", {
-      yPercent: 18,
-      scale: 1.08,
+    gsap.to("[data-hero-content]", {
+      yPercent: 8,
+      autoAlpha: 0.7,
       ease: "none",
       scrollTrigger: {
         trigger: rootRef.current,
@@ -99,25 +99,11 @@ const Hero = () => {
         scrub: true,
       },
     });
-
-    ScrollTrigger.create({
-      trigger: rootRef.current,
-      start: "top top",
-      end: "bottom top",
-      scrub: true,
-      animation: gsap.to("[data-hero-content]", {
-        yPercent: 10,
-        autoAlpha: 0.45,
-        ease: "none",
-      }),
-    });
   }, []);
 
   return (
     <div ref={rootRef} className="relative overflow-hidden">
-      <div data-hero-net>
-        <NetBackground />
-      </div>
+      <NetBackground />
 
       <div
         data-hero-content
@@ -199,7 +185,7 @@ const Hero = () => {
       <div
         data-hero-animate
         data-hero-chip
-        className="pointer-events-none absolute bottom-14 left-1/2 hidden -translate-x-1/2 rounded-full border border-primary/20 bg-background/80 px-4 py-2 text-xs font-medium shadow-lg shadow-primary/5 backdrop-blur sm:block"
+        className="pointer-events-none absolute right-6 top-24 hidden rounded-full border border-primary/20 bg-background/80 px-4 py-2 text-xs font-medium shadow-lg shadow-primary/5 backdrop-blur sm:block lg:right-1/4"
       >
         Secure Kora checkout
       </div>

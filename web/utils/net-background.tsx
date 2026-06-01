@@ -20,7 +20,7 @@ const NetBackground = () => {
       />
       <div
         aria-hidden="true"
-        className="absolute inset-x-0 top-0 -z-10 h-40 bg-linear-to-b from-background via-background/80 to-transparent"
+        className="absolute inset-x-0 top-0 -z-10 h-40 bg-linear-to-b  via-background/80 to-transparent from-transparent"
       />
       <div
         aria-hidden="true"
