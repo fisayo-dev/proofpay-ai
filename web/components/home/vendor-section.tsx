@@ -33,7 +33,7 @@ const VendorSection = () => {
   const rootRef = useRef<HTMLElement>(null);
   const displayedVendors = vendors.slice(0, 6);
 
-  useHomeGsap(rootRef, (gsap, _ScrollTrigger, prefersReducedMotion) => {
+  useHomeGsap(rootRef, (gsap, ScrollTrigger, prefersReducedMotion) => {
     if (prefersReducedMotion) {
       gsap.set("[data-vendor-animate]", { clearProps: "all" });
       return;
@@ -41,54 +41,60 @@ const VendorSection = () => {
 
     const cards = gsap.utils.toArray<HTMLElement>("[data-vendor-card]");
 
-    gsap
-      .timeline({
-        defaults: { ease: "power3.out" },
-        scrollTrigger: {
-          trigger: rootRef.current,
-          start: "top 72%",
-          end: "bottom 40%",
-          toggleActions: "play none none reverse",
-        },
-      })
-      .from("[data-vendor-heading]", {
-        autoAlpha: 0,
-        y: 18,
-        duration: 0.55,
-      })
-      .from(
-        "[data-vendor-filter]",
-        {
-          autoAlpha: 0,
-          x: (index) => (index % 2 === 0 ? -34 : 34),
-          rotate: (index) => (index % 2 === 0 ? -4 : 4),
-          duration: 0.55,
-          stagger: 0.06,
-        },
-        "-=0.25",
-      )
-      .from(
-        cards,
-        {
-          autoAlpha: 0,
-          y: 44,
-          clipPath: "inset(18% 0% 18% 0% round 18px)",
-          duration: 0.7,
-          stagger: { each: 0.09, grid: "auto", from: "center" },
-        },
-        "-=0.15",
-      )
-      .from(
-        "[data-vendor-avatar]",
-        {
-          scale: 0.65,
-          rotate: -10,
-          duration: 0.5,
-          stagger: { each: 0.05, from: "random" },
-          ease: "back.out(1.9)",
-        },
-        "-=0.45",
-      );
+    const revealTrigger = ScrollTrigger.create({
+      trigger: rootRef.current,
+      start: "top 78%",
+      once: true,
+      onEnter: () => {
+        gsap
+          .timeline({
+            defaults: { ease: "power3.out" },
+            onComplete: () => {
+              gsap.set("[data-vendor-animate]", {
+                clearProps: "opacity,visibility,transform",
+              });
+            },
+          })
+          .from("[data-vendor-heading]", {
+            autoAlpha: 0,
+            y: 18,
+            duration: 0.55,
+          })
+          .from(
+            "[data-vendor-filter]",
+            {
+              autoAlpha: 0,
+              x: (index) => (index % 2 === 0 ? -34 : 34),
+              rotate: (index) => (index % 2 === 0 ? -4 : 4),
+              duration: 0.55,
+              stagger: 0.06,
+            },
+            "-=0.25",
+          )
+          .from(
+            cards,
+            {
+              autoAlpha: 0,
+              y: 34,
+              scale: 0.96,
+              duration: 0.65,
+              stagger: { each: 0.08, grid: "auto", from: "center" },
+            },
+            "-=0.15",
+          )
+          .from(
+            "[data-vendor-avatar]",
+            {
+              scale: 0.72,
+              rotate: -8,
+              duration: 0.45,
+              stagger: { each: 0.05, from: "random" },
+              ease: "back.out(1.9)",
+            },
+            "-=0.4",
+          );
+      },
+    });
 
     gsap.to("[data-vendor-filter-active]", {
       boxShadow: "0 10px 32px -18px rgba(0, 102, 204, 0.9)",
@@ -155,7 +161,10 @@ const VendorSection = () => {
       });
     });
 
-    return () => cleanupHandlers.forEach((cleanup) => cleanup());
+    return () => {
+      revealTrigger.kill();
+      cleanupHandlers.forEach((cleanup) => cleanup());
+    };
   }, []);
 
   return (
