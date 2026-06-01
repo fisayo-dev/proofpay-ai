@@ -54,7 +54,7 @@ const AccessibilityContext = createContext<AccessibilityContextType | null>(
   null,
 );
 
-function getInitialSettings(): AccessibilitySettings {
+function getStoredSettings(): AccessibilitySettings {
   if (typeof window === "undefined") return defaultSettings;
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -62,7 +62,6 @@ function getInitialSettings(): AccessibilitySettings {
       return { ...defaultSettings, ...JSON.parse(stored) };
     }
   } catch {}
-
   const prefersReducedMotion = window.matchMedia(
     "(prefers-reduced-motion: reduce)",
   ).matches;
@@ -82,6 +81,64 @@ function applySettingsToDOM(settings: AccessibilitySettings) {
   root.setAttribute("data-a11y-line-spacing", settings.lineSpacing);
   root.setAttribute("data-a11y-keyboard-mode", String(settings.keyboardMode));
 }
+
+const A11Y_STYLES = `
+html[data-a11y-high-contrast="true"] {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0 0 0);
+  --primary: oklch(0 0 0);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.85 0 0);
+  --secondary-foreground: oklch(0 0 0);
+  --muted: oklch(0.85 0 0);
+  --muted-foreground: oklch(0.2 0 0);
+  --accent: oklch(0.8 0 0);
+  --accent-foreground: oklch(0 0 0);
+  --border: oklch(0 0 0);
+  --input: oklch(0.7 0 0);
+  --ring: oklch(0 0 0);
+  --success: oklch(0.3 0.18 150);
+  --success-foreground: oklch(1 0 0);
+  --warning: oklch(0.5 0.16 70);
+  --warning-foreground: oklch(1 0 0);
+  --destructive: oklch(0.4 0.24 25);
+  --destructive-foreground: oklch(1 0 0);
+}
+html[data-a11y-font-size="large"] { font-size: 120%; }
+html[data-a11y-font-size="xl"] { font-size: 140%; }
+html[data-a11y-dyslexic-font="true"] { --font-sans: var(--font-lexend); }
+html[data-a11y-reduce-motion="true"] *,
+html[data-a11y-reduce-motion="true"] *::before,
+html[data-a11y-reduce-motion="true"] *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+}
+html[data-a11y-color-blind="protanopia"] main { filter: url(#a11y-protanopia); }
+html[data-a11y-color-blind="deuteranopia"] main { filter: url(#a11y-deuteranopia); }
+html[data-a11y-color-blind="tritanopia"] main { filter: url(#a11y-tritanopia); }
+html:not([data-a11y-line-spacing="normal"]) p,
+html:not([data-a11y-line-spacing="normal"]) li,
+html:not([data-a11y-line-spacing="normal"]) h1,
+html:not([data-a11y-line-spacing="normal"]) h2,
+html:not([data-a11y-line-spacing="normal"]) h3,
+html:not([data-a11y-line-spacing="normal"]) h4,
+html:not([data-a11y-line-spacing="normal"]) h5,
+html:not([data-a11y-line-spacing="normal"]) h6 {
+  line-height: var(--a11y-ls);
+}
+html[data-a11y-line-spacing="wide"] { --a11y-ls: 2; }
+html[data-a11y-line-spacing="extra-wide"] { --a11y-ls: 2.5; }
+html[data-a11y-keyboard-mode="true"] *:focus-visible {
+  outline: 3px solid var(--foreground) !important;
+  outline-offset: 3px !important;
+  box-shadow: 0 0 0 6px var(--background) !important;
+}
+`;
 
 function ColorBlindFilters() {
   return (
@@ -112,23 +169,16 @@ function ColorBlindFilters() {
 }
 
 export function AccessibilityProvider({ children }: { children: ReactNode }) {
-  const [settings, setSettings] =
-    useState<AccessibilitySettings>(defaultSettings);
+  const [settings, setSettings] = useState<AccessibilitySettings>(() => {
+    if (typeof window === "undefined") return defaultSettings;
+    return getStoredSettings();
+  });
   const [isPanelOpen, setPanelOpen] = useState(false);
-  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    const initial = getInitialSettings();
-    setSettings(initial);
-    applySettingsToDOM(initial);
-    setHydrated(true);
-  }, []);
-
-  useEffect(() => {
-    if (!hydrated) return;
     applySettingsToDOM(settings);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-  }, [settings, hydrated]);
+  }, [settings]);
 
   const updateSetting = useCallback(
     <K extends keyof AccessibilitySettings>(
@@ -154,6 +204,7 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
         setPanelOpen,
       }}
     >
+      <style dangerouslySetInnerHTML={{ __html: A11Y_STYLES }} />
       {children}
       <ColorBlindFilters />
     </AccessibilityContext.Provider>
