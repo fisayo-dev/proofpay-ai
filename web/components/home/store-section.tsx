@@ -253,12 +253,6 @@ const StoreSection = () => {
               </div>
             </CardHeader>
 
-            <CardFooter className="flex items-center justify-between gap-3 border-t border-border/70 bg-muted/40">
-              <Button data-store-button className="w-full">
-                <WalletIcon />
-                <span>Purchase securely</span>
-              </Button>
-            </CardFooter>
           </Card>
         ))}
       </div>
