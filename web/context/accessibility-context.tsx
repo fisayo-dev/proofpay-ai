@@ -169,16 +169,25 @@ function ColorBlindFilters() {
 }
 
 export function AccessibilityProvider({ children }: { children: ReactNode }) {
-  const [settings, setSettings] = useState<AccessibilitySettings>(() => {
-    if (typeof window === "undefined") return defaultSettings;
-    return getStoredSettings();
-  });
+  const [settings, setSettings] =
+    useState<AccessibilitySettings>(defaultSettings);
   const [isPanelOpen, setPanelOpen] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
+
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    const stored = getStoredSettings();
+    setSettings(stored);
+    applySettingsToDOM(stored);
+    setHydrated(true);
+  }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   useEffect(() => {
+    if (!hydrated) return;
     applySettingsToDOM(settings);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-  }, [settings]);
+  }, [settings, hydrated]);
 
   const updateSetting = useCallback(
     <K extends keyof AccessibilitySettings>(
