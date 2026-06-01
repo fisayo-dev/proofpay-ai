@@ -36,7 +36,7 @@ const formatCurrency = (amount: number, currency: string) => {
     style: "currency",
     currency,
     minimumFractionDigits: 2,
-  }).format(amount / 100);
+  }).format(amount / 1);
 };
 
 const normalizeStatus = (payment?: PaymentStatusResponse | null) => {
