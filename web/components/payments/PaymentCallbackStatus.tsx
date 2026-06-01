@@ -103,7 +103,7 @@ const PaymentCallbackStatus = ({ paymentId }: PaymentCallbackStatusProps) => {
     const pollPaymentStatus = async () => {
       try {
         const nextPayment = await getPaymentStatus(paymentId);
-        console.log("Payment status: ", nextPayment);
+        // console.log("Payment status: ", nextPayment);
 
         if (!isMounted) {
           return;
