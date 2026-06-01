@@ -51,6 +51,10 @@ export const header_links = [
     text: "Home",
   },
   {
+    link: "#features",
+    text: "Features",
+  },
+  {
     link: "#vendors",
     text: "Vendors",
   },
