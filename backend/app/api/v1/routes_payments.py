@@ -2,7 +2,11 @@
 
 from fastapi import APIRouter, HTTPException
 from app.core.config import settings
-from app.services.payment_request_service import build_checkout_config, get_payment_request_by_id
+from app.services.payment_request_service import (
+    build_checkout_config,
+    get_kora_notification_url,
+    get_payment_request_by_id,
+)
 from app.services.payment_status_service import (
     get_payment_status,
     get_vendor_payment_requests,
@@ -39,7 +43,7 @@ def get_kora_checkout_config_endpoint(payment_request_id: str):
 
     checkout_config = build_checkout_config(
         settings.kora_public_key,
-        settings.kora_webhook_url,
+        get_kora_notification_url(),
         request["kora_reference"],
         request["amount_kobo"],
         request.get("currency", "NGN"),
