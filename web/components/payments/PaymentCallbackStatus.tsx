@@ -181,7 +181,7 @@ const PaymentCallbackStatus = ({ paymentId }: PaymentCallbackStatusProps) => {
 
   return (
     <main className="app-container flex min-h-[calc(100vh-5rem)] items-center justify-center py-8 sm:py-12">
-      <Card className="w-full max-w-2xl border border-border/70 bg-background shadow-[0_24px_80px_-48px_rgba(14,30,86,0.28)]">
+      <Card className="w-full max-w-xl border border-border/70 bg-background shadow-[0_24px_80px_-48px_rgba(14,30,86,0.28)]">
         <CardHeader className="items-center space-y-4 px-5 text-center sm:px-8">
           <div className="mx-auto flex size-16 items-center justify-center rounded-full border border-border bg-muted/30">
             <StatusIcon className={` size-9 ${stateCopy.iconClassName}`} />
