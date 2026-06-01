@@ -1,8 +1,9 @@
 import { Badge } from "../ui/badge";
 import Image from "next/image";
 import { Button } from "../ui/button";
-import { Compass, ShoppingCart } from "lucide-react";
+import { ArrowUpRight, Compass, ShoppingCart } from "lucide-react";
 import NetBackground from "@/utils/net-background";
+import Link from "next/link";
 
 const Hero = () => {
   return (
@@ -33,15 +34,19 @@ const Hero = () => {
         </div>
 
         <div className="grid md:flex items-center justify-center gap-2 md:gap-4">
-          <Button>
-            <ShoppingCart className="text-white" />
-            <span>Start Shopping</span>
-          </Button>
+          <Link href="/vendors/signup">
+            <Button>
+              <ShoppingCart />
+              <span>Start Shopping</span>
+            </Button>
+          </Link>
 
-          <Button variant="outline">
-            <Compass />
-            <span>Explore Store</span>
-          </Button>
+          <Link href="/vendors/signup">
+            <Button variant="outline">
+              <ArrowUpRight/>
+              <span>Sell your products</span>
+            </Button>
+          </Link>
         </div>
       </div>
     </div>
