@@ -28,6 +28,7 @@ const verdictStyles = {
 } as const;
 
 const filters = ["Reputation", "Trusted", "Caution", "Manual Review"] as const;
+const initialRevealSpeed = 2;
 
 const VendorSection = () => {
   const rootRef = useRef<HTMLElement>(null);
@@ -58,7 +59,7 @@ const VendorSection = () => {
           .from("[data-vendor-heading]", {
             autoAlpha: 0,
             y: 18,
-            duration: 0.55,
+            duration: 0.55 / initialRevealSpeed,
           })
           .from(
             "[data-vendor-filter]",
@@ -66,8 +67,8 @@ const VendorSection = () => {
               autoAlpha: 0,
               x: (index) => (index % 2 === 0 ? -34 : 34),
               rotate: (index) => (index % 2 === 0 ? -4 : 4),
-              duration: 0.55,
-              stagger: 0.06,
+              duration: 0.55 / initialRevealSpeed,
+              stagger: 0.06 / initialRevealSpeed,
             },
             "-=0.25",
           )
@@ -77,8 +78,12 @@ const VendorSection = () => {
               autoAlpha: 0,
               y: 34,
               scale: 0.96,
-              duration: 0.65,
-              stagger: { each: 0.08, grid: "auto", from: "center" },
+              duration: 0.65 / initialRevealSpeed,
+              stagger: {
+                each: 0.08 / initialRevealSpeed,
+                grid: "auto",
+                from: "center",
+              },
             },
             "-=0.15",
           )
@@ -87,8 +92,8 @@ const VendorSection = () => {
             {
               scale: 0.72,
               rotate: -8,
-              duration: 0.45,
-              stagger: { each: 0.05, from: "random" },
+              duration: 0.45 / initialRevealSpeed,
+              stagger: { each: 0.05 / initialRevealSpeed, from: "random" },
               ease: "back.out(1.9)",
             },
             "-=0.4",
@@ -182,7 +187,7 @@ const VendorSection = () => {
           approving a request.
         </p>
       </div>
-      <div className="flex justify-center gap-2 overflow-x-auto pb-1 text-sm lg:pb-0 mt-4 mx-auto w-full ">
+      <div className="flex justify-center gap-2 overflow-x-hidden pb-1 text-sm lg:pb-0 mt-4 mx-auto w-full ">
         {filters.map((filter) => (
           <button
             key={filter}
