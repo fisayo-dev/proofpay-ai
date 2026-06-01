@@ -21,6 +21,14 @@ def build_public_url(frontend_base_url: str, public_slug: str) -> str:
     return f"{frontend_base_url.rstrip('/')}/r/{public_slug}"
 
 
+def get_kora_notification_url() -> str:
+    configured_url = settings.kora_webhook_url.strip()
+    if configured_url:
+        return configured_url
+
+    return f"{settings.backend_base_url.rstrip('/')}/api/v1/payments/kora/webhook"
+
+
 def build_checkout_config(
     kora_public_key: str,
     kora_webhook_url: str,
@@ -158,7 +166,7 @@ def create_payment_request(data: dict) -> dict:
     # Step 8: Build checkout config for Fisayo
     checkout_config = build_checkout_config(
         settings.kora_public_key,
-        settings.kora_webhook_url,
+        get_kora_notification_url(),
         kora_reference,
         amount_kobo,
         data.get("currency", "NGN"),
