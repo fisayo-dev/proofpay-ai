@@ -1,15 +1,12 @@
 "use client";
 
 import Image from "next/image";
-import { WalletIcon } from "lucide-react";
 import { useRef } from "react";
 import { store_products } from "@/constants/home";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
