@@ -1,4 +1,5 @@
 import api from "@/lib/axios";
+import { getFriendlyApiErrorMessage } from "@/lib/api-error";
 import {
   CreatePaymentRequestPayload,
   CreatePaymentRequestResponse,
@@ -16,8 +17,13 @@ export const createPaymentRequest = async (
     );
 
     return response.data;
-  } catch (err) {
-    throw new Error("Failed to create payment request: " + err);
+  } catch (error) {
+    throw new Error(
+      getFriendlyApiErrorMessage(
+        error,
+        "We could not create the payment request. Please try again.",
+      ),
+    );
   }
 };
 
@@ -27,8 +33,13 @@ export const getPublicProduct = async (
   try {
     const response = await api.get(`/public/r/${productSlug}`);
     return response.data;
-  } catch (err) {
-    throw new Error("Failed to fetch public product: " + err);
+  } catch (error) {
+    throw new Error(
+      getFriendlyApiErrorMessage(
+        error,
+        "We could not load this payment request right now. Please try again.",
+      ),
+    );
   }
 };
 
@@ -36,8 +47,13 @@ export const getPaymentConfigUrl = async (paymentRequestId: string) => {
   try {
     const response = await api.get(`/payments/kora/config/${paymentRequestId}`);
     return response.data;
-  } catch (err) {
-    throw new Error("Failed to fetch payment config: " + err);
+  } catch (error) {
+    throw new Error(
+      getFriendlyApiErrorMessage(
+        error,
+        "We could not prepare checkout right now. Please try again.",
+      ),
+    );
   }
 };
 
@@ -50,7 +66,12 @@ export const getPaymentStatus = async (
     );
 
     return response.data;
-  } catch (err) {
-    throw new Error("Failed to fetch payment status: " + err);
+  } catch (error) {
+    throw new Error(
+      getFriendlyApiErrorMessage(
+        error,
+        "We could not check the payment status right now. Please try again.",
+      ),
+    );
   }
 };

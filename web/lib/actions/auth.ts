@@ -1,5 +1,6 @@
 import { SignupVendorPayload, SignupVendorResponse } from "@/types/auth";
 import { setSession } from "@/lib/session";
+import { getFriendlyApiErrorMessage } from "@/lib/api-error";
 import api from "../axios";
 
 const signupVendor = async (
@@ -16,10 +17,14 @@ const signupVendor = async (
     });
 
     return response.data;
-  } catch(err) {
-    throw new Error("Failed to signup vendor: " + err);
+  } catch (error) {
+    throw new Error(
+      getFriendlyApiErrorMessage(
+        error,
+        "We could not create your vendor account. Please check your details and try again.",
+      ),
+    );
   }
-  
 };
 
 export default signupVendor;

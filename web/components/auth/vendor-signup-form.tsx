@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { getFriendlyApiErrorMessage } from "@/lib/api-error";
 import signupVendor from "@/lib/actions/auth";
 import { cn } from "@/lib/utils";
 
@@ -148,8 +149,12 @@ const VendorSignupForm = () => {
       toast.success("Vendor account created successfully.");
       router.push("/vendors/new-product");
     } catch (error) {
-      const msg = error instanceof Error ? error.message : "Failed to create vendor account.";
-      setServerError(msg);
+      setServerError(
+        getFriendlyApiErrorMessage(
+          error,
+          "We could not create your vendor account. Please check your details and try again.",
+        ),
+      );
     } finally {
       setIsSubmitting(false);
     }

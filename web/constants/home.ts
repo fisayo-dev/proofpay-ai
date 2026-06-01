@@ -1,3 +1,5 @@
+import { getVendorAvatarUrl } from "@/lib/avatar";
+
 export const vendorVerdicts = [
   "Trusted",
   "Caution",
@@ -51,6 +53,10 @@ export const header_links = [
     text: "Home",
   },
   {
+    link: "#features",
+    text: "Features",
+  },
+  {
     link: "#vendors",
     text: "Vendors",
   },
@@ -85,10 +91,7 @@ export const store_products: StoreProduct[] = [
       score: 95,
       verdict: "Trusted",
       confidence: "High confidence",
-      reasons: [
-        "Vendor profile is fully complete",
-        "No disputes on record",
-      ],
+      reasons: ["Vendor profile is fully complete", "No disputes on record"],
     },
   },
   {
@@ -145,8 +148,7 @@ export const store_products: StoreProduct[] = [
   },
   {
     id: "artisan-ceramics-mug",
-    image:
-      "/images/products/ceramic-mug.jpg",
+    image: "/images/products/ceramic-mug.jpg",
     vendor: {
       business_name: "Clay & Co",
       category: "Home goods",
@@ -214,8 +216,7 @@ export const store_products: StoreProduct[] = [
   },
   {
     id: "fast-charge-usb-c",
-    image:
-      "/images/products/usb-c-cable.jpg",
+    image: "/images/products/usb-c-cable.jpg",
     vendor: {
       business_name: "Gadget Hub NG",
       category: "Electronics",
@@ -289,13 +290,13 @@ export const vendors: Vendor[] = [
     business_name: "Favour Fits",
     category: "Fashion",
     social_handle: "@favourfits",
-    profile_picture:
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80",
+    profile_picture: getVendorAvatarUrl(["favour-fits"]),
     completed_transactions: 14,
     score: 95,
     verdict: "Trusted",
     confidence: "High confidence",
-    summary: "Fast-moving campus fashion vendor with a consistent payment trail.",
+    summary:
+      "Fast-moving campus fashion vendor with a consistent payment trail.",
     reasons: [
       "Vendor profile is fully complete",
       "Vendor has 14 completed transactions",
@@ -307,8 +308,7 @@ export const vendors: Vendor[] = [
     business_name: "Campus Crates",
     category: "Groceries",
     social_handle: "@campuscrates",
-    profile_picture:
-      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80",
+    profile_picture: getVendorAvatarUrl(["campus-crates"]),
     completed_transactions: 12,
     score: 91,
     verdict: "Trusted",
@@ -325,13 +325,13 @@ export const vendors: Vendor[] = [
     business_name: "Gadget Hub NG",
     category: "Electronics",
     social_handle: "@gadgethubng",
-    profile_picture:
-      "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=400&q=80",
+    profile_picture: getVendorAvatarUrl(["-hub-ng"]),
     completed_transactions: 9,
     score: 88,
     verdict: "Trusted",
     confidence: "High confidence",
-    summary: "Accessory seller with strong identity checks and stable order values.",
+    summary:
+      "Accessory seller with strong identity checks and stable order values.",
     reasons: [
       "Account name is consistent with business name",
       "Vendor has 9 completed transactions",
@@ -343,13 +343,13 @@ export const vendors: Vendor[] = [
     business_name: "Hostel Bites",
     category: "Food",
     social_handle: "@hostelbites",
-    profile_picture:
-      "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=400&q=80",
+    profile_picture: getVendorAvatarUrl(["hostel-bites"]),
     completed_transactions: 7,
     score: 82,
     verdict: "Trusted",
     confidence: "Moderate confidence",
-    summary: "Daily meal delivery vendor with good history and low-value orders.",
+    summary:
+      "Daily meal delivery vendor with good history and low-value orders.",
     reasons: [
       "Vendor profile is mostly complete",
       "Payment amount is normal for this vendor category",
@@ -361,13 +361,13 @@ export const vendors: Vendor[] = [
     business_name: "Print Lab",
     category: "Printing",
     social_handle: "@printlab",
-    profile_picture:
-      "https://images.unsplash.com/photo-1507591064344-4c6ce005b128?auto=format&fit=crop&w=400&q=80",
+    profile_picture: getVendorAvatarUrl(["print-lab"]),
     completed_transactions: 5,
     score: 65,
     verdict: "Caution",
     confidence: "High confidence",
-    summary: "Growing print vendor with a workable history but a few review flags.",
+    summary:
+      "Growing print vendor with a workable history but a few review flags.",
     reasons: [
       "Vendor profile is mostly complete",
       "Some disputes on record - review before paying",
@@ -379,13 +379,13 @@ export const vendors: Vendor[] = [
     business_name: "Swift Rides",
     category: "Logistics",
     social_handle: "@swiftrides",
-    profile_picture:
-      "https://images.unsplash.com/photo-1506863530036-1efeddceb993?auto=format&fit=crop&w=400&q=80",
+    profile_picture: getVendorAvatarUrl(["swift-rides"]),
     completed_transactions: 4,
     score: 58,
     verdict: "Caution",
     confidence: "Moderate confidence",
-    summary: "Delivery partner with limited completed orders and variable pricing.",
+    summary:
+      "Delivery partner with limited completed orders and variable pricing.",
     reasons: [
       "Vendor has 4 completed transactions - growing history",
       "Payment amount is normal for this vendor category",
@@ -397,13 +397,13 @@ export const vendors: Vendor[] = [
     business_name: "Prime Appliances",
     category: "Home goods",
     social_handle: "@primeappliances",
-    profile_picture:
-      "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=crop&w=400&q=80",
-    completed_transactions: 0,
+    profile_picture: getVendorAvatarUrl(["prime-appliances"]),
+    completed_transactions: 7,
     score: 6,
     verdict: "Manual Review Needed",
     confidence: "Low confidence",
-    summary: "New seller requesting a high-value payment without enough history.",
+    summary:
+      "New seller requesting a high-value payment without enough history.",
     reasons: [
       "Vendor profile is incomplete - missing key details",
       "Vendor has no completed transactions yet - new seller",

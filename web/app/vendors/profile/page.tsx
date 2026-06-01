@@ -4,6 +4,8 @@ import { useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { getCachedSession } from "@/lib/session";
+import { getVendorAvatarUrl } from "@/lib/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -28,6 +30,12 @@ const ProfilePage = () => {
 
   if (!session) return null;
 
+  const avatarUrl = getVendorAvatarUrl([
+    session.vendor_id,
+    session.business_name,
+    session.full_name,
+  ]);
+
   return (
     <section className="mx-auto max-w-2xl space-y-6 pb-20 sm:pb-24">
       <div className="space-y-2">
@@ -41,9 +49,20 @@ const ProfilePage = () => {
 
       <Card className="border border-border/70 bg-background shadow-[0_24px_80px_-48px_rgba(14,30,86,0.28)]">
         <CardHeader>
-          <CardTitle className="text-3xl font-medium">
-            {session.full_name}
-          </CardTitle>
+          <div className="flex items-center gap-4">
+            <Avatar className="size-20 shadow-sm">
+              <AvatarImage
+                src={avatarUrl}
+                alt={`${session.business_name} vendor avatar`}
+              />
+              <AvatarFallback>
+                {session.full_name.slice(0, 1).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <CardTitle className="text-3xl font-medium">
+              {session.full_name}
+            </CardTitle>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-3 text-sm">
@@ -58,12 +77,6 @@ const ProfilePage = () => {
                 Business name
               </span>
               <span>{session.business_name}</span>
-            </div>
-            <div>
-              <span className="block text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Vendor ID
-              </span>
-              <span className="font-mono text-xs">{session.vendor_id}</span>
             </div>
           </div>
 
