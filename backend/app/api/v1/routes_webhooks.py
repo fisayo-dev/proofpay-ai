@@ -3,7 +3,7 @@
 import json
 import logging
 
-from fastapi import APIRouter, Header, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Request
 
 from app.core.config import settings
 from app.services.webhook_service import (
@@ -12,7 +12,6 @@ from app.services.webhook_service import (
     mark_payment_paid,
     mark_webhook_processed,
     save_webhook_event,
-    verify_kora_signature_from_body,
     verify_kora_signature,
 )
 
@@ -50,18 +49,11 @@ def process_kora_webhook_event(
         len(raw_body) if raw_body is not None else "n/a",
     )
 
-    if raw_body is not None:
-        signature_valid = verify_kora_signature_from_body(
-            raw_body,
-            received_signature,
-            settings.kora_secret_key,
-        )
-    else:
-        signature_valid = verify_kora_signature(
-            payload,
-            received_signature,
-            settings.kora_secret_key,
-        )
+    signature_valid = verify_kora_signature(
+        payload,
+        received_signature,
+        settings.kora_secret_key,
+    )
 
     logger.info(
         "Kora webhook signature checked event=%s reference=%s signature_valid=%s",
@@ -145,9 +137,28 @@ def kora_webhook_probe_endpoint():
     return get_kora_webhook_probe()
 
 
+def run_kora_webhook_processing(
+    payload: dict,
+    received_signature: str | None,
+    raw_body: bytes,
+    path: str,
+    client_host: str,
+) -> None:
+    try:
+        process_kora_webhook_event(payload, received_signature, raw_body)
+    except Exception:
+        logger.exception(
+            "Kora webhook background processing crashed path=%s client=%s body_bytes=%s",
+            path,
+            client_host,
+            len(raw_body),
+        )
+
+
 @router.post("/payments/kora/webhook")
 @router.post("/payments/kora/webhook/")
 async def kora_webhook_endpoint(
+    background_tasks: BackgroundTasks,
     request: Request,
     x_korapay_signature: str | None = Header(default=None),
 ):
@@ -173,13 +184,16 @@ async def kora_webhook_endpoint(
         )
         raise HTTPException(status_code=400, detail="Invalid JSON payload.") from exc
 
-    try:
-        return process_kora_webhook_event(payload, x_korapay_signature, raw_body)
-    except Exception:
-        logger.exception(
-            "Kora webhook processing crashed path=%s client=%s body_bytes=%s",
-            request.url.path,
-            client_host,
-            len(raw_body),
-        )
-        raise
+    background_tasks.add_task(
+        run_kora_webhook_processing,
+        payload,
+        x_korapay_signature,
+        raw_body,
+        request.url.path,
+        client_host,
+    )
+
+    return {
+        "status": "success",
+        "message": "Webhook received",
+    }

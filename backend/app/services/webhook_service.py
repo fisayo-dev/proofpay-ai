@@ -15,12 +15,17 @@ def _canonical_json(payload_data: dict) -> str:
     return json.dumps(payload_data, separators=(",", ":"), ensure_ascii=False)
 
 
+def _kora_signature_payload(payload_data: dict) -> dict:
+    data = payload_data.get("data")
+    return data if isinstance(data, dict) else payload_data
+
+
 def verify_kora_signature(
     payload_data: dict,
     received_signature: str | None,
     secret_key: str,
 ) -> bool:
-    message = _canonical_json(payload_data)
+    message = _canonical_json(_kora_signature_payload(payload_data))
     expected = hmac.new(
         secret_key.encode("utf-8"),
         message.encode("utf-8"),
@@ -43,7 +48,7 @@ def verify_kora_signature_from_body(
 
 
 def generate_kora_signature_for_test(payload_data: dict, secret_key: str) -> str:
-    message = _canonical_json(payload_data)
+    message = _canonical_json(_kora_signature_payload(payload_data))
     return hmac.new(
         secret_key.encode("utf-8"),
         message.encode("utf-8"),
