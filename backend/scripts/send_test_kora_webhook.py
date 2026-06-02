@@ -5,7 +5,7 @@ Usage:
   python backend/scripts/send_test_kora_webhook.py
 
 This utility does not hardcode secrets. It reads KORA_SECRET_KEY from the
-environment and signs the exact JSON body that is posted.
+environment and signs the payload data object, matching Kora's webhook docs.
 """
 
 from __future__ import annotations
@@ -50,7 +50,7 @@ def canonical_json(payload: OrderedDict) -> str:
 
 
 def sign_payload(payload: OrderedDict, secret_key: str) -> str:
-    message = canonical_json(payload)
+    message = canonical_json(payload["data"])
     return hmac.new(
         secret_key.encode("utf-8"),
         message.encode("utf-8"),

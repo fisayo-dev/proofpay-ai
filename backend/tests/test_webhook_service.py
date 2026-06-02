@@ -94,11 +94,18 @@ class WebhookServiceTest(unittest.TestCase):
 
     def test_verify_kora_signature_from_body_accepts_matching_signature(self):
         raw_body = b'{"event": "charge.success", "data": {"amount": 7500, "reference": "PPAY-123", "status": "success"}}'
-        signature = webhook_service.hmac.new(
-            b"test_secret",
-            raw_body,
-            webhook_service.hashlib.sha256,
-        ).hexdigest()
+        payload = {
+            "event": "charge.success",
+            "data": {
+                "amount": 7500,
+                "reference": "PPAY-123",
+                "status": "success",
+            },
+        }
+        signature = webhook_service.generate_kora_signature_for_test(
+            payload,
+            "test_secret",
+        )
 
         result = webhook_service.verify_kora_signature_from_body(
             raw_body,
