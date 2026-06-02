@@ -1,6 +1,9 @@
 # backend/app/main.py
 
-from fastapi import FastAPI
+import logging
+import time
+
+from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 import psycopg
@@ -17,6 +20,8 @@ from app.core.error_handlers import (
     general_exception_handler,
     validation_exception_handler,
 )
+
+logger = logging.getLogger("proofpay.requests")
 
 
 def get_allowed_origins() -> list[str]:
@@ -44,6 +49,40 @@ app.add_middleware(
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 app.add_exception_handler(psycopg.OperationalError, database_exception_handler)
 app.add_exception_handler(Exception, general_exception_handler)
+
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start = time.perf_counter()
+    logger.info(
+        "INCOMING %s %s client=%s",
+        request.method,
+        request.url.path,
+        request.client.host if request.client else "<unknown>",
+    )
+
+    try:
+        response = await call_next(request)
+    except Exception:
+        elapsed_ms = round((time.perf_counter() - start) * 1000, 2)
+        logger.exception(
+            "OUTGOING 500 %s %s crashed elapsed_ms=%s",
+            request.method,
+            request.url.path,
+            elapsed_ms,
+        )
+        raise
+
+    elapsed_ms = round((time.perf_counter() - start) * 1000, 2)
+    logger.info(
+        "OUTGOING %s %s %s elapsed_ms=%s",
+        response.status_code,
+        request.method,
+        request.url.path,
+        elapsed_ms,
+    )
+    return response
+
 
 app.include_router(vendor_router)
 app.include_router(payment_router)
