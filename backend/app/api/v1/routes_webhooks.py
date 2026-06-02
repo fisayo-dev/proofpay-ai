@@ -1,6 +1,7 @@
 # backend/app/api/v1/routes_webhooks.py
 
 import json
+import logging
 
 from fastapi import APIRouter, Header, HTTPException, Request
 
@@ -16,6 +17,7 @@ from app.services.webhook_service import (
 )
 
 router = APIRouter(prefix="/api/v1", tags=["Webhooks"])
+logger = logging.getLogger("proofpay.webhooks")
 
 
 def _extract_kora_reference(payload: dict) -> str:
@@ -40,6 +42,14 @@ def process_kora_webhook_event(
 ) -> dict:
     event_type = payload.get("event", "unknown")
     kora_reference = _extract_kora_reference(payload)
+    logger.info(
+        "Kora webhook processing started event=%s reference=%s signature_present=%s raw_body_bytes=%s",
+        event_type,
+        kora_reference or "<missing>",
+        bool(received_signature),
+        len(raw_body) if raw_body is not None else "n/a",
+    )
+
     if raw_body is not None:
         signature_valid = verify_kora_signature_from_body(
             raw_body,
@@ -53,9 +63,27 @@ def process_kora_webhook_event(
             settings.kora_secret_key,
         )
 
+    logger.info(
+        "Kora webhook signature checked event=%s reference=%s signature_valid=%s",
+        event_type,
+        kora_reference or "<missing>",
+        signature_valid,
+    )
+
     save_webhook_event(event_type, kora_reference, payload, signature_valid)
+    logger.info(
+        "Kora webhook event saved event=%s reference=%s signature_valid=%s",
+        event_type,
+        kora_reference or "<missing>",
+        signature_valid,
+    )
 
     if not signature_valid:
+        logger.warning(
+            "Kora webhook rejected due to invalid signature event=%s reference=%s",
+            event_type,
+            kora_reference or "<missing>",
+        )
         return {
             "received": True,
             "duplicate": False,
@@ -64,6 +92,11 @@ def process_kora_webhook_event(
         }
 
     if already_processed(event_type, kora_reference):
+        logger.info(
+            "Kora webhook duplicate ignored event=%s reference=%s",
+            event_type,
+            kora_reference or "<missing>",
+        )
         return {
             "received": True,
             "duplicate": True,
@@ -72,11 +105,24 @@ def process_kora_webhook_event(
         }
 
     if _is_success_event(payload):
+        logger.info("Kora webhook marking payment paid reference=%s", kora_reference or "<missing>")
         mark_payment_paid(kora_reference, payload)
     elif _is_failed_event(payload):
+        logger.info("Kora webhook marking payment failed reference=%s", kora_reference or "<missing>")
         mark_payment_failed(kora_reference, payload)
+    else:
+        logger.info(
+            "Kora webhook event received with no payment state change event=%s reference=%s",
+            event_type,
+            kora_reference or "<missing>",
+        )
 
     mark_webhook_processed(event_type, kora_reference)
+    logger.info(
+        "Kora webhook processed successfully event=%s reference=%s",
+        event_type,
+        kora_reference or "<missing>",
+    )
 
     return {
         "received": True,
@@ -106,10 +152,34 @@ async def kora_webhook_endpoint(
     x_korapay_signature: str | None = Header(default=None),
 ):
     raw_body = await request.body()
+    client_host = request.client.host if request.client else "<unknown>"
+    logger.info(
+        "Kora webhook POST received path=%s client=%s content_type=%s body_bytes=%s signature_present=%s",
+        request.url.path,
+        client_host,
+        request.headers.get("content-type", ""),
+        len(raw_body),
+        bool(x_korapay_signature),
+    )
 
     try:
         payload = json.loads(raw_body.decode("utf-8"))
     except json.JSONDecodeError as exc:
+        logger.warning(
+            "Kora webhook invalid JSON path=%s client=%s body_bytes=%s",
+            request.url.path,
+            client_host,
+            len(raw_body),
+        )
         raise HTTPException(status_code=400, detail="Invalid JSON payload.") from exc
 
-    return process_kora_webhook_event(payload, x_korapay_signature, raw_body)
+    try:
+        return process_kora_webhook_event(payload, x_korapay_signature, raw_body)
+    except Exception:
+        logger.exception(
+            "Kora webhook processing crashed path=%s client=%s body_bytes=%s",
+            request.url.path,
+            client_host,
+            len(raw_body),
+        )
+        raise

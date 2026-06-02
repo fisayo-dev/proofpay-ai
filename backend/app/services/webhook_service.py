@@ -3,9 +3,12 @@
 import hashlib
 import hmac
 import json
+import logging
 from datetime import datetime, timezone
 
 from app.db.connection import get_connection
+
+logger = logging.getLogger("proofpay.webhooks")
 
 
 def _canonical_json(payload_data: dict) -> str:
@@ -131,6 +134,7 @@ def mark_payment_paid(kora_reference: str, payload: dict) -> None:
         """,
         (now, kora_reference)
     )
+    payment_requests_updated = getattr(cursor, "rowcount", "unknown")
 
     cursor.execute(
         """
@@ -143,9 +147,16 @@ def mark_payment_paid(kora_reference: str, payload: dict) -> None:
         """,
         (now, now, kora_reference)
     )
+    transactions_updated = getattr(cursor, "rowcount", "unknown")
 
     conn.commit()
     conn.close()
+    logger.info(
+        "Kora webhook paid update reference=%s payment_requests_updated=%s transactions_updated=%s",
+        kora_reference or "<missing>",
+        payment_requests_updated,
+        transactions_updated,
+    )
 
 
 def mark_payment_failed(kora_reference: str, payload: dict) -> None:
@@ -161,6 +172,7 @@ def mark_payment_failed(kora_reference: str, payload: dict) -> None:
         """,
         (now, kora_reference)
     )
+    payment_requests_updated = getattr(cursor, "rowcount", "unknown")
 
     cursor.execute(
         """
@@ -173,6 +185,13 @@ def mark_payment_failed(kora_reference: str, payload: dict) -> None:
         """,
         (now, kora_reference)
     )
+    transactions_updated = getattr(cursor, "rowcount", "unknown")
 
     conn.commit()
     conn.close()
+    logger.info(
+        "Kora webhook failed update reference=%s payment_requests_updated=%s transactions_updated=%s",
+        kora_reference or "<missing>",
+        payment_requests_updated,
+        transactions_updated,
+    )
