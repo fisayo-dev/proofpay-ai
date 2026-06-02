@@ -26,6 +26,7 @@ FastAPI backend for AI-scored payment requests, Kora checkout handoff, verified 
 - `GET /api/v1/public/r/{public_slug}`
 - `GET /api/v1/payments/{payment_request_id}/status`
 - `GET /api/v1/payments/kora/config/{payment_request_id}`
+- `POST /api/v1/payments/{payment_request_id}/reconcile`
 - `POST /api/v1/payments/kora/webhook`
 - `POST /api/v1/delivery/confirm`
 - `POST /api/v1/disputes`

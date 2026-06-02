@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import {
   getPaymentStatus,
-  verifyKoraCheckoutPayment,
+  reconcilePayment,
 } from "@/lib/actions/payment-requests";
 import { getFriendlyApiErrorMessage } from "@/lib/api-error";
 import { Button } from "@/components/ui/button";
@@ -126,7 +126,7 @@ const PaymentCallbackStatus = ({ paymentId }: PaymentCallbackStatusProps) => {
         ) {
           try {
             verifyAttemptsRef.current += 1;
-            await verifyKoraCheckoutPayment(paymentId, nextPayment.kora_reference);
+            await reconcilePayment(paymentId, nextPayment.kora_reference);
             const verifiedPayment = await getPaymentStatus(paymentId);
 
             if (!isMounted) {

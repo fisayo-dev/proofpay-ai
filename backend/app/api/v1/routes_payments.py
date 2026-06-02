@@ -31,6 +31,73 @@ def _amount_kobo_matches(kora_amount: float, amount_kobo: int) -> bool:
     return round(kora_amount * 100) == int(amount_kobo)
 
 
+def _reconcile_payment_request(
+    request: dict,
+    source: str,
+    fallback_source: str | None = None,
+) -> dict:
+    kora_reference = request["kora_reference"]
+
+    try:
+        charge = verify_kora_charge(kora_reference)
+    except KoraVerificationError as exc:
+        logger.warning(
+            "Kora payment reconciliation unavailable reference=%s env=%s source=%s error=%s",
+            kora_reference,
+            settings.env,
+            source,
+            str(exc),
+        )
+        if settings.env.lower() in NON_PRODUCTION_ENVS:
+            mark_payment_paid_from_checkout_callback(kora_reference)
+            return {
+                "payment_request_id": str(request["id"]),
+                "kora_reference": kora_reference,
+                "status": "paid",
+                "source": fallback_source or f"{source}_fallback",
+                "warning": "Kora server-side verification was unavailable, so test-mode reconciliation fallback was used.",
+            }
+
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "code": "KORA_VERIFICATION_UNAVAILABLE",
+                "message": "Could not verify this payment with Kora yet.",
+            },
+        ) from exc
+
+    if charge["status"] != "success":
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": "KORA_CHARGE_NOT_SUCCESSFUL",
+                "message": "Kora has not confirmed this payment as successful.",
+            },
+        )
+
+    if (
+        charge["reference"] != kora_reference
+        or charge["currency"] != request.get("currency", "NGN")
+        or not _amount_kobo_matches(charge["amount"], request["amount_kobo"])
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "code": "KORA_CHARGE_MISMATCH",
+                "message": "Kora charge details do not match this payment request.",
+            },
+        )
+
+    mark_payment_paid_from_checkout_callback(kora_reference)
+
+    return {
+        "payment_request_id": str(request["id"]),
+        "kora_reference": kora_reference,
+        "status": "paid",
+        "source": source,
+    }
+
+
 @router.get("/payments/{payment_request_id}/status")
 def get_payment_status_endpoint(payment_request_id: str):
     result = get_payment_status(payment_request_id)
@@ -99,63 +166,26 @@ def verify_kora_checkout_endpoint(
             },
         )
 
-    try:
-        charge = verify_kora_charge(kora_reference)
-    except KoraVerificationError as exc:
-        logger.warning(
-            "Kora checkout verification unavailable reference=%s env=%s error=%s",
-            kora_reference,
-            settings.env,
-            str(exc),
-        )
-        if settings.env.lower() in NON_PRODUCTION_ENVS:
-            mark_payment_paid_from_checkout_callback(kora_reference)
-            return {
-                "payment_request_id": str(request["id"]),
-                "kora_reference": kora_reference,
-                "status": "paid",
-                "source": "kora_checkout_callback_fallback",
-                "warning": "Kora server-side verification was unavailable, so test-mode checkout callback was used.",
-            }
+    return _reconcile_payment_request(
+        request,
+        "kora_charge_verify",
+        "kora_checkout_callback_fallback",
+    )
 
-        raise HTTPException(
-            status_code=503,
-            detail={
-                "code": "KORA_VERIFICATION_UNAVAILABLE",
-                "message": "Could not verify this payment with Kora yet.",
-            },
-        ) from exc
 
-    if charge["status"] != "success":
+@router.post("/payments/{payment_request_id}/reconcile")
+def reconcile_payment_endpoint(payment_request_id: str):
+    request = get_payment_request_by_id(payment_request_id)
+    if not request:
         raise HTTPException(
-            status_code=409,
+            status_code=404,
             detail={
-                "code": "KORA_CHARGE_NOT_SUCCESSFUL",
-                "message": "Kora has not confirmed this payment as successful.",
+                "code": "PAYMENT_REQUEST_NOT_FOUND",
+                "message": "Payment request not found.",
             },
         )
 
-    if (
-        charge["reference"] != kora_reference
-        or charge["currency"] != request.get("currency", "NGN")
-        or not _amount_kobo_matches(charge["amount"], request["amount_kobo"])
-    ):
-        raise HTTPException(
-            status_code=400,
-            detail={
-                "code": "KORA_CHARGE_MISMATCH",
-                "message": "Kora charge details do not match this payment request.",
-            },
-        )
-
-    mark_payment_paid_from_checkout_callback(kora_reference)
-
-    return {
-        "payment_request_id": str(request["id"]),
-        "kora_reference": kora_reference,
-        "status": "paid",
-        "source": "kora_charge_verify",
-    }
+    return _reconcile_payment_request(request, "kora_reconcile")
 
 
 @router.get("/vendors/{vendor_id}/requests")

@@ -76,13 +76,13 @@ export const getPaymentStatus = async (
   }
 };
 
-export const verifyKoraCheckoutPayment = async (
+export const reconcilePayment = async (
   paymentRequestId: string,
   koraReference?: string,
 ) => {
   try {
     const response = await api.post(
-      `/payments/${paymentRequestId}/verify-checkout`,
+      `/payments/${paymentRequestId}/reconcile`,
       {
         kora_reference: koraReference,
       },
@@ -98,3 +98,5 @@ export const verifyKoraCheckoutPayment = async (
     );
   }
 };
+
+export const verifyKoraCheckoutPayment = reconcilePayment;

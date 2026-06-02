@@ -35,7 +35,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { verifyKoraCheckoutPayment } from "@/lib/actions/payment-requests";
+import { reconcilePayment } from "@/lib/actions/payment-requests";
 import { cn } from "@/lib/utils";
 import { BuyerPublicPageProps } from "@/types/product";
 
@@ -198,7 +198,7 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
 
   const confirmCheckoutThenRedirect = async () => {
     try {
-      await verifyKoraCheckoutPayment(
+      await reconcilePayment(
         paymentConfig.payment_request_id,
         paymentConfig.kora_reference,
       );
