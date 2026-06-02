@@ -99,4 +99,25 @@ export const reconcilePayment = async (
   }
 };
 
-export const verifyKoraCheckoutPayment = reconcilePayment;
+export const verifyKoraCheckoutPayment = async (
+  paymentRequestId: string,
+  koraReference?: string,
+) => {
+  try {
+    const response = await api.post(
+      `/payments/${paymentRequestId}/verify-checkout`,
+      {
+        kora_reference: koraReference,
+      },
+    );
+
+    return response.data;
+  } catch (error) {
+    throw new Error(
+      getFriendlyApiErrorMessage(
+        error,
+        "We could not confirm this payment yet. Please wait while we check again.",
+      ),
+    );
+  }
+};

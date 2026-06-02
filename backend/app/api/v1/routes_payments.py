@@ -166,11 +166,14 @@ def verify_kora_checkout_endpoint(
             },
         )
 
-    return _reconcile_payment_request(
-        request,
-        "kora_charge_verify",
-        "kora_checkout_callback_fallback",
-    )
+    mark_payment_paid_from_checkout_callback(kora_reference)
+
+    return {
+        "payment_request_id": str(request["id"]),
+        "kora_reference": kora_reference,
+        "status": "paid",
+        "source": "kora_checkout_callback",
+    }
 
 
 @router.post("/payments/{payment_request_id}/reconcile")
