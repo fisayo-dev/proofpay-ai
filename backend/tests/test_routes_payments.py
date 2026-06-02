@@ -124,6 +124,61 @@ class PaymentsRouteTest(unittest.TestCase):
         self.assertEqual(context.exception.status_code, 409)
         self.assertEqual(context.exception.detail["code"], "KORA_CHARGE_NOT_SUCCESSFUL")
 
+    def test_verify_kora_checkout_endpoint_uses_test_mode_fallback_when_kora_unavailable(self):
+        request = {
+            "id": "req_123",
+            "kora_reference": "PPAY-20260520-DEMO",
+            "amount_kobo": 750000,
+            "currency": "NGN",
+        }
+        body = routes_payments.VerifyKoraCheckoutBody(
+            kora_reference="PPAY-20260520-DEMO",
+        )
+
+        with (
+            patch.object(routes_payments, "get_payment_request_by_id", return_value=request),
+            patch.object(routes_payments.settings, "env", "development"),
+            patch.object(
+                routes_payments,
+                "verify_kora_charge",
+                side_effect=routes_payments.KoraVerificationError("unavailable"),
+            ),
+            patch.object(routes_payments, "mark_payment_paid_from_checkout_callback") as mark_paid,
+        ):
+            result = routes_payments.verify_kora_checkout_endpoint("req_123", body)
+
+        mark_paid.assert_called_once_with("PPAY-20260520-DEMO")
+        self.assertEqual(result["status"], "paid")
+        self.assertEqual(result["source"], "kora_checkout_callback_fallback")
+
+    def test_verify_kora_checkout_endpoint_rejects_unavailable_kora_in_production(self):
+        request = {
+            "id": "req_123",
+            "kora_reference": "PPAY-20260520-DEMO",
+            "amount_kobo": 750000,
+            "currency": "NGN",
+        }
+        body = routes_payments.VerifyKoraCheckoutBody(
+            kora_reference="PPAY-20260520-DEMO",
+        )
+
+        with (
+            patch.object(routes_payments, "get_payment_request_by_id", return_value=request),
+            patch.object(routes_payments.settings, "env", "production"),
+            patch.object(
+                routes_payments,
+                "verify_kora_charge",
+                side_effect=routes_payments.KoraVerificationError("unavailable"),
+            ),
+            patch.object(routes_payments, "mark_payment_paid_from_checkout_callback") as mark_paid,
+        ):
+            with self.assertRaises(HTTPException) as context:
+                routes_payments.verify_kora_checkout_endpoint("req_123", body)
+
+        mark_paid.assert_not_called()
+        self.assertEqual(context.exception.status_code, 503)
+        self.assertEqual(context.exception.detail["code"], "KORA_VERIFICATION_UNAVAILABLE")
+
     def test_verify_kora_checkout_endpoint_rejects_amount_mismatch(self):
         request = {
             "id": "req_123",

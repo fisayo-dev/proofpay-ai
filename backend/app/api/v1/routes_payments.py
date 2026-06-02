@@ -17,6 +17,8 @@ from app.services.webhook_service import mark_payment_paid_from_checkout_callbac
 
 router = APIRouter(prefix="/api/v1", tags=["Payments"])
 
+NON_PRODUCTION_ENVS = {"development", "dev", "test", "testing", "demo"}
+
 
 class VerifyKoraCheckoutBody(BaseModel):
     kora_reference: str | None = None
@@ -97,6 +99,16 @@ def verify_kora_checkout_endpoint(
     try:
         charge = verify_kora_charge(kora_reference)
     except KoraVerificationError as exc:
+        if settings.env.lower() in NON_PRODUCTION_ENVS:
+            mark_payment_paid_from_checkout_callback(kora_reference)
+            return {
+                "payment_request_id": str(request["id"]),
+                "kora_reference": kora_reference,
+                "status": "paid",
+                "source": "kora_checkout_callback_fallback",
+                "warning": "Kora server-side verification was unavailable, so test-mode checkout callback was used.",
+            }
+
         raise HTTPException(
             status_code=503,
             detail={
