@@ -11,7 +11,10 @@ import {
   ReceiptText,
   RotateCcw,
 } from "lucide-react";
-import { getPaymentStatus } from "@/lib/actions/payment-requests";
+import {
+  getPaymentStatus,
+  verifyKoraCheckoutPayment,
+} from "@/lib/actions/payment-requests";
 import { getFriendlyApiErrorMessage } from "@/lib/api-error";
 import { Button } from "@/components/ui/button";
 import {
@@ -113,7 +116,24 @@ const PaymentCallbackStatus = ({ paymentId }: PaymentCallbackStatusProps) => {
         setRequestError("");
         setLastCheckedAt(new Date());
 
-        const nextState = getPaymentState(nextPayment, "");
+        let nextState = getPaymentState(nextPayment, "");
+
+        if (nextState === "pending") {
+          try {
+            await verifyKoraCheckoutPayment(paymentId, nextPayment.kora_reference);
+            const verifiedPayment = await getPaymentStatus(paymentId);
+
+            if (!isMounted) {
+              return;
+            }
+
+            setPayment(verifiedPayment);
+            setLastCheckedAt(new Date());
+            nextState = getPaymentState(verifiedPayment, "");
+          } catch {
+            nextState = "pending";
+          }
+        }
 
         if (nextState === "pending") {
           timeoutId = setTimeout(pollPaymentStatus, POLL_INTERVAL_MS);

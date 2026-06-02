@@ -164,6 +164,43 @@ def mark_payment_paid(kora_reference: str, payload: dict) -> None:
     )
 
 
+def mark_payment_paid_from_checkout_callback(kora_reference: str) -> None:
+    conn = get_connection()
+    cursor = conn.cursor()
+    now = datetime.now(timezone.utc).isoformat()
+
+    cursor.execute(
+        """
+        UPDATE payment_requests
+        SET status = 'paid', updated_at = %s
+        WHERE kora_reference = %s AND status != 'paid'
+        """,
+        (now, kora_reference)
+    )
+    payment_requests_updated = getattr(cursor, "rowcount", "unknown")
+
+    cursor.execute(
+        """
+        UPDATE transactions
+        SET payment_status = 'paid',
+            paid_at = %s,
+            updated_at = %s
+        WHERE kora_reference = %s AND payment_status != 'paid'
+        """,
+        (now, now, kora_reference)
+    )
+    transactions_updated = getattr(cursor, "rowcount", "unknown")
+
+    conn.commit()
+    conn.close()
+    logger.info(
+        "Kora checkout callback paid update reference=%s payment_requests_updated=%s transactions_updated=%s",
+        kora_reference or "<missing>",
+        payment_requests_updated,
+        transactions_updated,
+    )
+
+
 def mark_payment_failed(kora_reference: str, payload: dict) -> None:
     conn = get_connection()
     cursor = conn.cursor()

@@ -35,6 +35,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { verifyKoraCheckoutPayment } from "@/lib/actions/payment-requests";
 import { cn } from "@/lib/utils";
 import { BuyerPublicPageProps } from "@/types/product";
 
@@ -195,6 +196,19 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
     window.location.assign(callbackUrl);
   };
 
+  const confirmCheckoutThenRedirect = async () => {
+    try {
+      await verifyKoraCheckoutPayment(
+        paymentConfig.payment_request_id,
+        paymentConfig.kora_reference,
+      );
+    } catch (error) {
+      console.error("Kora checkout callback verification failed", error);
+    } finally {
+      redirectToCallback();
+    }
+  };
+
   const handleCheckout = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -229,7 +243,7 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
         email,
       },
       onClose: redirectToCallback,
-      onSuccess: redirectToCallback,
+      onSuccess: confirmCheckoutThenRedirect,
       onFailed: redirectToCallback,
       onPending: redirectToCallback,
     });

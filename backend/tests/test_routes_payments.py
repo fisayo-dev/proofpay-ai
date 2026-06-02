@@ -61,6 +61,133 @@ class PaymentsRouteTest(unittest.TestCase):
         self.assertEqual(context.exception.status_code, 404)
         self.assertEqual(context.exception.detail["code"], "PAYMENT_REQUEST_NOT_FOUND")
 
+    def test_verify_kora_checkout_endpoint_verifies_with_kora_then_marks_payment_paid(self):
+        request = {
+            "id": "req_123",
+            "kora_reference": "PPAY-20260520-DEMO",
+            "amount_kobo": 750000,
+            "currency": "NGN",
+        }
+        body = routes_payments.VerifyKoraCheckoutBody(
+            kora_reference="PPAY-20260520-DEMO",
+        )
+        verification = {
+            "status": "success",
+            "reference": "PPAY-20260520-DEMO",
+            "amount": 7500.0,
+            "currency": "NGN",
+        }
+
+        with (
+            patch.object(routes_payments, "get_payment_request_by_id", return_value=request),
+            patch.object(routes_payments, "verify_kora_charge", return_value=verification) as verify_charge,
+            patch.object(routes_payments, "mark_payment_paid_from_checkout_callback") as mark_paid,
+        ):
+            result = routes_payments.verify_kora_checkout_endpoint("req_123", body)
+
+        verify_charge.assert_called_once_with("PPAY-20260520-DEMO")
+        mark_paid.assert_called_once_with("PPAY-20260520-DEMO")
+        self.assertEqual(result["payment_request_id"], "req_123")
+        self.assertEqual(result["kora_reference"], "PPAY-20260520-DEMO")
+        self.assertEqual(result["status"], "paid")
+        self.assertEqual(result["source"], "kora_charge_verify")
+
+    def test_verify_kora_checkout_endpoint_rejects_unsuccessful_kora_charge(self):
+        request = {
+            "id": "req_123",
+            "kora_reference": "PPAY-20260520-DEMO",
+            "amount_kobo": 750000,
+            "currency": "NGN",
+        }
+        body = routes_payments.VerifyKoraCheckoutBody(
+            kora_reference="PPAY-20260520-DEMO",
+        )
+
+        with (
+            patch.object(routes_payments, "get_payment_request_by_id", return_value=request),
+            patch.object(
+                routes_payments,
+                "verify_kora_charge",
+                return_value={
+                    "status": "pending",
+                    "reference": "PPAY-20260520-DEMO",
+                    "amount": 7500.0,
+                    "currency": "NGN",
+                },
+            ),
+            patch.object(routes_payments, "mark_payment_paid_from_checkout_callback") as mark_paid,
+        ):
+            with self.assertRaises(HTTPException) as context:
+                routes_payments.verify_kora_checkout_endpoint("req_123", body)
+
+        mark_paid.assert_not_called()
+        self.assertEqual(context.exception.status_code, 409)
+        self.assertEqual(context.exception.detail["code"], "KORA_CHARGE_NOT_SUCCESSFUL")
+
+    def test_verify_kora_checkout_endpoint_rejects_amount_mismatch(self):
+        request = {
+            "id": "req_123",
+            "kora_reference": "PPAY-20260520-DEMO",
+            "amount_kobo": 750000,
+            "currency": "NGN",
+        }
+        body = routes_payments.VerifyKoraCheckoutBody(
+            kora_reference="PPAY-20260520-DEMO",
+        )
+
+        with (
+            patch.object(routes_payments, "get_payment_request_by_id", return_value=request),
+            patch.object(
+                routes_payments,
+                "verify_kora_charge",
+                return_value={
+                    "status": "success",
+                    "reference": "PPAY-20260520-DEMO",
+                    "amount": 7400.0,
+                    "currency": "NGN",
+                },
+            ),
+            patch.object(routes_payments, "mark_payment_paid_from_checkout_callback") as mark_paid,
+        ):
+            with self.assertRaises(HTTPException) as context:
+                routes_payments.verify_kora_checkout_endpoint("req_123", body)
+
+        mark_paid.assert_not_called()
+        self.assertEqual(context.exception.status_code, 400)
+        self.assertEqual(context.exception.detail["code"], "KORA_CHARGE_MISMATCH")
+
+    def test_verify_kora_checkout_endpoint_raises_404_when_missing(self):
+        body = routes_payments.VerifyKoraCheckoutBody(
+            kora_reference="PPAY-20260520-DEMO",
+        )
+
+        with patch.object(routes_payments, "get_payment_request_by_id", return_value=None):
+            with self.assertRaises(HTTPException) as context:
+                routes_payments.verify_kora_checkout_endpoint("missing", body)
+
+        self.assertEqual(context.exception.status_code, 404)
+        self.assertEqual(context.exception.detail["code"], "PAYMENT_REQUEST_NOT_FOUND")
+
+    def test_verify_kora_checkout_endpoint_rejects_reference_mismatch(self):
+        request = {
+            "id": "req_123",
+            "kora_reference": "PPAY-20260520-DEMO",
+        }
+        body = routes_payments.VerifyKoraCheckoutBody(
+            kora_reference="PPAY-20260520-WRONG",
+        )
+
+        with (
+            patch.object(routes_payments, "get_payment_request_by_id", return_value=request),
+            patch.object(routes_payments, "mark_payment_paid_from_checkout_callback") as mark_paid,
+        ):
+            with self.assertRaises(HTTPException) as context:
+                routes_payments.verify_kora_checkout_endpoint("req_123", body)
+
+        mark_paid.assert_not_called()
+        self.assertEqual(context.exception.status_code, 400)
+        self.assertEqual(context.exception.detail["code"], "KORA_REFERENCE_MISMATCH")
+
     def test_vendor_requests_endpoint_returns_dashboard_payload(self):
         requests = [
             {
