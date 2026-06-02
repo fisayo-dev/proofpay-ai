@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Confetti from "react-confetti";
 import {
   AlertCircle,
@@ -33,6 +33,7 @@ type PaymentCallbackStatusProps = {
 };
 
 const POLL_INTERVAL_MS = 4000;
+const MAX_VERIFY_ATTEMPTS = 3;
 
 const formatCurrency = (amount: number, currency: string) => {
   return new Intl.NumberFormat("en-NG", {
@@ -93,6 +94,7 @@ const PaymentCallbackStatus = ({ paymentId }: PaymentCallbackStatusProps) => {
   const [payment, setPayment] = useState<PaymentStatusResponse | null>(null);
   const [requestError, setRequestError] = useState("");
   const [lastCheckedAt, setLastCheckedAt] = useState<Date | null>(null);
+  const verifyAttemptsRef = useRef(0);
 
   const paymentState = useMemo(
     () => getPaymentState(payment, requestError),
@@ -118,8 +120,12 @@ const PaymentCallbackStatus = ({ paymentId }: PaymentCallbackStatusProps) => {
 
         let nextState = getPaymentState(nextPayment, "");
 
-        if (nextState === "pending") {
+        if (
+          nextState === "pending" &&
+          verifyAttemptsRef.current < MAX_VERIFY_ATTEMPTS
+        ) {
           try {
+            verifyAttemptsRef.current += 1;
             await verifyKoraCheckoutPayment(paymentId, nextPayment.kora_reference);
             const verifiedPayment = await getPaymentStatus(paymentId);
 

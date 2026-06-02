@@ -1,5 +1,7 @@
 # backend/app/api/v1/routes_payments.py
 
+import logging
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from app.core.config import settings
@@ -16,6 +18,7 @@ from app.services.kora_service import KoraVerificationError, verify_kora_charge
 from app.services.webhook_service import mark_payment_paid_from_checkout_callback
 
 router = APIRouter(prefix="/api/v1", tags=["Payments"])
+logger = logging.getLogger("proofpay.payments")
 
 NON_PRODUCTION_ENVS = {"development", "dev", "test", "testing", "demo"}
 
@@ -99,6 +102,12 @@ def verify_kora_checkout_endpoint(
     try:
         charge = verify_kora_charge(kora_reference)
     except KoraVerificationError as exc:
+        logger.warning(
+            "Kora checkout verification unavailable reference=%s env=%s error=%s",
+            kora_reference,
+            settings.env,
+            str(exc),
+        )
         if settings.env.lower() in NON_PRODUCTION_ENVS:
             mark_payment_paid_from_checkout_callback(kora_reference)
             return {

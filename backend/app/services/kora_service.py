@@ -1,11 +1,14 @@
 # backend/app/services/kora_service.py
 
 import json
+import logging
 from urllib import error, request
 
 from app.core.config import settings
 
 KORA_CHARGE_QUERY_URL = "https://api.korapay.com/merchant/api/v1/charges/{reference}"
+KORA_VERIFY_TIMEOUT_SECONDS = 6
+logger = logging.getLogger("proofpay.kora")
 
 
 class KoraVerificationError(Exception):
@@ -34,9 +37,23 @@ def verify_kora_charge(kora_reference: str) -> dict:
     )
 
     try:
-        with request.urlopen(api_request, timeout=15) as response:
+        with request.urlopen(api_request, timeout=KORA_VERIFY_TIMEOUT_SECONDS) as response:
             payload = json.loads(response.read().decode("utf-8"))
-    except (error.HTTPError, error.URLError, TimeoutError, json.JSONDecodeError) as exc:
+    except error.HTTPError as exc:
+        response_body = exc.read().decode("utf-8", errors="replace")
+        logger.warning(
+            "Kora charge verification HTTP error reference=%s status=%s body=%s",
+            kora_reference,
+            exc.code,
+            response_body[:500],
+        )
+        raise KoraVerificationError("Could not verify Kora charge.") from exc
+    except (error.URLError, TimeoutError, json.JSONDecodeError) as exc:
+        logger.warning(
+            "Kora charge verification failed reference=%s error=%s",
+            kora_reference,
+            str(exc),
+        )
         raise KoraVerificationError("Could not verify Kora charge.") from exc
 
     data = payload.get("data") or {}
