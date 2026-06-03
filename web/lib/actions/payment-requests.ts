@@ -76,6 +76,28 @@ export const getPaymentStatus = async (
   }
 };
 
+export const createImageUpload = async (
+  imageUrl: string,
+): Promise<{ image_url: string; storage: string }> => {
+  try {
+    const response = await api.post<{ image_url: string; storage: string }>(
+      "/uploads/image",
+      {
+        image_url: imageUrl,
+      },
+    );
+
+    return response.data;
+  } catch (error) {
+    throw new Error(
+      getFriendlyApiErrorMessage(
+        error,
+        "We could not validate this product image. Please try another image URL.",
+      ),
+    );
+  }
+};
+
 export const reconcilePayment = async (
   paymentRequestId: string,
   koraReference?: string,

@@ -191,6 +191,10 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
     product.item.currency,
   );
   const callbackUrl = `/payments/callback/${paymentConfig.payment_request_id}`;
+  const productImageUrl =
+    product.item.image_url && product.item.image_url.trim()
+      ? product.item.image_url
+      : "/images/products/ceramic-mug.jpg";
 
   const redirectToCallback = () => {
     window.location.assign(callbackUrl);
@@ -267,7 +271,7 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
             <section className="overflow-hidden rounded-xl border border-border/70 bg-card shadow-[0_24px_80px_-52px_rgba(15,23,42,0.35)]">
               <div className="relative aspect-4/3 w-full bg-muted sm:aspect-video">
                 <Image
-                  src="/images/products/ceramic-mug.jpg"
+                  src={productImageUrl}
                   alt={`${product.item.name} product preview`}
                   fill
                   priority

@@ -13,6 +13,7 @@ export type PublicProductResponse = {
     description: string;
     amount: number;
     currency: string;
+    image_url?: string | null;
   };
   trust: {
     score: number;
@@ -38,6 +39,7 @@ export type BuyerPublicPageProps = {
       description: string;
       amount: number;
       currency: string;
+      image_url?: string | null;
     };
     trust: {
       score: number;

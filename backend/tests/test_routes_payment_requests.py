@@ -16,6 +16,7 @@ class PublicPaymentRequestRouteTest(unittest.TestCase):
             "item_description": "Oversized black hoodie, size L",
             "amount_kobo": 750099,
             "currency": "NGN",
+            "image_url": "https://example.com/black-hoodie.jpg",
             "status": "created",
             "kora_reference": "PPAY-20260520-DEMO",
             "public_slug": "ppai_DEMO",
@@ -49,6 +50,7 @@ class PublicPaymentRequestRouteTest(unittest.TestCase):
             response = routes_payment_requests.get_public_request_endpoint("ppai_DEMO")
 
         self.assertEqual(response["item"]["amount"], 7500.99)
+        self.assertEqual(response["item"]["image_url"], "https://example.com/black-hoodie.jpg")
         self.assertEqual(response["trust"]["score"], 72)
         self.assertEqual(response["trust"]["verdict"], "Caution")
         self.assertEqual(response["trust"]["reasons"], trust_check["reasons"])
@@ -114,6 +116,7 @@ class PublicPaymentRequestRouteTest(unittest.TestCase):
             vendor_id="vendor_123",
             item_name="Black hoodie",
             amount=7500.5,
+            image_url="https://example.com/black-hoodie.jpg",
         )
 
         captured = {}
@@ -127,6 +130,7 @@ class PublicPaymentRequestRouteTest(unittest.TestCase):
 
         self.assertIn("amount_kobo", captured)
         self.assertEqual(captured["amount_kobo"], 750050)
+        self.assertEqual(captured["image_url"], "https://example.com/black-hoodie.jpg")
 
     def test_refresh_trust_score_preserves_database_operational_error(self):
         with patch.object(

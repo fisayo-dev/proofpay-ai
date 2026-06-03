@@ -30,6 +30,7 @@ class CreatePaymentRequestBody(BaseModel):
     currency: str = "NGN"
     delivery_method: Optional[str] = None
     expected_delivery_date: Optional[str] = None
+    image_url: Optional[str] = None
 
 
 @router.post("/payment-requests", status_code=201)
@@ -142,7 +143,8 @@ def get_public_request_endpoint(public_slug: str):
             "name": request["item_name"],
             "description": request.get("item_description"),
             "amount": amount_kobo_to_naira(request["amount_kobo"]),
-            "currency": request["currency"]
+            "currency": request["currency"],
+            "image_url": request.get("image_url"),
         },
         "trust": {
             "score": request.get("trust_score_at_creation"),

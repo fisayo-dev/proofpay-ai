@@ -6,6 +6,7 @@ export type CreatePaymentRequestPayload = {
   currency: string;
   delivery_method: string;
   expected_delivery_date: string;
+  image_url?: string;
 };
 
 export type CreatePaymentRequestResponse = {

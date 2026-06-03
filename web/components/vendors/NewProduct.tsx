@@ -5,13 +5,17 @@ import {
   CheckCircle2,
   Copy,
   ExternalLink,
+  ImageIcon,
   Lock,
   Plus,
   Truck,
 } from "lucide-react";
 import { toast } from "sonner";
 import { getFriendlyApiErrorMessage } from "@/lib/api-error";
-import { createPaymentRequest } from "@/lib/actions/payment-requests";
+import {
+  createImageUpload,
+  createPaymentRequest,
+} from "@/lib/actions/payment-requests";
 import { getCachedVendorId } from "@/lib/session";
 import { Button } from "@/components/ui/button";
 import {
@@ -58,6 +62,7 @@ const NewProductComponent = () => {
   const [itemName, setItemName] = useState("");
   const [itemDescription, setItemDescription] = useState("");
   const [amount, setAmount] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
   const [deliveryMethod, setDeliveryMethod] = useState<string>(
     DEFAULT_DELIVERY_METHOD,
   );
@@ -173,6 +178,9 @@ const NewProductComponent = () => {
     setIsSubmitting(true);
 
     try {
+      const uploadedImage = imageUrl.trim()
+        ? await createImageUpload(imageUrl.trim())
+        : null;
       const res = await createPaymentRequest({
         vendor_id: vendorId,
         item_name: itemName.trim(),
@@ -181,6 +189,7 @@ const NewProductComponent = () => {
         currency: CURRENCY,
         delivery_method: deliveryMethod,
         expected_delivery_date: expectedDeliveryDate,
+        image_url: uploadedImage?.image_url,
       });
 
       setCreatedProduct({
@@ -191,6 +200,7 @@ const NewProductComponent = () => {
       setItemName("");
       setItemDescription("");
       setAmount("");
+      setImageUrl("");
       setDeliveryMethod(DEFAULT_DELIVERY_METHOD);
       setExpectedDeliveryDate(getDefaultExpectedDate());
     } catch (error) {
@@ -374,6 +384,24 @@ const NewProductComponent = () => {
                   value={itemDescription}
                   onChange={handleInputChange(setItemDescription)}
                 />
+              </label>
+
+              <label htmlFor="image_url" className="space-y-2 sm:col-span-2">
+                <span className="block text-sm font-medium">
+                  Product image URL
+                </span>
+                <div className="relative">
+                  <ImageIcon className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    id="image_url"
+                    name="image_url"
+                    type="url"
+                    className="pl-11 text-sm"
+                    placeholder="https://example.com/black-hoodie.jpg"
+                    value={imageUrl}
+                    onChange={handleInputChange(setImageUrl)}
+                  />
+                </div>
               </label>
 
               <label htmlFor="amount" className="space-y-2">
