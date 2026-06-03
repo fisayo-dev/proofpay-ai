@@ -2,10 +2,12 @@
 
 import logging
 import time
+from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 import psycopg
 
 from app.api.v1.routes_demo import router as demo_router
@@ -23,6 +25,7 @@ from app.core.error_handlers import (
 )
 
 logger = logging.getLogger("proofpay.requests")
+UPLOAD_DIR = Path("uploads")
 
 
 def get_allowed_origins() -> list[str]:
@@ -50,6 +53,9 @@ app.add_middleware(
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 app.add_exception_handler(psycopg.OperationalError, database_exception_handler)
 app.add_exception_handler(Exception, general_exception_handler)
+
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
 
 
 @app.middleware("http")

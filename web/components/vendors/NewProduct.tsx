@@ -44,6 +44,8 @@ const DELIVERY_METHODS = [
 
 const CURRENCY = "NGN";
 const DEFAULT_DELIVERY_METHOD = DELIVERY_METHODS[0];
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+const SUPPORTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 type CreatedProduct = {
   name: string;
@@ -62,7 +64,7 @@ const NewProductComponent = () => {
   const [itemName, setItemName] = useState("");
   const [itemDescription, setItemDescription] = useState("");
   const [amount, setAmount] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [deliveryMethod, setDeliveryMethod] = useState<string>(
     DEFAULT_DELIVERY_METHOD,
   );
@@ -141,6 +143,13 @@ const NewProductComponent = () => {
       }
     };
 
+  const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setImageFile(event.target.files?.[0] ?? null);
+    if (errorMessage) {
+      resetMessages();
+    }
+  };
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     resetMessages();
@@ -175,12 +184,20 @@ const NewProductComponent = () => {
       return;
     }
 
+    if (imageFile && !SUPPORTED_IMAGE_TYPES.includes(imageFile.type)) {
+      setErrorMessage("Upload a JPEG, PNG, or WebP product image.");
+      return;
+    }
+
+    if (imageFile && imageFile.size > MAX_IMAGE_BYTES) {
+      setErrorMessage("Product image must be 5MB or smaller.");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      const uploadedImage = imageUrl.trim()
-        ? await createImageUpload(imageUrl.trim())
-        : null;
+      const uploadedImage = imageFile ? await createImageUpload(imageFile) : null;
       const res = await createPaymentRequest({
         vendor_id: vendorId,
         item_name: itemName.trim(),
@@ -200,7 +217,7 @@ const NewProductComponent = () => {
       setItemName("");
       setItemDescription("");
       setAmount("");
-      setImageUrl("");
+      setImageFile(null);
       setDeliveryMethod(DEFAULT_DELIVERY_METHOD);
       setExpectedDeliveryDate(getDefaultExpectedDate());
     } catch (error) {
@@ -388,20 +405,22 @@ const NewProductComponent = () => {
 
               <label htmlFor="image_url" className="space-y-2 sm:col-span-2">
                 <span className="block text-sm font-medium">
-                  Product image URL
+                  Product image
                 </span>
                 <div className="relative">
                   <ImageIcon className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     id="image_url"
                     name="image_url"
-                    type="url"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
                     className="pl-11 text-sm"
-                    placeholder="https://example.com/black-hoodie.jpg"
-                    value={imageUrl}
-                    onChange={handleInputChange(setImageUrl)}
+                    onChange={handleImageChange}
                   />
                 </div>
+                <p className="text-xs text-muted-foreground">
+                  JPEG, PNG, or WebP. Max 5MB.
+                </p>
               </label>
 
               <label htmlFor="amount" className="space-y-2">
