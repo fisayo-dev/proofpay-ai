@@ -3,10 +3,12 @@
 import {
   ChangeEvent,
   FormEvent,
+  useEffect,
   useRef,
   useSyncExternalStore,
   useState,
 } from "react";
+import Confetti from "react-confetti";
 import {
   CheckCircle2,
   Copy,
@@ -90,6 +92,16 @@ const NewProductComponent = () => {
     () => getCachedVendorId(),
     () => null,
   );
+
+  const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
+
+  useEffect(() => {
+    const handleResize = () =>
+      setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const amountKobo = (() => {
     const parsedAmount = Number(amount);
@@ -270,7 +282,17 @@ const NewProductComponent = () => {
 
   if (createdProduct) {
     return (
-      <section className="mx-auto flex max-w-xl justify-center pb-20 sm:pb-24">
+      <>
+        <Confetti
+          width={windowSize.width}
+          height={windowSize.height}
+          numberOfPieces={350}
+          recycle={false}
+          gravity={0.2}
+          initialVelocityY={{ min: -20, max: -10 }}
+          colors={["#2563eb", "#7c3aed", "#06b6d4", "#10b981", "#f59e0b", "#ef4444"]}
+        />
+        <section className="mx-auto flex max-w-xl justify-center pb-20 sm:pb-24">
         <Card className="w-full border border-border/70 bg-background shadow-[0_24px_80px_-48px_rgba(14,30,86,0.28)]">
           <CardHeader className="items-center space-y-4 px-5 text-center sm:px-8">
             <div className="flex size-28 items-center justify-center rounded-full mx-auto bg-primary/10">
@@ -347,6 +369,7 @@ const NewProductComponent = () => {
           </CardContent>
         </Card>
       </section>
+      </>
     );
   }
 
@@ -367,6 +390,14 @@ const NewProductComponent = () => {
               <Lock className="text-xs mr-2 size-4" />
               <span>SECURE PAYMENT</span>
             </p>
+            {imageFile ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={URL.createObjectURL(imageFile)}
+                alt="Product preview"
+                className="h-40 w-full rounded-xl object-cover"
+              />
+            ) : null}
             <div className="mt-3 grid gap-2 text-sm text-muted-foreground  sm:items-end sm:justify-between">
               <div className="space-y-3">
                 <p className="font-semibold text-foreground text-xl">
@@ -433,7 +464,7 @@ const NewProductComponent = () => {
                 />
               </label>
 
-              <label className="space-y-2 sm:col-span-2">
+              <div className="space-y-2 sm:col-span-2">
                 <span className="block text-sm font-medium">
                   Product image
                 </span>
@@ -479,6 +510,7 @@ const NewProductComponent = () => {
 
                 <input
                   ref={fileInputRef}
+                  id="image-upload"
                   type="file"
                   accept="image/*"
                   className="hidden"
@@ -486,7 +518,7 @@ const NewProductComponent = () => {
                     handleFileSelect(event.target.files?.[0] ?? null)
                   }
                 />
-              </label>
+              </div>
 
               <label htmlFor="amount" className="space-y-2">
                 <span className="block text-sm font-medium">

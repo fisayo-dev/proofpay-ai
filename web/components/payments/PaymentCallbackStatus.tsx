@@ -227,6 +227,8 @@ const PaymentCallbackStatus = ({ paymentId }: PaymentCallbackStatusProps) => {
           height={windowSize.height}
           numberOfPieces={350}
           recycle={false}
+          gravity={0.2}
+          initialVelocityY={{ min: -20, max: -10 }}
           colors={["#2563eb", "#7c3aed", "#06b6d4", "#10b981", "#f59e0b", "#ef4444"]}
         />
       ) : null}
