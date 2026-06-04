@@ -69,7 +69,9 @@ const getPaymentState = (
     return "success";
   }
 
-  if (["failed", "failure", "cancelled", "canceled", "error"].includes(status)) {
+  if (
+    ["failed", "failure", "cancelled", "canceled", "error"].includes(status)
+  ) {
     return "failed";
   }
 
@@ -126,7 +128,10 @@ const PaymentCallbackStatus = ({ paymentId }: PaymentCallbackStatusProps) => {
         ) {
           try {
             verifyAttemptsRef.current += 1;
-            await verifyKoraCheckoutPayment(paymentId, nextPayment.kora_reference);
+            await verifyKoraCheckoutPayment(
+              paymentId,
+              nextPayment.kora_reference,
+            );
             const verifiedPayment = await getPaymentStatus(paymentId);
 
             if (!isMounted) {
@@ -229,7 +234,14 @@ const PaymentCallbackStatus = ({ paymentId }: PaymentCallbackStatusProps) => {
           recycle={false}
           gravity={0.2}
           initialVelocityY={{ min: -20, max: -10 }}
-          colors={["#2563eb", "#7c3aed", "#06b6d4", "#10b981", "#f59e0b", "#ef4444"]}
+          colors={[
+            "#2563eb",
+            "#7c3aed",
+            "#06b6d4",
+            "#10b981",
+            "#f59e0b",
+            "#ef4444",
+          ]}
         />
       ) : null}
       <Card className="w-full max-w-xl border border-border/70 bg-background shadow-[0_24px_80px_-48px_rgba(14,30,86,0.28)]">
