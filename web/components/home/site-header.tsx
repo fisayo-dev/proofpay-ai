@@ -121,22 +121,30 @@ export function SiteHeader() {
 
             <div className="flex flex-col gap-3 sm:flex-row">
               {session ?
-                <Button variant="outline" asChild className="w-full sm:flex-1">
-                  <Link href="/vendors/profile" onClick={closeMenu}>
-                    {avatarUrl ?
-                      <Avatar size="sm">
-                        <AvatarImage
-                          src={avatarUrl}
-                          alt={`${session.business_name} vendor avatar`}
-                        />
-                        <AvatarFallback>
-                          {session.full_name.slice(0, 1).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                    : <User2 />}
-                    {session.full_name}
-                  </Link>
-                </Button>
+                <>
+                  <Button variant="outline" asChild className="w-full sm:flex-1">
+                    <Link href="/vendors/new-product" onClick={closeMenu}>
+                      <Plus />
+                      Create Product
+                    </Link>
+                  </Button>
+                  <Button variant="outline" asChild className="w-full sm:flex-1">
+                    <Link href="/vendors/profile" onClick={closeMenu}>
+                      {avatarUrl ?
+                        <Avatar size="sm">
+                          <AvatarImage
+                            src={avatarUrl}
+                            alt={`${session.business_name} vendor avatar`}
+                          />
+                          <AvatarFallback>
+                            {session.full_name.slice(0, 1).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                      : <User2 />}
+                      {session.full_name}
+                    </Link>
+                  </Button>
+                </>
               : <Button asChild className="w-full sm:flex-1">
                   <Link href="/vendors/signup" onClick={closeMenu}>
                     <User2 />

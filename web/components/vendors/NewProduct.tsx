@@ -290,22 +290,25 @@ const NewProductComponent = () => {
   if (createdProduct) {
     return (
       <>
-        <Confetti
-          width={windowSize.width}
-          height={windowSize.height}
-          numberOfPieces={350}
-          recycle={false}
-          gravity={0.2}
-          initialVelocityY={{ min: -20, max: -10 }}
-          colors={[
-            "#2563eb",
-            "#7c3aed",
-            "#06b6d4",
-            "#10b981",
-            "#f59e0b",
-            "#ef4444",
-          ]}
-        />
+        {windowSize.width > 0 ?
+          <Confetti
+            width={windowSize.width}
+            height={windowSize.height}
+            numberOfPieces={350}
+            recycle={false}
+            gravity={0.2}
+            initialVelocityY={{ min: -20, max: -10 }}
+            colors={[
+              "#2563eb",
+              "#7c3aed",
+              "#06b6d4",
+              "#10b981",
+              "#f59e0b",
+              "#ef4444",
+            ]}
+            style={{ position: "fixed" }}
+          />
+        : null}
         <section className="mx-auto flex max-w-xl justify-center pb-20 sm:pb-24">
           <Card className="w-full border border-border/70 bg-background shadow-[0_24px_80px_-48px_rgba(14,30,86,0.28)]">
             <CardHeader className="items-center space-y-4 px-5 text-center sm:px-8">

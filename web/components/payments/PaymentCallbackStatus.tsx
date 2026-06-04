@@ -226,7 +226,7 @@ const PaymentCallbackStatus = ({ paymentId }: PaymentCallbackStatusProps) => {
 
   return (
     <main className="app-container flex min-h-[calc(100vh-5rem)] items-center justify-center py-8 sm:py-12">
-      {showConfetti ? (
+      {showConfetti && windowSize.width > 0 ? (
         <Confetti
           width={windowSize.width}
           height={windowSize.height}
@@ -242,6 +242,7 @@ const PaymentCallbackStatus = ({ paymentId }: PaymentCallbackStatusProps) => {
             "#f59e0b",
             "#ef4444",
           ]}
+          style={{ position: "fixed" }}
         />
       ) : null}
       <Card className="w-full max-w-xl border border-border/70 bg-background shadow-[0_24px_80px_-48px_rgba(14,30,86,0.28)]">
