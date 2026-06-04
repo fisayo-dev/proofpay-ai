@@ -66,6 +66,25 @@ class UploadsRouteTest(unittest.IsolatedAsyncioTestCase):
             )
         )
 
+    async def test_create_image_upload_forces_https_for_hugging_face_origin(self):
+        request = FakeRequest(
+            {"filename": "black-hoodie.jpg", "content_type": "image/jpeg"},
+            base_url="http://olatunjitobi-proofpay-ai-backend.hf.space/",
+            headers={
+                "x-forwarded-proto": "http",
+                "x-forwarded-host": "olatunjitobi-proofpay-ai-backend.hf.space",
+            },
+        )
+
+        with patch.object(routes_uploads.settings, "backend_base_url", "http://localhost:8000"):
+            response = await routes_uploads.create_image_upload(request)
+
+        self.assertTrue(
+            response["upload_url"].startswith(
+                "https://olatunjitobi-proofpay-ai-backend.hf.space/api/v1/uploads/image/"
+            )
+        )
+
     async def test_create_image_upload_accepts_external_image_url(self):
         response = await routes_uploads.create_image_upload(
             FakeRequest({"image_url": "https://example.com/black-hoodie.webp"})

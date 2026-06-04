@@ -29,16 +29,23 @@ def _is_supported_image_url(image_url: str) -> bool:
 
 
 def _get_public_backend_base_url(request: Request) -> str:
+    def force_https_for_public_hosts(base_url: str) -> str:
+        normalized = base_url.rstrip("/")
+        parsed = urlparse(normalized)
+        if parsed.hostname and parsed.hostname.endswith(".hf.space") and parsed.scheme == "http":
+            return normalized.replace("http://", "https://", 1)
+        return normalized
+
     configured_base_url = settings.backend_base_url.rstrip("/")
     if configured_base_url and "localhost" not in configured_base_url and "127.0.0.1" not in configured_base_url:
-        return configured_base_url
+        return force_https_for_public_hosts(configured_base_url)
 
     forwarded_proto = request.headers.get("x-forwarded-proto")
     forwarded_host = request.headers.get("x-forwarded-host")
     if forwarded_proto and forwarded_host:
-        return f"{forwarded_proto}://{forwarded_host}".rstrip("/")
+        return force_https_for_public_hosts(f"{forwarded_proto}://{forwarded_host}")
 
-    return str(request.base_url).rstrip("/")
+    return force_https_for_public_hosts(str(request.base_url))
 
 
 def _absolute_backend_url(request: Request, path: str) -> str:
