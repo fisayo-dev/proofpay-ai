@@ -8,9 +8,16 @@ from app.api.v1 import routes_uploads
 
 
 class FakeRequest:
-    def __init__(self, body, content_type: str | None = None):
+    def __init__(
+        self,
+        body,
+        content_type: str | None = None,
+        base_url: str = "https://request.example.com/",
+        headers: dict | None = None,
+    ):
         self._body = body
-        self.headers = {}
+        self.base_url = base_url
+        self.headers = dict(headers or {})
         if content_type:
             self.headers["content-type"] = content_type
 
@@ -35,6 +42,29 @@ class UploadsRouteTest(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(response["upload_url"].startswith("https://backend.example.com/api/v1/uploads/image/"))
         self.assertTrue(response["image_url"].startswith("https://backend.example.com/uploads/"))
         self.assertTrue(response["image_url"].endswith(".jpg"))
+
+    async def test_create_image_upload_uses_request_origin_when_config_is_localhost(self):
+        request = FakeRequest(
+            {"filename": "black-hoodie.jpg", "content_type": "image/jpeg"},
+            headers={
+                "x-forwarded-proto": "https",
+                "x-forwarded-host": "olatunjitobi-proofpay-ai-backend.hf.space",
+            },
+        )
+
+        with patch.object(routes_uploads.settings, "backend_base_url", "http://localhost:8000"):
+            response = await routes_uploads.create_image_upload(request)
+
+        self.assertTrue(
+            response["upload_url"].startswith(
+                "https://olatunjitobi-proofpay-ai-backend.hf.space/api/v1/uploads/image/"
+            )
+        )
+        self.assertTrue(
+            response["image_url"].startswith(
+                "https://olatunjitobi-proofpay-ai-backend.hf.space/uploads/"
+            )
+        )
 
     async def test_create_image_upload_accepts_external_image_url(self):
         response = await routes_uploads.create_image_upload(

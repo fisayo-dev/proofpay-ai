@@ -28,8 +28,21 @@ def _is_supported_image_url(image_url: str) -> bool:
     ) or image_url.startswith("/images/")
 
 
-def _absolute_backend_url(path: str) -> str:
-    return f"{settings.backend_base_url.rstrip('/')}/{path.lstrip('/')}"
+def _get_public_backend_base_url(request: Request) -> str:
+    configured_base_url = settings.backend_base_url.rstrip("/")
+    if configured_base_url and "localhost" not in configured_base_url and "127.0.0.1" not in configured_base_url:
+        return configured_base_url
+
+    forwarded_proto = request.headers.get("x-forwarded-proto")
+    forwarded_host = request.headers.get("x-forwarded-host")
+    if forwarded_proto and forwarded_host:
+        return f"{forwarded_proto}://{forwarded_host}".rstrip("/")
+
+    return str(request.base_url).rstrip("/")
+
+
+def _absolute_backend_url(request: Request, path: str) -> str:
+    return f"{_get_public_backend_base_url(request)}/{path.lstrip('/')}"
 
 
 def _validate_content_type(content_type: str | None) -> str:
@@ -86,9 +99,9 @@ async def create_image_upload(request: Request):
     upload_id = f"{uuid.uuid4().hex}{extension}"
 
     return {
-        "upload_url": _absolute_backend_url(f"/api/v1/uploads/image/{upload_id}"),
+        "upload_url": _absolute_backend_url(request, f"/api/v1/uploads/image/{upload_id}"),
         "upload_method": "PUT",
-        "image_url": _absolute_backend_url(f"/uploads/{upload_id}"),
+        "image_url": _absolute_backend_url(request, f"/uploads/{upload_id}"),
         "upload_id": upload_id,
         "max_size_bytes": MAX_IMAGE_BYTES,
         "accepted_content_types": list(ALLOWED_IMAGE_TYPES.keys()),
@@ -118,6 +131,6 @@ async def store_uploaded_image(upload_id: str, request: Request):
     (UPLOAD_DIR / upload_id).write_bytes(image_bytes)
 
     return {
-        "image_url": _absolute_backend_url(f"/uploads/{upload_id}"),
+        "image_url": _absolute_backend_url(request, f"/uploads/{upload_id}"),
         "storage": "proofpay-local",
     }
