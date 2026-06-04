@@ -11,11 +11,13 @@ const ProductPage = async ({
   params,
 }: PageProps<"/r/[product_slug]">) => {
   const { product_slug } = await params;
-  try {
-    const product = await getPublicProduct(product_slug);
-    const paymentConfig = await getPaymentConfigUrl(product.payment_request_id);
 
-    return <BuyerPublicPage product={product} paymentConfig={paymentConfig} />;
+  let product: Awaited<ReturnType<typeof getPublicProduct>>;
+  let paymentConfig: Awaited<ReturnType<typeof getPaymentConfigUrl>>;
+
+  try {
+    product = await getPublicProduct(product_slug);
+    paymentConfig = await getPaymentConfigUrl(product.payment_request_id);
   } catch (error) {
     return (
       <RequestErrorState
@@ -29,6 +31,8 @@ const ProductPage = async ({
       />
     );
   }
+
+  return <BuyerPublicPage product={product} paymentConfig={paymentConfig} />;
 };
 
 export default ProductPage;
