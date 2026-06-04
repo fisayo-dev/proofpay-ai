@@ -23,7 +23,6 @@ import { getFriendlyApiErrorMessage } from "@/lib/api-error";
 import {
   createImageUpload,
   createPaymentRequest,
-  uploadFileToUrl,
 } from "@/lib/actions/payment-requests";
 import { getCachedVendorId } from "@/lib/session";
 import { Button } from "@/components/ui/button";
@@ -53,6 +52,8 @@ const DELIVERY_METHODS = [
 
 const CURRENCY = "NGN";
 const DEFAULT_DELIVERY_METHOD = DELIVERY_METHODS[0];
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+const SUPPORTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
 type CreatedProduct = {
   name: string;
@@ -71,7 +72,7 @@ const NewProductComponent = () => {
   const [itemName, setItemName] = useState("");
   const [itemDescription, setItemDescription] = useState("");
   const [amount, setAmount] = useState("");
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [deliveryMethod, setDeliveryMethod] = useState<string>(
     DEFAULT_DELIVERY_METHOD,
   );
@@ -156,7 +157,7 @@ const NewProductComponent = () => {
       setErrorMessage("Please select an image file.");
       return;
     }
-    setSelectedFile(file);
+    setImageFile(file);
     if (errorMessage) {
       resetMessages();
     }
@@ -177,7 +178,7 @@ const NewProductComponent = () => {
   };
 
   const handleRemoveFile = () => {
-    setSelectedFile(null);
+    setImageFile(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -217,18 +218,22 @@ const NewProductComponent = () => {
       return;
     }
 
+    // if (imageFile && !SUPPORTED_IMAGE_TYPES.includes(imageFile.type)) {
+    //   console.log("Image file type: ",imageFile.type)
+    //   setErrorMessage("Upload a JPEG, PNG, or WebP product image.");
+    //   return;
+    // }
+
+    if (imageFile && imageFile.size > MAX_IMAGE_BYTES) {
+      setErrorMessage("Product image must be 5MB or smaller.");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      let uploadedImageUrl: string | undefined;
-      if (selectedFile) {
-        const upload = await createImageUpload({
-          filename: selectedFile.name,
-          content_type: selectedFile.type,
-        });
-        await uploadFileToUrl(upload.upload_url, selectedFile);
-        uploadedImageUrl = upload.image_url;
-      }
+      const uploadedImage = imageFile ? await createImageUpload(imageFile) : null;
+      const uploadedImageUrl = uploadedImage?.image_url;
       const res = await createPaymentRequest({
         vendor_id: vendorId,
         item_name: itemName.trim(),
@@ -248,7 +253,7 @@ const NewProductComponent = () => {
       setItemName("");
       setItemDescription("");
       setAmount("");
-      setSelectedFile(null);
+      setImageFile(null);
       setDeliveryMethod(DEFAULT_DELIVERY_METHOD);
       setExpectedDeliveryDate(getDefaultExpectedDate());
     } catch (error) {
@@ -397,12 +402,6 @@ const NewProductComponent = () => {
 
         <CardContent className="px-5 pb-6 sm:px-6">
           <form onSubmit={handleSubmit} className="space-y-6">
-            {errorMessage ? (
-              <div className="rounded-2xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-                {errorMessage}
-              </div>
-            ) : null}
-
             <div className="grid gap-4 sm:grid-cols-2">
               <label htmlFor="item_name" className="space-y-2 sm:col-span-2">
                 <span className="block text-sm font-medium">Item name</span>
@@ -438,12 +437,11 @@ const NewProductComponent = () => {
                 <span className="block text-sm font-medium">
                   Product image
                 </span>
-
-                {selectedFile ? (
+                {imageFile ? (
                   <div className="relative overflow-hidden rounded-2xl border border-border/70 bg-muted/20">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={URL.createObjectURL(selectedFile)}
+                      src={URL.createObjectURL(imageFile)}
                       alt="Product preview"
                       className="h-48 w-full object-cover"
                     />
@@ -456,9 +454,9 @@ const NewProductComponent = () => {
                     </button>
                     <div className="flex items-center gap-2 px-4 py-2 text-xs text-muted-foreground">
                       <ImageIcon className="size-3.5 shrink-0" />
-                      <span className="truncate">{selectedFile.name}</span>
+                      <span className="truncate">{imageFile.name}</span>
                       <span className="shrink-0">
-                        ({(selectedFile.size / 1024).toFixed(1)} KB)
+                        ({(imageFile.size / 1024).toFixed(1)} KB)
                       </span>
                     </div>
                   </div>
@@ -553,7 +551,11 @@ const NewProductComponent = () => {
                 />
               </label>
             </div>
-
+            {errorMessage ? (
+              <div className="rounded-2xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+                {errorMessage}
+              </div>
+            ) : null}
             <Button
               type="submit"
               disabled={isSubmitting || !vendorId}
