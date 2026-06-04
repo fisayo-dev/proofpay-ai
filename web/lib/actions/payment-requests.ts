@@ -76,7 +76,12 @@ export const getPaymentStatus = async (
   }
 };
 
-type CreateImageUploadResponse = {
+export type CreateImageUploadPayload = {
+  filename: string;
+  content_type: string;
+};
+
+export type CreateImageUploadResponse = {
   upload_url?: string;
   upload_method?: string;
   image_url: string;
@@ -119,8 +124,27 @@ export const createImageUpload = async (
     throw new Error(
       getFriendlyApiErrorMessage(
         error,
-        "We could not validate this product image. Please try another image URL.",
+        "We could not prepare the image upload. Please try again.",
       ),
+    );
+  }
+};
+
+export const uploadFileToUrl = async (
+  uploadUrl: string,
+  file: File,
+): Promise<void> => {
+  const response = await fetch(uploadUrl, {
+    method: "PUT",
+    body: file,
+    headers: {
+      "Content-Type": file.type,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `Image upload failed with status ${response.status}. Please try again.`,
     );
   }
 };

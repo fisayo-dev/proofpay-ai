@@ -1,6 +1,12 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useSyncExternalStore, useState } from "react";
+import {
+  ChangeEvent,
+  FormEvent,
+  useRef,
+  useSyncExternalStore,
+  useState,
+} from "react";
 import {
   CheckCircle2,
   Copy,
@@ -9,6 +15,8 @@ import {
   Lock,
   Plus,
   Truck,
+  Upload,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { getFriendlyApiErrorMessage } from "@/lib/api-error";
@@ -45,7 +53,7 @@ const DELIVERY_METHODS = [
 const CURRENCY = "NGN";
 const DEFAULT_DELIVERY_METHOD = DELIVERY_METHODS[0];
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
-const SUPPORTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const SUPPORTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
 type CreatedProduct = {
   name: string;
@@ -76,6 +84,7 @@ const NewProductComponent = () => {
   );
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const vendorId = useSyncExternalStore(
     () => () => {},
     () => getCachedVendorId(),
@@ -143,10 +152,35 @@ const NewProductComponent = () => {
       }
     };
 
-  const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setImageFile(event.target.files?.[0] ?? null);
+  const handleFileSelect = (file: File | null) => {
+    if (file && !file.type.startsWith("image/")) {
+      setErrorMessage("Please select an image file.");
+      return;
+    }
+    setImageFile(file);
     if (errorMessage) {
       resetMessages();
+    }
+  };
+
+  const handleDragOver = (event: React.DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+  };
+
+  const handleDrop = (event: React.DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const file = event.dataTransfer.files?.[0];
+    if (file) {
+      handleFileSelect(file);
+    }
+  };
+
+  const handleRemoveFile = () => {
+    setImageFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
     }
   };
 
@@ -184,10 +218,11 @@ const NewProductComponent = () => {
       return;
     }
 
-    if (imageFile && !SUPPORTED_IMAGE_TYPES.includes(imageFile.type)) {
-      setErrorMessage("Upload a JPEG, PNG, or WebP product image.");
-      return;
-    }
+    // if (imageFile && !SUPPORTED_IMAGE_TYPES.includes(imageFile.type)) {
+    //   console.log("Image file type: ",imageFile.type)
+    //   setErrorMessage("Upload a JPEG, PNG, or WebP product image.");
+    //   return;
+    // }
 
     if (imageFile && imageFile.size > MAX_IMAGE_BYTES) {
       setErrorMessage("Product image must be 5MB or smaller.");
@@ -198,6 +233,7 @@ const NewProductComponent = () => {
 
     try {
       const uploadedImage = imageFile ? await createImageUpload(imageFile) : null;
+      const uploadedImageUrl = uploadedImage?.image_url;
       const res = await createPaymentRequest({
         vendor_id: vendorId,
         item_name: itemName.trim(),
@@ -206,7 +242,7 @@ const NewProductComponent = () => {
         currency: CURRENCY,
         delivery_method: deliveryMethod,
         expected_delivery_date: expectedDeliveryDate,
-        image_url: uploadedImage?.image_url,
+        image_url: uploadedImageUrl,
       });
 
       setCreatedProduct({
@@ -366,12 +402,6 @@ const NewProductComponent = () => {
 
         <CardContent className="px-5 pb-6 sm:px-6">
           <form onSubmit={handleSubmit} className="space-y-6">
-            {errorMessage ? (
-              <div className="rounded-2xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-                {errorMessage}
-              </div>
-            ) : null}
-
             <div className="grid gap-4 sm:grid-cols-2">
               <label htmlFor="item_name" className="space-y-2 sm:col-span-2">
                 <span className="block text-sm font-medium">Item name</span>
@@ -403,24 +433,59 @@ const NewProductComponent = () => {
                 />
               </label>
 
-              <label htmlFor="image_url" className="space-y-2 sm:col-span-2">
+              <label className="space-y-2 sm:col-span-2">
                 <span className="block text-sm font-medium">
                   Product image
                 </span>
-                <div className="relative">
-                  <ImageIcon className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    id="image_url"
-                    name="image_url"
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    className="pl-11 text-sm"
-                    onChange={handleImageChange}
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  JPEG, PNG, or WebP. Max 5MB.
-                </p>
+                {imageFile ? (
+                  <div className="relative overflow-hidden rounded-2xl border border-border/70 bg-muted/20">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={URL.createObjectURL(imageFile)}
+                      alt="Product preview"
+                      className="h-48 w-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleRemoveFile}
+                      className="absolute right-2 top-2 rounded-full bg-background/80 p-1.5 text-muted-foreground transition-colors hover:text-foreground"
+                    >
+                      <X className="size-4" />
+                    </button>
+                    <div className="flex items-center gap-2 px-4 py-2 text-xs text-muted-foreground">
+                      <ImageIcon className="size-3.5 shrink-0" />
+                      <span className="truncate">{imageFile.name}</span>
+                      <span className="shrink-0">
+                        ({(imageFile.size / 1024).toFixed(1)} KB)
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    onDragOver={handleDragOver}
+                    onDrop={handleDrop}
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-border/60 bg-muted/10 px-4 py-10 transition-colors hover:border-primary/50 hover:bg-muted/20"
+                  >
+                    <Upload className="size-8 text-muted-foreground" />
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Click to upload or drag and drop
+                    </p>
+                    <p className="text-xs text-muted-foreground/60">
+                      PNG, JPG or WebP
+                    </p>
+                  </div>
+                )}
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(event) =>
+                    handleFileSelect(event.target.files?.[0] ?? null)
+                  }
+                />
               </label>
 
               <label htmlFor="amount" className="space-y-2">
@@ -486,7 +551,11 @@ const NewProductComponent = () => {
                 />
               </label>
             </div>
-
+            {errorMessage ? (
+              <div className="rounded-2xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+                {errorMessage}
+              </div>
+            ) : null}
             <Button
               type="submit"
               disabled={isSubmitting || !vendorId}
