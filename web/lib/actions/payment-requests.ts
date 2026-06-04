@@ -76,15 +76,23 @@ export const getPaymentStatus = async (
   }
 };
 
+export type CreateImageUploadPayload = {
+  filename: string;
+  content_type: string;
+};
+
+export type CreateImageUploadResponse = {
+  upload_url: string;
+  image_url: string;
+};
+
 export const createImageUpload = async (
-  imageUrl: string,
-): Promise<{ image_url: string; storage: string }> => {
+  data: CreateImageUploadPayload,
+): Promise<CreateImageUploadResponse> => {
   try {
-    const response = await api.post<{ image_url: string; storage: string }>(
+    const response = await api.post<CreateImageUploadResponse>(
       "/uploads/image",
-      {
-        image_url: imageUrl,
-      },
+      data,
     );
 
     return response.data;
@@ -92,8 +100,27 @@ export const createImageUpload = async (
     throw new Error(
       getFriendlyApiErrorMessage(
         error,
-        "We could not validate this product image. Please try another image URL.",
+        "We could not prepare the image upload. Please try again.",
       ),
+    );
+  }
+};
+
+export const uploadFileToUrl = async (
+  uploadUrl: string,
+  file: File,
+): Promise<void> => {
+  const response = await fetch(uploadUrl, {
+    method: "PUT",
+    body: file,
+    headers: {
+      "Content-Type": file.type,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `Image upload failed with status ${response.status}. Please try again.`,
     );
   }
 };

@@ -1,6 +1,12 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useSyncExternalStore, useState } from "react";
+import {
+  ChangeEvent,
+  FormEvent,
+  useRef,
+  useSyncExternalStore,
+  useState,
+} from "react";
 import {
   CheckCircle2,
   Copy,
@@ -9,12 +15,15 @@ import {
   Lock,
   Plus,
   Truck,
+  Upload,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { getFriendlyApiErrorMessage } from "@/lib/api-error";
 import {
   createImageUpload,
   createPaymentRequest,
+  uploadFileToUrl,
 } from "@/lib/actions/payment-requests";
 import { getCachedVendorId } from "@/lib/session";
 import { Button } from "@/components/ui/button";
@@ -62,7 +71,7 @@ const NewProductComponent = () => {
   const [itemName, setItemName] = useState("");
   const [itemDescription, setItemDescription] = useState("");
   const [amount, setAmount] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [deliveryMethod, setDeliveryMethod] = useState<string>(
     DEFAULT_DELIVERY_METHOD,
   );
@@ -74,6 +83,7 @@ const NewProductComponent = () => {
   );
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const vendorId = useSyncExternalStore(
     () => () => {},
     () => getCachedVendorId(),
@@ -141,6 +151,38 @@ const NewProductComponent = () => {
       }
     };
 
+  const handleFileSelect = (file: File | null) => {
+    if (file && !file.type.startsWith("image/")) {
+      setErrorMessage("Please select an image file.");
+      return;
+    }
+    setSelectedFile(file);
+    if (errorMessage) {
+      resetMessages();
+    }
+  };
+
+  const handleDragOver = (event: React.DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+  };
+
+  const handleDrop = (event: React.DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const file = event.dataTransfer.files?.[0];
+    if (file) {
+      handleFileSelect(file);
+    }
+  };
+
+  const handleRemoveFile = () => {
+    setSelectedFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     resetMessages();
@@ -178,9 +220,15 @@ const NewProductComponent = () => {
     setIsSubmitting(true);
 
     try {
-      const uploadedImage = imageUrl.trim()
-        ? await createImageUpload(imageUrl.trim())
-        : null;
+      let uploadedImageUrl: string | undefined;
+      if (selectedFile) {
+        const upload = await createImageUpload({
+          filename: selectedFile.name,
+          content_type: selectedFile.type,
+        });
+        await uploadFileToUrl(upload.upload_url, selectedFile);
+        uploadedImageUrl = upload.image_url;
+      }
       const res = await createPaymentRequest({
         vendor_id: vendorId,
         item_name: itemName.trim(),
@@ -189,7 +237,7 @@ const NewProductComponent = () => {
         currency: CURRENCY,
         delivery_method: deliveryMethod,
         expected_delivery_date: expectedDeliveryDate,
-        image_url: uploadedImage?.image_url,
+        image_url: uploadedImageUrl,
       });
 
       setCreatedProduct({
@@ -200,7 +248,7 @@ const NewProductComponent = () => {
       setItemName("");
       setItemDescription("");
       setAmount("");
-      setImageUrl("");
+      setSelectedFile(null);
       setDeliveryMethod(DEFAULT_DELIVERY_METHOD);
       setExpectedDeliveryDate(getDefaultExpectedDate());
     } catch (error) {
@@ -386,22 +434,60 @@ const NewProductComponent = () => {
                 />
               </label>
 
-              <label htmlFor="image_url" className="space-y-2 sm:col-span-2">
+              <label className="space-y-2 sm:col-span-2">
                 <span className="block text-sm font-medium">
-                  Product image URL
+                  Product image
                 </span>
-                <div className="relative">
-                  <ImageIcon className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    id="image_url"
-                    name="image_url"
-                    type="url"
-                    className="pl-11 text-sm"
-                    placeholder="https://example.com/black-hoodie.jpg"
-                    value={imageUrl}
-                    onChange={handleInputChange(setImageUrl)}
-                  />
-                </div>
+
+                {selectedFile ? (
+                  <div className="relative overflow-hidden rounded-2xl border border-border/70 bg-muted/20">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={URL.createObjectURL(selectedFile)}
+                      alt="Product preview"
+                      className="h-48 w-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleRemoveFile}
+                      className="absolute right-2 top-2 rounded-full bg-background/80 p-1.5 text-muted-foreground transition-colors hover:text-foreground"
+                    >
+                      <X className="size-4" />
+                    </button>
+                    <div className="flex items-center gap-2 px-4 py-2 text-xs text-muted-foreground">
+                      <ImageIcon className="size-3.5 shrink-0" />
+                      <span className="truncate">{selectedFile.name}</span>
+                      <span className="shrink-0">
+                        ({(selectedFile.size / 1024).toFixed(1)} KB)
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    onDragOver={handleDragOver}
+                    onDrop={handleDrop}
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-border/60 bg-muted/10 px-4 py-10 transition-colors hover:border-primary/50 hover:bg-muted/20"
+                  >
+                    <Upload className="size-8 text-muted-foreground" />
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Click to upload or drag and drop
+                    </p>
+                    <p className="text-xs text-muted-foreground/60">
+                      PNG, JPG or WebP
+                    </p>
+                  </div>
+                )}
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(event) =>
+                    handleFileSelect(event.target.files?.[0] ?? null)
+                  }
+                />
               </label>
 
               <label htmlFor="amount" className="space-y-2">
