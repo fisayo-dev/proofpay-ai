@@ -73,9 +73,6 @@ const PriceTier = () => {
         {
           autoAlpha: 0,
           y: 48,
-          rotateY: -12,
-          rotateX: 6,
-          transformPerspective: 900,
           duration: 0.75,
           stagger: { each: 0.15, from: "start" },
         },
@@ -86,7 +83,6 @@ const PriceTier = () => {
       const handleMouseEnter = () => {
         gsap.to(card, {
           y: -8,
-          rotateX: 2,
           duration: 0.28,
           ease: "power2.out",
         });
@@ -95,7 +91,6 @@ const PriceTier = () => {
       const handleMouseLeave = () => {
         gsap.to(card, {
           y: 0,
-          rotateX: 0,
           duration: 0.35,
           ease: "power2.out",
         });
