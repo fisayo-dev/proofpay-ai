@@ -167,14 +167,11 @@ const TrustScorePill = ({ score }: { score: number }) => {
   return (
     <div
       className={cn(
-        "flex items-center  gap-5 rounded-full border px-3 py-1.5 text-sm font-semibold tracking-tight",
+        "justify-center flex items-center rounded-full border p-2 h-12 w-12 text-sm font-semibold tracking-tight",
         style.className,
       )}
     >
-      <span>{score}%</span>
-      <span className="text-[11px] font-medium uppercase tracking-[0.18em] opacity-80">
-        {style.label}
-      </span>
+      {score}%
     </div>
   );
 };
@@ -364,8 +361,8 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
                       <TrustIcon className="size-3.5" />
                       <span>{trustTone.label}</span>
                     </Badge>
-                    <div className="space-y-2">
-                      <CardTitle className="text-2xl sm:text-3xl">
+                    <div className="space-y-2 mt-4">
+                      <CardTitle className="text-2xl sm:text-3xl font-bold">
                         {product.trust.verdict}
                       </CardTitle>
                       <CardDescription className="max-w-2xl text-sm leading-7">
@@ -382,7 +379,6 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
                 <div className="rounded-lg border border-border/70 bg-background px-4 py-3">
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge variant="secondary" className="gap-2 rounded-md">
-                      <Sparkles className="size-3.5" />
                       {product.trust.ai_powered ? "Groq AI" : "AI fallback"}
                     </Badge>
                     {product.trust.ai_model ? (
