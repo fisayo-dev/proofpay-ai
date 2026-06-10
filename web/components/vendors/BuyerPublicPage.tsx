@@ -518,7 +518,7 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
                       <ArrowRight />
                     </Button>
                   </AlertDialogTrigger>
-                  <AlertDialogContent>
+                  <AlertDialogContent  className="sm:max-w-2xl">
                     <form onSubmit={handleCheckout} className="grid gap-4">
                       <AlertDialogHeader>
                         <AlertDialogTitle>Checkout details</AlertDialogTitle>

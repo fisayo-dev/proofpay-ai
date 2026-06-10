@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Confetti from "react-confetti";
 import {
   AlertCircle,
@@ -16,6 +16,17 @@ import {
   verifyKoraCheckoutPayment,
 } from "@/lib/actions/payment-requests";
 import { getFriendlyApiErrorMessage } from "@/lib/api-error";
+import { toPng } from "html-to-image";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -214,6 +225,37 @@ const PaymentCallbackStatus = ({ paymentId }: PaymentCallbackStatusProps) => {
 
   const showConfetti = paymentState === "success";
 
+  const [showReceipt, setShowReceipt] = useState(false);
+  const receiptRef = useRef<HTMLDivElement>(null);
+
+  const captureAndDownload = useCallback(async () => {
+    if (!receiptRef.current || !payment) return;
+
+    try {
+      const dataUrl = await toPng(receiptRef.current, {
+        quality: 1,
+        pixelRatio: 2,
+        backgroundColor: "#fff",
+      });
+      const link = document.createElement("a");
+      link.download = `receipt-${payment.kora_reference || paymentId}.png`;
+      link.href = dataUrl;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch {
+      // fallback — image capture failed, user can still see the receipt
+    }
+  }, [payment, paymentId]);
+
+  useEffect(() => {
+    if (!showReceipt) return;
+    const id = setTimeout(() => {
+      captureAndDownload();
+    }, 500);
+    return () => clearTimeout(id);
+  }, [showReceipt, captureAndDownload]);
+
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
 
   useEffect(() => {
@@ -317,6 +359,16 @@ const PaymentCallbackStatus = ({ paymentId }: PaymentCallbackStatusProps) => {
             <Button asChild>
               <Link href="/">Return home</Link>
             </Button>
+            {payment && paymentState !== "loading" ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowReceipt(true)}
+              >
+                <ReceiptText className="size-4" />
+                Download receipt
+              </Button>
+            ) : null}
             <Button
               type="button"
               variant="outline"
@@ -328,6 +380,84 @@ const PaymentCallbackStatus = ({ paymentId }: PaymentCallbackStatusProps) => {
           </div>
         </CardContent>
       </Card>
+
+      <AlertDialog open={showReceipt} onOpenChange={setShowReceipt}>
+        <AlertDialogContent
+          className="sm:max-w-2xl"
+        >
+          <AlertDialogHeader>
+            <AlertDialogTitle>Receipt preview</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your receipt will be downloaded automatically.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div
+            ref={receiptRef}
+            className="rounded-xl border bg-white p-5 text-sm text-gray-900"
+            style={{ fontFamily: "system-ui, sans-serif" }}
+          >
+            <div className="text-center">
+              <p className="text-base font-semibold">Payment Receipt</p>
+              <p className="text-xs text-gray-500">{payment?.item_name}</p>
+            </div>
+            <div className="mt-4 space-y-2">
+              <div className="flex justify-between">
+                <span className="text-gray-500">Amount</span>
+                <span className="font-bold">{formattedAmount}</span>
+              </div>
+              <div className="flex justify-between border-t pt-2">
+                <span className="text-gray-500">Status</span>
+                <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
+                  {statusLabel}
+                </span>
+              </div>
+              <div className="flex justify-between border-t pt-2">
+                <span className="text-gray-500">Reference</span>
+                <span className="max-w-[180px] truncate font-medium">
+                  {payment?.kora_reference || paymentId}
+                </span>
+              </div>
+              {payment?.buyer_name ? (
+                <div className="flex justify-between border-t pt-2">
+                  <span className="text-gray-500">Paid by</span>
+                  <span className="font-medium">{payment.buyer_name}</span>
+                </div>
+              ) : null}
+              {payment?.transaction?.payment_method ? (
+                <div className="flex justify-between border-t pt-2">
+                  <span className="text-gray-500">Method</span>
+                  <span className="font-medium">{payment.transaction.payment_method}</span>
+                </div>
+              ) : null}
+              {payment?.transaction?.paid_at ? (
+                <div className="flex justify-between border-t pt-2">
+                  <span className="text-gray-500">Paid at</span>
+                  <span className="font-medium">
+                    {new Date(payment.transaction.paid_at).toLocaleString("en-NG")}
+                  </span>
+                </div>
+              ) : null}
+              <div className="flex justify-between border-t pt-2">
+                <span className="text-gray-500">Created</span>
+                <span className="font-medium">
+                  {payment ? new Date(payment.created_at).toLocaleString("en-NG") : ""}
+                </span>
+              </div>
+            </div>
+            <div className="mt-4 border-t-2 border-dashed pt-3 text-center text-xs text-gray-400">
+              ProofPay &bull; {payment?.payment_request_id}
+            </div>
+          </div>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel>Close</AlertDialogCancel>
+            <AlertDialogAction onClick={captureAndDownload}>
+              Download
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </main>
   );
 };
