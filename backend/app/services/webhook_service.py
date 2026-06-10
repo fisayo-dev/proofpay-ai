@@ -7,6 +7,7 @@ import logging
 from datetime import datetime, timezone
 
 from app.db.connection import get_connection
+from app.services.receipt_service import generate_receipt_pdf
 
 logger = logging.getLogger("proofpay.webhooks")
 
@@ -172,6 +173,12 @@ def mark_payment_paid(kora_reference: str, payload: dict) -> str | None:
     )
     return payment_request_id
 
+    # Generate receipt PDF in background if payment was updated
+    if payment_request_id:
+        generate_receipt_pdf(payment_request_id)
+
+    return payment_request_id
+
 
 def mark_payment_paid_from_checkout_callback(kora_reference: str) -> None:
     conn = get_connection()
@@ -183,10 +190,17 @@ def mark_payment_paid_from_checkout_callback(kora_reference: str) -> None:
         UPDATE payment_requests
         SET status = 'paid', updated_at = %s
         WHERE kora_reference = %s AND status != 'paid'
+        RETURNING id
         """,
         (now, kora_reference)
     )
-    payment_requests_updated = getattr(cursor, "rowcount", "unknown")
+    row = cursor.fetchone()
+    if isinstance(row, dict):
+        payment_request_id = str(row["id"]) if row.get("id") else None
+    elif row:
+        payment_request_id = str(row[0])
+    else:
+        payment_request_id = None
 
     cursor.execute(
         """
@@ -203,11 +217,14 @@ def mark_payment_paid_from_checkout_callback(kora_reference: str) -> None:
     conn.commit()
     conn.close()
     logger.info(
-        "Kora checkout callback paid update reference=%s payment_requests_updated=%s transactions_updated=%s",
+        "Kora checkout callback paid update reference=%s transactions_updated=%s",
         kora_reference or "<missing>",
-        payment_requests_updated,
         transactions_updated,
     )
+
+    # Generate receipt PDF in background if payment was updated
+    if payment_request_id:
+        generate_receipt_pdf(payment_request_id)
 
 
 def mark_payment_failed(kora_reference: str, payload: dict) -> None:

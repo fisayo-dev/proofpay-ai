@@ -194,6 +194,56 @@ class VendorRouteTest(unittest.TestCase):
             with self.assertRaises(psycopg.OperationalError):
                 routes_vendor.get_vendor_endpoint("vendor_123")
 
+    def test_score_prediction_endpoint_returns_prediction(self):
+        prediction = {
+            "current_score": 72,
+            "predicted_score_if_paid": 79,
+            "message": "Complete this transaction to raise your trust score from 72 to 79",
+        }
+
+        with patch.object(
+            routes_vendor,
+            "get_vendor_score_prediction",
+            return_value=prediction,
+        ):
+            result = routes_vendor.get_vendor_score_prediction_endpoint("vendor_123")
+
+        self.assertEqual(result, prediction)
+
+    def test_score_prediction_endpoint_returns_404_when_vendor_missing(self):
+        with patch.object(routes_vendor, "get_vendor_score_prediction", return_value=None):
+            with self.assertRaises(routes_vendor.HTTPException) as context:
+                routes_vendor.get_vendor_score_prediction_endpoint("missing")
+
+        self.assertEqual(context.exception.status_code, 404)
+        self.assertEqual(context.exception.detail["code"], "VENDOR_NOT_FOUND")
+
+    def test_analytics_endpoint_returns_metrics(self):
+        analytics = {
+            "vendor_id": "vendor_123",
+            "total_requests": 10,
+            "paid_count": 7,
+            "failed_count": 1,
+            "pending_count": 2,
+            "dispute_count": 1,
+            "completion_rate": 0.7,
+            "average_amount_naira": 5500.0,
+            "average_time_to_payment_seconds": 120.0,
+        }
+
+        with patch.object(routes_vendor, "get_vendor_analytics", return_value=analytics):
+            result = routes_vendor.get_vendor_analytics_endpoint("vendor_123")
+
+        self.assertEqual(result, analytics)
+
+    def test_analytics_endpoint_returns_404_when_vendor_missing(self):
+        with patch.object(routes_vendor, "get_vendor_analytics", return_value=None):
+            with self.assertRaises(routes_vendor.HTTPException) as context:
+                routes_vendor.get_vendor_analytics_endpoint("missing")
+
+        self.assertEqual(context.exception.status_code, 404)
+        self.assertEqual(context.exception.detail["code"], "VENDOR_NOT_FOUND")
+
 
 if __name__ == "__main__":
     unittest.main()
