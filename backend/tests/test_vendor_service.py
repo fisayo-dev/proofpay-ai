@@ -69,8 +69,8 @@ class VendorServiceTest(unittest.TestCase):
         self.assertEqual(result["full_name"], "Favour Ade")
         self.assertEqual(result["email"], "favour@example.com")
         self.assertEqual(result["business_name"], "Favour Fits")
-        self.assertIn("INSERT INTO users", cursor.queries[0][0])
-        self.assertIn("user_id, business_name", cursor.queries[1][0])
+        self.assertTrue(any("INSERT INTO users" in query for query, _ in cursor.queries))
+        self.assertTrue(any("user_id, business_name" in query for query, _ in cursor.queries))
         self.assertTrue(conn.committed)
         self.assertTrue(conn.closed)
 

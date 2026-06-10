@@ -16,7 +16,7 @@ ProofPay AI was built for the Covenant University Kora Hackathon 2.0.
 - Backend: FastAPI deployed on Hugging Face Spaces
 - Database: Supabase Postgres
 - Payment infrastructure: Kora Checkout and Kora webhooks
-- AI layer: Explainable trust scoring, anomaly detection, and Groq-generated buyer explanations
+- AI layer: Explainable trust scoring, XGBoost-ready anomaly detection, and Groq-generated buyer explanations
 
 ## Live Links
 
@@ -90,7 +90,9 @@ We intentionally use a hybrid AI approach:
 
 - Deterministic scoring checks vendor/payment signals reliably.
 - Fraud/anomaly detection flags unusual payment patterns such as large payments from new vendors or high dispute rates.
+- XGBoost fraud scoring is supported as an optional model layer through `XGBOOST_FRAUD_MODEL_PATH`. If a trained model is unavailable, ProofPay safely falls back to deterministic fraud rules.
 - Groq AI converts the trust score, anomaly flags, and payment context into a plain-English buyer explanation.
+- Vendor reputation includes badge logic, trust score history, and a prediction of how a successful transaction can improve trust.
 
 This avoids pretending to have a trained fraud model without enough real fraud data, while still giving users an intelligent explanation they can understand immediately. Kora webhooks give ProofPay AI the verified payment events needed to evolve into a stronger ML risk model over time.
 
@@ -160,9 +162,11 @@ The MVP starts with Covenant University student commerce because the user group 
 ## Key Features
 
 - Vendor signup and dashboard
+- Vendor and buyer signup/login
 - Create Kora-powered payment requests
 - Public buyer verification page
 - Explainable AI trust score
+- Vendor badge and reputation history
 - Trust verdict and score reasons
 - Kora checkout configuration
 - Signed Kora webhook handler
@@ -177,11 +181,17 @@ The MVP starts with Covenant University student commerce because the user group 
 GET  /api/v1/health
 
 POST /api/v1/vendors
+POST /api/v1/auth/signup
+POST /api/v1/auth/login
 GET  /api/v1/vendors/{vendor_id}
 GET  /api/v1/vendors/{vendor_id}/requests
+GET  /api/v1/vendors/{vendor_id}/metrics
+GET  /api/v1/vendors/{vendor_id}/trust-history
+GET  /api/v1/vendors/{vendor_id}/badge
 
 POST /api/v1/payment-requests
 POST /api/v1/trust/score
+POST /api/v1/trust/predict
 GET  /api/v1/payment-requests/{request_id}
 GET  /api/v1/public/r/{public_slug}
 

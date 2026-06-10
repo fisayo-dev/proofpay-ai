@@ -7,6 +7,7 @@ export type PublicProductResponse = {
     business_name: string;
     category: string;
     social_handle: string;
+    badge?: VendorBadge;
   };
   item: {
     name: string;
@@ -26,6 +27,8 @@ export type PublicProductResponse = {
     ai_engine?: string;
     ai_model?: string | null;
     anomaly_warnings?: string[];
+    history?: TrustHistoryPoint[];
+    prediction?: TrustPrediction;
   };
 };
 
@@ -39,6 +42,7 @@ export type BuyerPublicPageProps = {
       business_name: string;
       category: string;
       social_handle: string;
+      badge?: VendorBadge;
     };
     item: {
       name: string;
@@ -58,6 +62,8 @@ export type BuyerPublicPageProps = {
       ai_engine?: string;
       ai_model?: string | null;
       anomaly_warnings?: string[];
+      history?: TrustHistoryPoint[];
+      prediction?: TrustPrediction;
     };
   };
   paymentConfig: {
@@ -72,4 +78,25 @@ export type BuyerPublicPageProps = {
       notification_url: string;
     };
   };
+};
+
+export type VendorBadge = {
+  key: string;
+  label: string;
+  icon: string;
+  description: string;
+};
+
+export type TrustHistoryPoint = {
+  score: number;
+  verdict: string;
+  created_at: string;
+  payment_request_id?: string | null;
+};
+
+export type TrustPrediction = {
+  current_score: number;
+  predicted_score: number;
+  delta: number;
+  message: string;
 };

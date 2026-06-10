@@ -6,10 +6,32 @@ from datetime import datetime, timezone
 import psycopg
 
 from app.db.connection import get_connection
+from app.services.auth_service import hash_password, verify_password
 
 
 class VendorAlreadyExistsError(Exception):
     """Raised when signup uses an email that already belongs to a user."""
+
+
+class InvalidLoginError(Exception):
+    """Raised when login credentials do not match an account."""
+
+
+def _ensure_user_auth_columns(cursor) -> None:
+    cursor.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT", ())
+
+
+def _account_from_rows(user: dict, vendor: dict | None = None) -> dict:
+    return {
+        "user_id": user.get("id"),
+        "vendor_id": vendor.get("id") if vendor else None,
+        "role": user.get("role", "buyer"),
+        "full_name": user.get("full_name"),
+        "email": user.get("email"),
+        "business_name": vendor.get("business_name") if vendor else "",
+        "trust_score": vendor.get("trust_score") if vendor else None,
+        "created_at": user.get("created_at"),
+    }
 
 
 def create_vendor(data: dict) -> dict:
@@ -23,14 +45,16 @@ def create_vendor(data: dict) -> dict:
     try:
         user = None
         if user_id:
+            _ensure_user_auth_columns(cursor)
             cursor.execute("""
-                INSERT INTO users (id, full_name, email, role, created_at)
-                VALUES (%s, %s, %s, 'vendor', %s)
-                RETURNING id, full_name, email
+                INSERT INTO users (id, full_name, email, role, password_hash, created_at)
+                VALUES (%s, %s, %s, 'vendor', %s, %s)
+                RETURNING id, full_name, email, role, created_at
             """, (
                 user_id,
                 data["full_name"],
                 data["email"],
+                hash_password(data.get("password")),
                 now,
             ))
             user = dict(cursor.fetchone())
@@ -69,6 +93,95 @@ def create_vendor(data: dict) -> dict:
         raise VendorAlreadyExistsError("A user with this email already exists.") from exc
     finally:
         conn.close()
+
+
+def create_buyer(data: dict) -> dict:
+    user_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc).isoformat()
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    try:
+        _ensure_user_auth_columns(cursor)
+        cursor.execute("""
+            INSERT INTO users (id, full_name, email, role, password_hash, created_at)
+            VALUES (%s, %s, %s, 'buyer', %s, %s)
+            RETURNING id, full_name, email, role, created_at
+        """, (
+            user_id,
+            data["full_name"],
+            data["email"],
+            hash_password(data.get("password")),
+            now,
+        ))
+        user = dict(cursor.fetchone())
+        conn.commit()
+        return _account_from_rows(user)
+    except psycopg.errors.UniqueViolation as exc:
+        if hasattr(conn, "rollback"):
+            conn.rollback()
+        raise VendorAlreadyExistsError("A user with this email already exists.") from exc
+    finally:
+        conn.close()
+
+
+def create_account(data: dict) -> dict:
+    role = str(data.get("role") or data.get("account_type") or "vendor").lower()
+    if role == "buyer":
+        return create_buyer(data)
+
+    vendor = create_vendor(data)
+    return {
+        "user_id": vendor.get("user_id"),
+        "vendor_id": vendor.get("id"),
+        "role": "vendor",
+        "full_name": vendor.get("full_name"),
+        "email": vendor.get("email"),
+        "business_name": vendor.get("business_name"),
+        "trust_score": vendor.get("trust_score"),
+        "created_at": vendor.get("created_at"),
+    }
+
+
+def login_account(email: str, password: str | None = None) -> dict:
+    conn = get_connection()
+    cursor = conn.cursor()
+    _ensure_user_auth_columns(cursor)
+    cursor.execute(
+        """
+        SELECT
+            u.id AS user_id,
+            u.full_name,
+            u.email,
+            u.role,
+            u.password_hash,
+            u.created_at,
+            v.id AS vendor_id,
+            v.business_name,
+            v.trust_score
+        FROM users u
+        LEFT JOIN vendors v ON v.user_id = u.id
+        WHERE LOWER(u.email) = LOWER(%s)
+        LIMIT 1
+        """,
+        (email,),
+    )
+    row = cursor.fetchone()
+    conn.close()
+
+    if not row or not verify_password(password, row.get("password_hash")):
+        raise InvalidLoginError("Invalid email or password.")
+
+    return {
+        "user_id": row.get("user_id"),
+        "vendor_id": row.get("vendor_id"),
+        "role": row.get("role", "buyer"),
+        "full_name": row.get("full_name"),
+        "email": row.get("email"),
+        "business_name": row.get("business_name") or "",
+        "trust_score": row.get("trust_score"),
+        "created_at": row.get("created_at"),
+    }
 
 
 def get_vendor_by_id(vendor_id: str) -> dict | None:

@@ -174,6 +174,7 @@ def calculate_trust_score(vendor: dict, payment_request: dict) -> dict:
 
     features["anomaly_flags"] = anomaly_result["anomaly_flags"]
     features["risk_multiplier"] = anomaly_result["risk_multiplier"]
+    features["xgboost"] = anomaly_result.get("xgboost")
 
     return {
         "score": adjusted_score,

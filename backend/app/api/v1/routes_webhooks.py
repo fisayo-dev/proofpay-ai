@@ -97,9 +97,13 @@ def process_kora_webhook_event(
             "kora_reference": kora_reference,
         }
 
+    payment_request_id = None
+    payment_status = None
+
     if _is_success_event(payload):
         logger.info("Kora webhook marking payment paid reference=%s", kora_reference or "<missing>")
-        mark_payment_paid(kora_reference, payload)
+        payment_request_id = mark_payment_paid(kora_reference, payload)
+        payment_status = "paid"
     elif _is_failed_event(payload):
         logger.info("Kora webhook marking payment failed reference=%s", kora_reference or "<missing>")
         mark_payment_failed(kora_reference, payload)
