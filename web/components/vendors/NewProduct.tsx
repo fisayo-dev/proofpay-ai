@@ -3,6 +3,7 @@
 import {
   ChangeEvent,
   FormEvent,
+  useCallback,
   useEffect,
   useRef,
   useSyncExternalStore,
@@ -12,10 +13,14 @@ import Confetti from "react-confetti";
 import {
   CheckCircle2,
   Copy,
+  Download,
   ExternalLink,
   ImageIcon,
   Lock,
+  MessageCircle,
   Plus,
+  QrCode,
+  Send,
   Truck,
   Upload,
   X,
@@ -29,12 +34,24 @@ import {
 import { getCachedVendorId } from "@/lib/session";
 import { Button } from "@/components/ui/button";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { QRCodeCanvas } from "qrcode.react";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -44,28 +61,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { DEFAULT_DELIVERY_METHOD, MAX_IMAGE_BYTES, CURRENCY, DELIVERY_METHODS, SUPPORTED_IMAGE_TYPES } from "@/constants/products";
 
-const DELIVERY_METHODS = [
-  "CU hostel delivery",
-  "Campus pickup",
-  "Lagos city dispatch",
-  "Nationwide courier",
-] as const;
-
-const CURRENCY = "NGN";
-const DEFAULT_DELIVERY_METHOD = DELIVERY_METHODS[0];
-const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
-const SUPPORTED_IMAGE_TYPES = [
-  "image/jpeg",
-  "image/jpg",
-  "image/png",
-  "image/webp",
-];
 
 type CreatedProduct = {
   name: string;
   description: string;
   publicUrl: string;
+  imageUrl?: string;
 };
 
 const getDefaultExpectedDate = () => {
@@ -87,7 +90,7 @@ const NewProductComponent = () => {
     getDefaultExpectedDate,
   );
   const [createdProduct, setCreatedProduct] = useState<CreatedProduct | null>(
-    null,
+    {name: "Oraimo headphone", description: "Sleek oraimo headphones", publicUrl: "https://"}
   );
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -97,6 +100,18 @@ const NewProductComponent = () => {
     () => getCachedVendorId(),
     () => null,
   );
+
+  const qrRef = useRef<HTMLCanvasElement>(null);
+
+  const handleDownloadQr = useCallback(() => {
+    const canvas = qrRef.current;
+    if (!canvas) return;
+    const url = canvas.toDataURL("image/png");
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "proofpay-qr.png";
+    a.click();
+  }, []);
 
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
 
@@ -153,6 +168,27 @@ const NewProductComponent = () => {
     } catch {
       toast.error("Could not copy the public URL.");
     }
+  };
+
+  const handleShareToWhatsApp = () => {
+    if (!createdProduct) return;
+    const text = encodeURIComponent(
+      `I just created a payment request for "${createdProduct.name}" on ProofPay. Pay securely here: ${createdProduct.publicUrl}`,
+    );
+    window.open(`https://wa.me/?text=${text}`, "_blank", "noopener,noreferrer");
+  };
+
+  const handleShareToTelegram = () => {
+    if (!createdProduct) return;
+    const text = encodeURIComponent(
+      `I just created a payment request for "${createdProduct.name}" on ProofPay.`,
+    );
+    const url = encodeURIComponent(createdProduct.publicUrl);
+    window.open(
+      `https://t.me/share/url?url=${url}&text=${text}`,
+      "_blank",
+      "noopener,noreferrer",
+    );
   };
 
   const handleCreateAnotherProduct = () => {
@@ -267,6 +303,7 @@ const NewProductComponent = () => {
         name: itemName.trim(),
         description: itemDescription.trim(),
         publicUrl: getPublicUrl(res.public_url),
+        imageUrl: uploadedImageUrl ?? undefined,
       });
       setItemName("");
       setItemDescription("");
@@ -309,8 +346,17 @@ const NewProductComponent = () => {
           />
         : null}
         <section className="mx-auto flex max-w-xl justify-center pb-20 sm:pb-24">
+          <AlertDialog>
           <Card className="w-full border border-border/70 bg-background shadow-[0_24px_80px_-48px_rgba(14,30,86,0.28)]">
-            <CardHeader className="items-center space-y-4 px-5 text-center sm:px-8">
+            <CardHeader className="relative items-center space-y-4 px-5 text-center sm:px-8">
+              <AlertDialogTrigger asChild>
+                <button
+                  type="button"
+                  className="cursor-pointer absolute right-5 top-5 flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                >
+                  <QrCode className="size-5" />
+                </button>
+              </AlertDialogTrigger>
               <div className="flex size-28 items-center justify-center rounded-full mx-auto bg-primary/10">
                 <CheckCircle2 className="size-12 md:size-16 text-primary" />
               </div>
@@ -326,6 +372,14 @@ const NewProductComponent = () => {
 
             <CardContent className="space-y-6 px-5 pb-6 sm:px-8">
               <div className="rounded-2xl border border-border/70 bg-muted/20 p-4 sm:p-5">
+                {createdProduct.imageUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={createdProduct.imageUrl}
+                    alt={createdProduct.name}
+                    className="mb-3 h-44 w-full rounded-xl object-cover"
+                  />
+                )}
                 <p className="mb-2 text-xs font-medium uppercase text-muted-foreground">
                   Product
                 </p>
@@ -367,6 +421,32 @@ const NewProductComponent = () => {
                 </div>
               </div>
 
+              <div className="space-y-3 mt-4">
+                <p className="text-center text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  Share via
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full gap-2"
+                    onClick={handleShareToWhatsApp}
+                  >
+                    <MessageCircle className="size-4 text-[#25D366]" />
+                    <span className="hidden sm:block">WhatsApp</span>
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full gap-2"
+                    onClick={handleShareToTelegram}
+                  >
+                    <Send className="size-4 text-[#0088cc]" />
+                    <span className="hidden sm:block">Telegram</span>
+                  </Button>
+                </div>
+              </div>
+
               <div className="grid gap-3 sm:grid-cols-2">
                 <Button asChild className="w-full">
                   <a
@@ -390,6 +470,32 @@ const NewProductComponent = () => {
               </div>
             </CardContent>
           </Card>
+
+          <AlertDialogContent size="sm">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Scan to pay</AlertDialogTitle>
+              <AlertDialogDescription>
+                Scan this QR code with your phone to open the payment request
+                instantly.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="flex justify-center py-4">
+              <QRCodeCanvas
+                ref={qrRef}
+                value={createdProduct.publicUrl}
+                size={200}
+                level="M"
+              />
+            </div>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Close</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDownloadQr}>
+                <Download className="size-4" />
+                Download
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
         </section>
       </>
     );

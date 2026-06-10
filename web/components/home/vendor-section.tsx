@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, ShieldCheck } from "lucide-react";
+import { AlertTriangle, Award, BadgeCheck, ShieldCheck, Sparkles } from "lucide-react";
 import { useRef } from "react";
 
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +8,31 @@ import { vendors } from "@/constants/home";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { useHomeGsap } from "./use-home-gsap";
+
+const getVerificationBadge = (score: number) => {
+  if (score >= 80) {
+    return {
+      label: "Top seller",
+      Icon: Award,
+      className:
+        "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400",
+    };
+  }
+  if (score >= 65) {
+    return {
+      label: "Verified",
+      Icon: BadgeCheck,
+      className:
+        "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+    };
+  }
+  return {
+    label: "Rising star",
+    Icon: Sparkles,
+    className:
+      "border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400",
+  };
+};
 
 const verdictStyles = {
   Trusted: {
@@ -210,6 +235,8 @@ const VendorSection = () => {
         {displayedVendors.map((vendor, index) => {
           const vendorStyle = verdictStyles[vendor.verdict];
           const VendorIcon = vendorStyle.icon;
+          const verification = getVerificationBadge(vendor.score);
+          const VerificationIcon = verification.Icon;
 
           return (
             <article
@@ -254,13 +281,11 @@ const VendorSection = () => {
                       variant="outline"
                       className={cn(
                         "gap-1 rounded-md text-[11px]",
-                        vendorStyle.badgeClassName,
+                        verification.className,
                       )}
                     >
-                      <VendorIcon
-                        className={cn("size-3", vendorStyle.iconClassName)}
-                      />
-                      {vendor.verdict}
+                      <VerificationIcon className="size-3" />
+                      {verification.label}
                     </Badge>
                     <Badge
                       data-vendor-badge

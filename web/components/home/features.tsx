@@ -100,9 +100,6 @@ const Features = () => {
         {
           autoAlpha: 0,
           y: (index) => (index % 2 === 0 ? 54 : 28),
-          rotateY: (index) => (index % 2 === 0 ? -18 : 18),
-          rotateX: 8,
-          transformPerspective: 900,
           duration: 0.75,
           stagger: { each: 0.08, from: "edges" },
         },
@@ -137,8 +134,6 @@ const Features = () => {
       const handleMouseEnter = () => {
         gsap.to(card, {
           y: -8,
-          rotateX: 2,
-          rotateY: -2,
           duration: 0.28,
           ease: "power2.out",
         });
@@ -153,8 +148,6 @@ const Features = () => {
       const handleMouseLeave = () => {
         gsap.to(card, {
           y: 0,
-          rotateX: 0,
-          rotateY: 0,
           duration: 0.35,
           ease: "power2.out",
         });

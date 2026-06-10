@@ -5,6 +5,7 @@ import Script from "next/script";
 import {
   AlertTriangle,
   ArrowRight,
+  Award,
   BadgeCheck,
   Building2,
   ChevronDown,
@@ -55,6 +56,31 @@ const formatCurrency = (amount: number, currency: string) => {
     currency,
     minimumFractionDigits: 2,
   }).format(amount / 1);
+};
+
+const getVerificationBadge = (score: number) => {
+  if (score >= 80) {
+    return {
+      label: "Top seller",
+      Icon: Award,
+      className:
+        "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400",
+    };
+  }
+  if (score >= 65) {
+    return {
+      label: "Verified",
+      Icon: BadgeCheck,
+      className:
+        "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+    };
+  }
+  return {
+    label: "Rising star",
+    Icon: Sparkles,
+    className:
+      "border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400",
+  };
 };
 
 const getTrustTone = (score: number) => {
@@ -167,14 +193,11 @@ const TrustScorePill = ({ score }: { score: number }) => {
   return (
     <div
       className={cn(
-        "flex items-center  gap-5 rounded-full border px-3 py-1.5 text-sm font-semibold tracking-tight",
+        "justify-center flex items-center rounded-full border p-2 h-12 w-12 text-sm font-semibold tracking-tight",
         style.className,
       )}
     >
-      <span>{score}%</span>
-      <span className="text-[11px] font-medium uppercase tracking-[0.18em] opacity-80">
-        {style.label}
-      </span>
+      {score}%
     </div>
   );
 };
@@ -188,6 +211,8 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
   const [isKoraScriptReady, setIsKoraScriptReady] = useState(false);
   const trustTone = getTrustTone(product.trust.score);
   const TrustIcon = trustTone.Icon;
+  const verification = getVerificationBadge(product.trust.score);
+  const VerificationIcon = verification.Icon;
   const formattedAmount = formatCurrency(
     product.item.amount,
     product.item.currency,
@@ -305,6 +330,16 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
                   >
                     {product.seller.category}
                   </Badge>
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "gap-1.5 rounded-md px-2.5 py-1",
+                      verification.className,
+                    )}
+                  >
+                    <VerificationIcon className="size-3.5" />
+                    {verification.label}
+                  </Badge>
                   {vendorBadge ? (
                     <Badge
                       variant="outline"
@@ -372,8 +407,8 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
                       <TrustIcon className="size-3.5" />
                       <span>{trustTone.label}</span>
                     </Badge>
-                    <div className="space-y-2">
-                      <CardTitle className="text-2xl sm:text-3xl">
+                    <div className="space-y-2 mt-4">
+                      <CardTitle className="text-2xl sm:text-3xl font-bold">
                         {product.trust.verdict}
                       </CardTitle>
                       <CardDescription className="max-w-2xl text-sm leading-7">
@@ -390,7 +425,6 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
                 <div className="rounded-lg border border-border/70 bg-background px-4 py-3">
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge variant="secondary" className="gap-2 rounded-md">
-                      <Sparkles className="size-3.5" />
                       {product.trust.ai_powered ? "Groq AI" : "AI fallback"}
                     </Badge>
                     {product.trust.ai_model ? (
@@ -568,7 +602,7 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
                       <ArrowRight />
                     </Button>
                   </AlertDialogTrigger>
-                  <AlertDialogContent>
+                  <AlertDialogContent  className="sm:max-w-2xl">
                     <form onSubmit={handleCheckout} className="grid gap-4">
                       <AlertDialogHeader>
                         <AlertDialogTitle>Checkout details</AlertDialogTitle>
