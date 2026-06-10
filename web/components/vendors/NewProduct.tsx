@@ -61,23 +61,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { DEFAULT_DELIVERY_METHOD, MAX_IMAGE_BYTES, CURRENCY, DELIVERY_METHODS } from "@/constants/products";
 
-const DELIVERY_METHODS = [
-  "CU hostel delivery",
-  "Campus pickup",
-  "Lagos city dispatch",
-  "Nationwide courier",
-] as const;
-
-const CURRENCY = "NGN";
-const DEFAULT_DELIVERY_METHOD = DELIVERY_METHODS[0];
-const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
-const SUPPORTED_IMAGE_TYPES = [
-  "image/jpeg",
-  "image/jpg",
-  "image/png",
-  "image/webp",
-];
 
 type CreatedProduct = {
   name: string;
