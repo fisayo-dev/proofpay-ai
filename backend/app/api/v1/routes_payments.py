@@ -202,3 +202,33 @@ def get_vendor_requests_endpoint(vendor_id: str):
         "total": len(requests),
         "requests": requests,
     }
+
+
+@router.api_route("/payments/kora/webhook", methods=["GET", "HEAD"])
+@router.api_route("/payments/kora/webhook/", methods=["GET", "HEAD"])
+def kora_webhook_probe_endpoint():
+    return get_kora_webhook_probe()
+
+
+@router.post("/payments/kora/webhook")
+@router.post("/payments/kora/webhook/")
+async def kora_webhook_endpoint(
+    request: Request,
+    x_korapay_signature: str | None = Header(default=None),
+):
+    raw_body = await request.body()
+
+    try:
+        payload = json.loads(raw_body.decode("utf-8"))
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status_code=400, detail="Invalid JSON payload.") from exc
+
+    result = process_kora_webhook_event(payload, x_korapay_signature, raw_body)
+    if (
+        result.get("signature_valid")
+        and not result.get("duplicate")
+        and result.get("payment_request_id")
+        and result.get("status") == "paid"
+    ):
+        await notify_ws(result["payment_request_id"], "paid")
+    return result

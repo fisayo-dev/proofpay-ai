@@ -7,6 +7,17 @@ from app.api.v1 import routes_payments
 
 
 class PaymentsRouteTest(unittest.TestCase):
+    def test_payments_router_registers_kora_webhook_post(self):
+        webhook_routes = [
+            route
+            for route in routes_payments.router.routes
+            if getattr(route, "path", "").endswith("/payments/kora/webhook")
+        ]
+
+        self.assertTrue(
+            any("POST" in getattr(route, "methods", set()) for route in webhook_routes)
+        )
+
     def test_payment_status_endpoint_returns_status(self):
         status = {
             "payment_request_id": "req_123",

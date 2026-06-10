@@ -38,7 +38,7 @@ class KoraWebhookRouteTest(unittest.TestCase):
             patch.object(routes_webhooks.settings, "kora_secret_key", "secret"),
             patch.object(routes_webhooks, "save_webhook_event") as save_event,
             patch.object(routes_webhooks, "already_processed", return_value=False),
-            patch.object(routes_webhooks, "mark_payment_paid") as mark_paid,
+            patch.object(routes_webhooks, "mark_payment_paid", return_value="req_123") as mark_paid,
             patch.object(routes_webhooks, "mark_payment_failed") as mark_failed,
             patch.object(routes_webhooks, "mark_webhook_processed") as mark_processed,
         ):
@@ -51,6 +51,8 @@ class KoraWebhookRouteTest(unittest.TestCase):
                 "duplicate": False,
                 "signature_valid": True,
                 "kora_reference": "PPAY-123",
+                "payment_request_id": "req_123",
+                "status": "paid",
             },
         )
         save_event.assert_called_once_with("charge.success", "PPAY-123", payload, True)
@@ -129,7 +131,7 @@ class KoraWebhookRouteTest(unittest.TestCase):
             patch.object(routes_webhooks, "verify_kora_signature", return_value=True) as verify_dict,
             patch.object(routes_webhooks, "save_webhook_event") as save_event,
             patch.object(routes_webhooks, "already_processed", return_value=False),
-            patch.object(routes_webhooks, "mark_payment_paid") as mark_paid,
+            patch.object(routes_webhooks, "mark_payment_paid", return_value="req_123") as mark_paid,
             patch.object(routes_webhooks, "mark_payment_failed") as mark_failed,
             patch.object(routes_webhooks, "mark_webhook_processed") as mark_processed,
         ):
@@ -142,6 +144,8 @@ class KoraWebhookRouteTest(unittest.TestCase):
                 "duplicate": False,
                 "signature_valid": True,
                 "kora_reference": "PPAY-123",
+                "payment_request_id": "req_123",
+                "status": "paid",
             },
         )
         verify_dict.assert_called_once_with(payload, "sig", "secret")

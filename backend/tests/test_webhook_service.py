@@ -166,17 +166,22 @@ class WebhookServiceTest(unittest.TestCase):
         self.assertTrue(conn.closed)
 
     def test_mark_payment_paid_updates_request_and_transaction(self):
-        cursor = FakeCursor()
+        cursor = FakeCursor(fetchone_result={"id": "req_123"})
         conn = FakeConnection(cursor)
 
         with patch.object(webhook_service, "get_connection", return_value=conn):
-            webhook_service.mark_payment_paid("PPAY-123", {"status": "success"})
+            payment_request_id = webhook_service.mark_payment_paid(
+                "PPAY-123",
+                {"status": "success"},
+            )
 
         self.assertEqual(len(cursor.queries), 2)
         self.assertIn("SET status = 'paid'", cursor.queries[0][0])
+        self.assertIn("RETURNING id", cursor.queries[0][0])
         self.assertIn("payment_status = 'paid'", cursor.queries[1][0])
         self.assertEqual(cursor.queries[0][1][1], "PPAY-123")
         self.assertEqual(cursor.queries[1][1][2], "PPAY-123")
+        self.assertEqual(payment_request_id, "req_123")
         self.assertTrue(conn.committed)
         self.assertTrue(conn.closed)
 
