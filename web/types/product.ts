@@ -13,12 +13,19 @@ export type PublicProductResponse = {
     description: string;
     amount: number;
     currency: string;
+    image_url?: string | null;
   };
   trust: {
     score: number;
     verdict: string;
     reasons: string[];
     model_version: string;
+    ai_summary?: string;
+    ai_recommendation?: string;
+    ai_powered?: boolean;
+    ai_engine?: string;
+    ai_model?: string | null;
+    anomaly_warnings?: string[];
   };
 };
 
@@ -38,12 +45,31 @@ export type BuyerPublicPageProps = {
       description: string;
       amount: number;
       currency: string;
+      image_url?: string | null;
     };
     trust: {
       score: number;
       verdict: string;
       reasons: string[];
       model_version: string;
+      ai_summary?: string;
+      ai_recommendation?: string;
+      ai_powered?: boolean;
+      ai_engine?: string;
+      ai_model?: string | null;
+      anomaly_warnings?: string[];
+    };
+  };
+  paymentConfig: {
+    payment_request_id: string;
+    kora_reference: string;
+    checkout_config: {
+      key: string;
+      reference: string;
+      amount: number;
+      currency: string;
+      customer: { name: string; email: string };
+      notification_url: string;
     };
   };
 };

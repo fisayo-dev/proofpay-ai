@@ -1,22 +1,40 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { header_links } from "@/constants/home";
+import { getCachedSession } from "@/lib/session";
+import { getVendorAvatarUrl } from "@/lib/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "../ui/button";
 import Link from "next/link";
-import { Menu, User2, X } from "lucide-react";
+import { Menu, Plus, User2, X } from "lucide-react";
 
 export function SiteHeader() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const session = useSyncExternalStore(
+    () => () => {},
+    () => getCachedSession(),
+    () => null,
+  );
 
   const closeMenu = () => setIsMenuOpen(false);
+  const avatarUrl = session
+    ? getVendorAvatarUrl([
+        session.vendor_id,
+        session.business_name,
+        session.full_name,
+      ])
+    : null;
 
   return (
     <header className="fixed z-30 w-full bg-background/95 py-3">
       <div className="app-container relative">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-4 lg:gap-8">
-            <Link href="/" className="text-2xl font-extrabold text-primary sm:text-3xl">
+            <Link
+              href="/"
+              className="text-2xl font-extrabold text-primary sm:text-3xl"
+            >
               Proof Pay
             </Link>
             {/* Links*/}
@@ -34,12 +52,38 @@ export function SiteHeader() {
           </div>
 
           <div className="hidden items-center space-x-4 lg:flex">
-            <Button asChild>
-              <Link href="/vendors/signup">
-                <User2 />
-                Signup as vendor
-              </Link>
-            </Button>
+            {session ?
+              <>
+                <Button variant="outline" asChild>
+                  <Link href="/vendors/new-product">
+                    <Plus />
+                    Create Product
+                  </Link>
+                </Button>
+                <Button variant="outline" asChild>
+                  <Link href="/vendors/profile">
+                    {avatarUrl ?
+                      <Avatar size="sm">
+                        <AvatarImage
+                          src={avatarUrl}
+                          alt={`${session.business_name} vendor avatar`}
+                        />
+                        <AvatarFallback>
+                          {session.full_name.slice(0, 1).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                    : <User2 />}
+                    {session.full_name}
+                  </Link>
+                </Button>
+              </>
+            : <Button asChild>
+                <Link href="/vendors/signup">
+                  <User2 />
+                  Signup as vendor
+                </Link>
+              </Button>
+            }
           </div>
 
           <Button
@@ -76,12 +120,38 @@ export function SiteHeader() {
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row">
-              <Button asChild className="w-full sm:flex-1">
-                <Link href="/vendors/signup" onClick={closeMenu}>
-                  <User2 />
-                  Signup as vendor
-                </Link>
-              </Button>
+              {session ?
+                <>
+                  <Button variant="outline" asChild className="w-full sm:flex-1">
+                    <Link href="/vendors/new-product" onClick={closeMenu}>
+                      <Plus />
+                      Create Product
+                    </Link>
+                  </Button>
+                  <Button variant="outline" asChild className="w-full sm:flex-1">
+                    <Link href="/vendors/profile" onClick={closeMenu}>
+                      {avatarUrl ?
+                        <Avatar size="sm">
+                          <AvatarImage
+                            src={avatarUrl}
+                            alt={`${session.business_name} vendor avatar`}
+                          />
+                          <AvatarFallback>
+                            {session.full_name.slice(0, 1).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                      : <User2 />}
+                      {session.full_name}
+                    </Link>
+                  </Button>
+                </>
+              : <Button asChild className="w-full sm:flex-1">
+                  <Link href="/vendors/signup" onClick={closeMenu}>
+                    <User2 />
+                    Signup as vendor
+                  </Link>
+                </Button>
+              }
             </div>
           </div>
         </div>

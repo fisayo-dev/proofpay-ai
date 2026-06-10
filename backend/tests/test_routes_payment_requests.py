@@ -16,6 +16,7 @@ class PublicPaymentRequestRouteTest(unittest.TestCase):
             "item_description": "Oversized black hoodie, size L",
             "amount_kobo": 750099,
             "currency": "NGN",
+            "image_url": "https://example.com/black-hoodie.jpg",
             "status": "created",
             "kora_reference": "PPAY-20260520-DEMO",
             "public_slug": "ppai_DEMO",
@@ -45,14 +46,30 @@ class PublicPaymentRequestRouteTest(unittest.TestCase):
                 return_value=trust_check,
                 create=True,
             ),
+            patch.object(
+                routes_payment_requests,
+                "generate_ai_trust_explanation",
+                return_value={
+                    "summary": "Groq says this payment should be reviewed carefully.",
+                    "recommendation": "Proceed carefully.",
+                    "anomaly_warnings": ["Amount is above average"],
+                    "ai_powered": True,
+                    "engine": "groq-chat-completions",
+                    "model": "llama-test",
+                },
+            ),
         ):
             response = routes_payment_requests.get_public_request_endpoint("ppai_DEMO")
 
         self.assertEqual(response["item"]["amount"], 7500.99)
+        self.assertEqual(response["item"]["image_url"], "https://example.com/black-hoodie.jpg")
         self.assertEqual(response["trust"]["score"], 72)
         self.assertEqual(response["trust"]["verdict"], "Caution")
         self.assertEqual(response["trust"]["reasons"], trust_check["reasons"])
         self.assertEqual(response["trust"]["model_version"], "rules-v1")
+        self.assertEqual(response["trust"]["ai_summary"], "Groq says this payment should be reviewed carefully.")
+        self.assertTrue(response["trust"]["ai_powered"])
+        self.assertEqual(response["trust"]["anomaly_warnings"], ["Amount is above average"])
 
     def test_refresh_trust_score_requires_vendor_id(self):
         with self.assertRaises(HTTPException) as context:
@@ -114,6 +131,7 @@ class PublicPaymentRequestRouteTest(unittest.TestCase):
             vendor_id="vendor_123",
             item_name="Black hoodie",
             amount=7500.5,
+            image_url="https://example.com/black-hoodie.jpg",
         )
 
         captured = {}
@@ -127,6 +145,7 @@ class PublicPaymentRequestRouteTest(unittest.TestCase):
 
         self.assertIn("amount_kobo", captured)
         self.assertEqual(captured["amount_kobo"], 750050)
+        self.assertEqual(captured["image_url"], "https://example.com/black-hoodie.jpg")
 
     def test_refresh_trust_score_preserves_database_operational_error(self):
         with patch.object(

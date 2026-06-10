@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     kora_public_key: str = ""
     kora_secret_key: str = ""
     kora_webhook_url: str = ""
+    groq_api_key: str = ""
+    groq_model: str = "llama-3.3-70b-versatile"
     frontend_base_url: str = "http://localhost:3000"
     backend_base_url: str = "http://localhost:8000"
     session_secret: str = ""

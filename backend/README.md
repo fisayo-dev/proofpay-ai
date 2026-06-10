@@ -10,6 +10,8 @@ FastAPI backend for AI-scored payment requests, Kora checkout handoff, verified 
 - `KORA_PUBLIC_KEY`
 - `KORA_SECRET_KEY`
 - `KORA_WEBHOOK_URL`
+- `GROQ_API_KEY`
+- `GROQ_MODEL`
 - `FRONTEND_BASE_URL`
 - `BACKEND_BASE_URL`
 - `SESSION_SECRET`
@@ -26,9 +28,18 @@ FastAPI backend for AI-scored payment requests, Kora checkout handoff, verified 
 - `GET /api/v1/public/r/{public_slug}`
 - `GET /api/v1/payments/{payment_request_id}/status`
 - `GET /api/v1/payments/kora/config/{payment_request_id}`
+- `POST /api/v1/payments/{payment_request_id}/reconcile`
 - `POST /api/v1/payments/kora/webhook`
 - `POST /api/v1/delivery/confirm`
 - `POST /api/v1/disputes`
+
+## Groq AI Layer
+
+The public buyer endpoint calls Groq server-side when `GROQ_API_KEY` is configured:
+
+- `GET /api/v1/public/r/{public_slug}` returns `trust.ai_summary`.
+- The summary explains the trust score, fraud/anomaly signals, and buyer recommendation in plain English.
+- If Groq fails or the key is missing, the backend returns a deterministic fallback summary.
 
 ## Kora Flow
 

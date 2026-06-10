@@ -16,6 +16,7 @@ ProofPay AI was built for the Covenant University Kora Hackathon 2.0.
 - Backend: FastAPI deployed on Hugging Face Spaces
 - Database: Supabase Postgres
 - Payment infrastructure: Kora Checkout and Kora webhooks
+- AI layer: Explainable trust scoring, anomaly detection, and Groq-generated buyer explanations
 
 ## Live Links
 
@@ -83,9 +84,15 @@ Seller signs up or uses a demo vendor
 
 ## AI / Intelligent Automation
 
-ProofPay AI uses an explainable trust scoring engine for the hackathon MVP.
+ProofPay AI uses an explainable trust scoring engine, fraud/anomaly detection, and Groq AI-generated buyer explanations for the hackathon MVP.
 
-We intentionally started with transparent scoring instead of pretending to have a trained fraud model without enough real fraud data. Real fraud detection needs real payment outcomes, delivery confirmations, and dispute data. Kora webhooks give ProofPay AI the verified payment events needed to evolve into a stronger ML risk model over time.
+We intentionally use a hybrid AI approach:
+
+- Deterministic scoring checks vendor/payment signals reliably.
+- Fraud/anomaly detection flags unusual payment patterns such as large payments from new vendors or high dispute rates.
+- Groq AI converts the trust score, anomaly flags, and payment context into a plain-English buyer explanation.
+
+This avoids pretending to have a trained fraud model without enough real fraud data, while still giving users an intelligent explanation they can understand immediately. Kora webhooks give ProofPay AI the verified payment events needed to evolve into a stronger ML risk model over time.
 
 ### Trust Score Inputs
 
@@ -107,6 +114,16 @@ We intentionally started with transparent scoring instead of pretending to have 
 | 0-29 | Manual Review Needed |
 
 Important safety rule: ProofPay AI does not call anyone a scammer. It shows risk signals and helps the buyer make a safer decision.
+
+### Groq AI Explanation
+
+The buyer page includes a natural-language trust explanation generated server-side with Groq when `GROQ_API_KEY` is available. If Groq is unavailable, ProofPay falls back to a deterministic explanation so checkout is never blocked by an AI provider outage.
+
+Example:
+
+```text
+Favour Fits is rated Trusted for this payment because the vendor has a complete profile, a strong transaction history, and no disputes on record. Confirm the item and delivery details, then proceed through Kora Checkout.
+```
 
 ### Example Trust Response
 
@@ -170,6 +187,7 @@ GET  /api/v1/public/r/{public_slug}
 
 GET  /api/v1/payments/{payment_request_id}/status
 GET  /api/v1/payments/kora/config/{payment_request_id}
+POST /api/v1/payments/{payment_request_id}/reconcile
 POST /api/v1/payments/kora/webhook
 
 POST /api/v1/delivery/confirm

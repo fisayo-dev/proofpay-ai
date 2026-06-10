@@ -86,18 +86,20 @@ def create_payment_request(data: dict) -> dict:
     now = datetime.now(timezone.utc).isoformat()
 
     cursor = conn.cursor()
+    cursor.execute("ALTER TABLE payment_requests ADD COLUMN IF NOT EXISTS image_url TEXT")
     cursor.execute("""
         INSERT INTO payment_requests (
             id, vendor_id, buyer_name, buyer_email,
             item_name, item_description, amount_kobo,
             currency, delivery_method, expected_delivery_date,
+            image_url,
             status, kora_reference, public_slug,
             trust_score_at_creation, trust_verdict,
             created_at, updated_at
         )
         VALUES (
             %s, %s, %s, %s, %s, %s, %s,
-            %s, %s, %s, 'created', %s, %s,
+            %s, %s, %s, %s, 'created', %s, %s,
             %s, %s, %s, %s
         )
         RETURNING *
@@ -112,6 +114,7 @@ def create_payment_request(data: dict) -> dict:
         data.get("currency", "NGN"),
         data.get("delivery_method"),
         data.get("expected_delivery_date"),
+        data.get("image_url"),
         kora_reference,
         public_slug,
         trust_result.get("score"),
