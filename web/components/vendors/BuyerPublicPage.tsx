@@ -12,6 +12,7 @@ import {
   LockKeyhole,
   PackageCheck,
   ShieldCheck,
+  Sparkles,
   Store,
   User2,
 } from "lucide-react";
@@ -192,6 +193,14 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
     product.item.currency,
   );
   const callbackUrl = `/payments/callback/${paymentConfig.payment_request_id}`;
+  const productImageUrl =
+    product.item.image_url && product.item.image_url.trim()
+      ? product.item.image_url
+      : "/images/products/ceramic-mug.jpg";
+  const aiSummary =
+    product.trust.ai_summary ||
+    "ProofPay AI reviewed seller signals, payment context, and request details before sending you to checkout.";
+  const anomalyWarnings = product.trust.anomaly_warnings || [];
 
   const redirectToCallback = () => {
     window.location.assign(callbackUrl);
@@ -360,8 +369,7 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
                         {product.trust.verdict}
                       </CardTitle>
                       <CardDescription className="max-w-2xl text-sm leading-7">
-                        ProofPay AI reviewed seller signals, payment context,
-                        and request details before sending you to checkout.
+                        {aiSummary}
                       </CardDescription>
                     </div>
                   </div>
@@ -371,6 +379,38 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
               </CardHeader>
 
               <CardContent className="grid gap-3 px-5 pb-5 sm:px-6">
+                <div className="rounded-lg border border-border/70 bg-background px-4 py-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant="secondary" className="gap-2 rounded-md">
+                      <Sparkles className="size-3.5" />
+                      {product.trust.ai_powered ? "Groq AI" : "AI fallback"}
+                    </Badge>
+                    {product.trust.ai_model ? (
+                      <span className="text-xs text-muted-foreground">
+                        {product.trust.ai_model}
+                      </span>
+                    ) : null}
+                  </div>
+                  {product.trust.ai_recommendation ? (
+                    <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                      {product.trust.ai_recommendation}
+                    </p>
+                  ) : null}
+                </div>
+
+                {anomalyWarnings.length > 0 ? (
+                  <div className="rounded-lg border border-destructive/25 bg-destructive/5 px-4 py-3">
+                    <p className="text-sm font-semibold text-destructive">
+                      Fraud and anomaly signals
+                    </p>
+                    <ul className="mt-2 grid gap-1 text-sm leading-6 text-foreground/85">
+                      {anomalyWarnings.slice(0, 3).map((warning) => (
+                        <li key={warning}>- {warning}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+
                 <button
                   type="button"
                   className="flex w-full items-center justify-between rounded-lg border border-border/70 bg-background px-4 py-3 text-left transition-colors hover:bg-muted/50"

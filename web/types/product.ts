@@ -20,6 +20,12 @@ export type PublicProductResponse = {
     verdict: string;
     reasons: string[];
     model_version: string;
+    ai_summary?: string;
+    ai_recommendation?: string;
+    ai_powered?: boolean;
+    ai_engine?: string;
+    ai_model?: string | null;
+    anomaly_warnings?: string[];
   };
 };
 
@@ -46,6 +52,12 @@ export type BuyerPublicPageProps = {
       verdict: string;
       reasons: string[];
       model_version: string;
+      ai_summary?: string;
+      ai_recommendation?: string;
+      ai_powered?: boolean;
+      ai_engine?: string;
+      ai_model?: string | null;
+      anomaly_warnings?: string[];
     };
   };
   paymentConfig: {

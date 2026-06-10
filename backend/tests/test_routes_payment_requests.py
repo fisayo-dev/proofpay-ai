@@ -46,6 +46,18 @@ class PublicPaymentRequestRouteTest(unittest.TestCase):
                 return_value=trust_check,
                 create=True,
             ),
+            patch.object(
+                routes_payment_requests,
+                "generate_ai_trust_explanation",
+                return_value={
+                    "summary": "Groq says this payment should be reviewed carefully.",
+                    "recommendation": "Proceed carefully.",
+                    "anomaly_warnings": ["Amount is above average"],
+                    "ai_powered": True,
+                    "engine": "groq-chat-completions",
+                    "model": "llama-test",
+                },
+            ),
         ):
             response = routes_payment_requests.get_public_request_endpoint("ppai_DEMO")
 
@@ -55,6 +67,9 @@ class PublicPaymentRequestRouteTest(unittest.TestCase):
         self.assertEqual(response["trust"]["verdict"], "Caution")
         self.assertEqual(response["trust"]["reasons"], trust_check["reasons"])
         self.assertEqual(response["trust"]["model_version"], "rules-v1")
+        self.assertEqual(response["trust"]["ai_summary"], "Groq says this payment should be reviewed carefully.")
+        self.assertTrue(response["trust"]["ai_powered"])
+        self.assertEqual(response["trust"]["anomaly_warnings"], ["Amount is above average"])
 
     def test_refresh_trust_score_requires_vendor_id(self):
         with self.assertRaises(HTTPException) as context:
