@@ -14,6 +14,7 @@ from app.services.webhook_service import (
     verify_kora_signature_from_body,
     verify_kora_signature,
 )
+from app.api.v1.routes_ws import notify_ws
 
 router = APIRouter(prefix="/api/v1", tags=["Webhooks"])
 
@@ -40,6 +41,8 @@ def process_kora_webhook_event(
 ) -> dict:
     event_type = payload.get("event", "unknown")
     kora_reference = _extract_kora_reference(payload)
+    payment_request_id = None
+    payment_status = None
     if raw_body is not None:
         signature_valid = verify_kora_signature_from_body(
             raw_body,
@@ -72,18 +75,24 @@ def process_kora_webhook_event(
         }
 
     if _is_success_event(payload):
-        mark_payment_paid(kora_reference, payload)
+        payment_request_id = mark_payment_paid(kora_reference, payload)
+        payment_status = "paid"
     elif _is_failed_event(payload):
         mark_payment_failed(kora_reference, payload)
+        payment_status = "failed"
 
     mark_webhook_processed(event_type, kora_reference)
 
-    return {
+    result = {
         "received": True,
         "duplicate": False,
         "signature_valid": True,
         "kora_reference": kora_reference,
     }
+    if isinstance(payment_request_id, str) and payment_request_id:
+        result["payment_request_id"] = payment_request_id
+        result["status"] = payment_status
+    return result
 
 
 def get_kora_webhook_probe() -> dict:
@@ -112,4 +121,12 @@ async def kora_webhook_endpoint(
     except json.JSONDecodeError as exc:
         raise HTTPException(status_code=400, detail="Invalid JSON payload.") from exc
 
-    return process_kora_webhook_event(payload, x_korapay_signature, raw_body)
+    result = process_kora_webhook_event(payload, x_korapay_signature, raw_body)
+    if (
+        result.get("signature_valid")
+        and not result.get("duplicate")
+        and result.get("payment_request_id")
+        and result.get("status") == "paid"
+    ):
+        await notify_ws(result["payment_request_id"], "paid")
+    return result

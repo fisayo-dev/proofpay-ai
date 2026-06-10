@@ -11,6 +11,7 @@ from app.api.v1.routes_payment_requests import router as payment_router
 from app.api.v1.routes_payments import router as payments_router
 from app.api.v1.routes_vendor import router as vendor_router
 from app.api.v1.routes_webhooks import router as webhooks_router
+from app.api.v1.routes_ws import router as ws_router
 from app.core.config import settings
 from app.core.error_handlers import (
     database_exception_handler,
@@ -51,6 +52,7 @@ app.include_router(payments_router)
 app.include_router(disputes_router)
 app.include_router(demo_router)
 app.include_router(webhooks_router)
+app.include_router(ws_router)
 
 
 @app.get("/api/v1/health")

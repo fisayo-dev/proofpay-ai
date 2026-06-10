@@ -17,6 +17,7 @@ from app.api.v1.routes_webhooks import (
     get_kora_webhook_probe,
     process_kora_webhook_event,
 )
+from app.api.v1.routes_ws import notify_ws
 
 router = APIRouter(prefix="/api/v1", tags=["Payments"])
 
@@ -96,4 +97,12 @@ async def kora_webhook_endpoint(
     except json.JSONDecodeError as exc:
         raise HTTPException(status_code=400, detail="Invalid JSON payload.") from exc
 
-    return process_kora_webhook_event(payload, x_korapay_signature, raw_body)
+    result = process_kora_webhook_event(payload, x_korapay_signature, raw_body)
+    if (
+        result.get("signature_valid")
+        and not result.get("duplicate")
+        and result.get("payment_request_id")
+        and result.get("status") == "paid"
+    ):
+        await notify_ws(result["payment_request_id"], "paid")
+    return result

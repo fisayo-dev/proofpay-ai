@@ -118,7 +118,7 @@ def mark_webhook_processed(event_type: str, kora_reference: str) -> None:
     conn.close()
 
 
-def mark_payment_paid(kora_reference: str, payload: dict) -> None:
+def mark_payment_paid(kora_reference: str, payload: dict) -> str | None:
     conn = get_connection()
     cursor = conn.cursor()
     now = datetime.now(timezone.utc).isoformat()
@@ -128,9 +128,17 @@ def mark_payment_paid(kora_reference: str, payload: dict) -> None:
         UPDATE payment_requests
         SET status = 'paid', updated_at = %s
         WHERE kora_reference = %s AND status != 'paid'
+        RETURNING id
         """,
         (now, kora_reference)
     )
+    row = cursor.fetchone()
+    if isinstance(row, dict):
+        payment_request_id = str(row["id"]) if row.get("id") else None
+    elif row:
+        payment_request_id = str(row[0])
+    else:
+        payment_request_id = None
 
     cursor.execute(
         """
@@ -146,6 +154,7 @@ def mark_payment_paid(kora_reference: str, payload: dict) -> None:
 
     conn.commit()
     conn.close()
+    return payment_request_id
 
 
 def mark_payment_failed(kora_reference: str, payload: dict) -> None:
