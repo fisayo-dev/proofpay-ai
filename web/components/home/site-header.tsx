@@ -20,11 +20,12 @@ export function SiteHeader() {
   const closeMenu = () => setIsMenuOpen(false);
   const avatarUrl = session
     ? getVendorAvatarUrl([
-        session.vendor_id,
-        session.business_name,
+        session.vendor_id || session.user_id || "",
+        session.business_name || session.role,
         session.full_name,
       ])
     : null;
+  const isVendor = session?.role === "vendor";
 
   return (
     <header className="fixed z-30 w-full bg-background/95 py-3">
@@ -54,19 +55,21 @@ export function SiteHeader() {
           <div className="hidden items-center space-x-4 lg:flex">
             {session ?
               <>
-                <Button variant="outline" asChild>
-                  <Link href="/vendors/new-product">
-                    <Plus />
-                    Create Product
-                  </Link>
-                </Button>
+                {isVendor ? (
+                  <Button variant="outline" asChild>
+                    <Link href="/vendors/new-product">
+                      <Plus />
+                      Create Product
+                    </Link>
+                  </Button>
+                ) : null}
                 <Button variant="outline" asChild>
                   <Link href="/vendors/profile">
                     {avatarUrl ?
                       <Avatar size="sm">
                         <AvatarImage
                           src={avatarUrl}
-                          alt={`${session.business_name} vendor avatar`}
+                          alt={`${session.full_name} account avatar`}
                         />
                         <AvatarFallback>
                           {session.full_name.slice(0, 1).toUpperCase()}
@@ -120,21 +123,23 @@ export function SiteHeader() {
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row">
-              {session ?
+            {session ?
                 <>
-                  <Button variant="outline" asChild className="w-full sm:flex-1">
-                    <Link href="/vendors/new-product" onClick={closeMenu}>
-                      <Plus />
-                      Create Product
-                    </Link>
-                  </Button>
+                  {isVendor ? (
+                    <Button variant="outline" asChild className="w-full sm:flex-1">
+                      <Link href="/vendors/new-product" onClick={closeMenu}>
+                        <Plus />
+                        Create Product
+                      </Link>
+                    </Button>
+                  ) : null}
                   <Button variant="outline" asChild className="w-full sm:flex-1">
                     <Link href="/vendors/profile" onClick={closeMenu}>
                       {avatarUrl ?
                         <Avatar size="sm">
                           <AvatarImage
                             src={avatarUrl}
-                            alt={`${session.business_name} vendor avatar`}
+                            alt={`${session.full_name} account avatar`}
                           />
                           <AvatarFallback>
                             {session.full_name.slice(0, 1).toUpperCase()}

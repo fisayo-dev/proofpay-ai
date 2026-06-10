@@ -9,6 +9,76 @@ from app.api.v1 import routes_vendor
 
 
 class VendorRouteTest(unittest.TestCase):
+    def test_signup_buyer_returns_buyer_session(self):
+        body = routes_vendor.SignupRequest(
+            role="buyer",
+            full_name="Daniel Buyer",
+            email="daniel@example.com",
+            password="StrongPass123!",
+            business_name="",
+            category="",
+        )
+        account = {
+            "user_id": "user_123",
+            "vendor_id": None,
+            "role": "buyer",
+            "full_name": "Daniel Buyer",
+            "email": "daniel@example.com",
+            "business_name": "",
+            "trust_score": None,
+            "created_at": "2026-06-10T08:00:00+00:00",
+        }
+
+        with (
+            patch.object(routes_vendor, "create_account", return_value=account),
+            patch.object(routes_vendor, "create_session_token", return_value="signed-token"),
+        ):
+            response = routes_vendor.signup_endpoint(body)
+
+        payload = json.loads(response.body)
+        self.assertEqual(payload["role"], "buyer")
+        self.assertIsNone(payload["vendor_id"])
+        self.assertIn("proofpay_session=signed-token", response.headers["set-cookie"])
+
+    def test_login_returns_role_aware_session(self):
+        body = routes_vendor.LoginRequest(
+            email="vendor@example.com",
+            password="StrongPass123!",
+        )
+        account = {
+            "user_id": "user_123",
+            "vendor_id": "vendor_123",
+            "role": "vendor",
+            "full_name": "Favour Ade",
+            "email": "vendor@example.com",
+            "business_name": "Favour Fits",
+            "trust_score": 82,
+            "created_at": "2026-06-10T08:00:00+00:00",
+        }
+
+        with (
+            patch.object(routes_vendor, "login_account", return_value=account),
+            patch.object(routes_vendor, "create_session_token", return_value="signed-token"),
+        ):
+            response = routes_vendor.login_endpoint(body)
+
+        payload = json.loads(response.body)
+        self.assertEqual(payload["role"], "vendor")
+        self.assertEqual(payload["vendor_id"], "vendor_123")
+
+    def test_login_rejects_invalid_credentials(self):
+        body = routes_vendor.LoginRequest(email="bad@example.com", password="wrong")
+
+        with patch.object(
+            routes_vendor,
+            "login_account",
+            side_effect=routes_vendor.InvalidLoginError("Invalid email or password."),
+        ):
+            with self.assertRaises(routes_vendor.HTTPException) as context:
+                routes_vendor.login_endpoint(body)
+
+        self.assertEqual(context.exception.status_code, 401)
+
     def test_create_vendor_sets_httponly_cookie_without_token_body(self):
         body = routes_vendor.CreateVendorRequest(
             full_name="Favour Ade",
@@ -123,6 +193,56 @@ class VendorRouteTest(unittest.TestCase):
         ):
             with self.assertRaises(psycopg.OperationalError):
                 routes_vendor.get_vendor_endpoint("vendor_123")
+
+    def test_score_prediction_endpoint_returns_prediction(self):
+        prediction = {
+            "current_score": 72,
+            "predicted_score_if_paid": 79,
+            "message": "Complete this transaction to raise your trust score from 72 to 79",
+        }
+
+        with patch.object(
+            routes_vendor,
+            "get_vendor_score_prediction",
+            return_value=prediction,
+        ):
+            result = routes_vendor.get_vendor_score_prediction_endpoint("vendor_123")
+
+        self.assertEqual(result, prediction)
+
+    def test_score_prediction_endpoint_returns_404_when_vendor_missing(self):
+        with patch.object(routes_vendor, "get_vendor_score_prediction", return_value=None):
+            with self.assertRaises(routes_vendor.HTTPException) as context:
+                routes_vendor.get_vendor_score_prediction_endpoint("missing")
+
+        self.assertEqual(context.exception.status_code, 404)
+        self.assertEqual(context.exception.detail["code"], "VENDOR_NOT_FOUND")
+
+    def test_analytics_endpoint_returns_metrics(self):
+        analytics = {
+            "vendor_id": "vendor_123",
+            "total_requests": 10,
+            "paid_count": 7,
+            "failed_count": 1,
+            "pending_count": 2,
+            "dispute_count": 1,
+            "completion_rate": 0.7,
+            "average_amount_naira": 5500.0,
+            "average_time_to_payment_seconds": 120.0,
+        }
+
+        with patch.object(routes_vendor, "get_vendor_analytics", return_value=analytics):
+            result = routes_vendor.get_vendor_analytics_endpoint("vendor_123")
+
+        self.assertEqual(result, analytics)
+
+    def test_analytics_endpoint_returns_404_when_vendor_missing(self):
+        with patch.object(routes_vendor, "get_vendor_analytics", return_value=None):
+            with self.assertRaises(routes_vendor.HTTPException) as context:
+                routes_vendor.get_vendor_analytics_endpoint("missing")
+
+        self.assertEqual(context.exception.status_code, 404)
+        self.assertEqual(context.exception.detail["code"], "VENDOR_NOT_FOUND")
 
 
 if __name__ == "__main__":

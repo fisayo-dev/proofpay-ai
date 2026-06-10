@@ -15,6 +15,11 @@ from app.services.payment_request_service import (
 from app.services.ai_trust_service import generate_ai_trust_explanation
 from app.services.trust_score_service import calculate_trust_score
 from app.services.vendor_service import get_vendor_by_id, get_vendor_for_scoring
+from app.services.vendor_reputation_service import (
+    get_vendor_badge,
+    get_vendor_trust_history,
+    predict_score_after_success,
+)
 
 router = APIRouter(prefix="/api/v1", tags=["Payment Requests"])
 
@@ -108,6 +113,29 @@ def refresh_trust_score(body: dict):
     return trust
 
 
+@router.post("/trust/predict")
+def predict_trust_score_endpoint(body: dict):
+    vendor_id = body.get("vendor_id")
+    if not vendor_id:
+        raise HTTPException(
+            status_code=400,
+            detail={"code": "VALIDATION_ERROR", "message": "vendor_id is required."}
+        )
+
+    vendor = get_vendor_for_scoring(vendor_id)
+    if not vendor:
+        raise HTTPException(
+            status_code=404,
+            detail={"code": "VENDOR_NOT_FOUND", "message": "Vendor not found."}
+        )
+
+    score = body.get("current_score")
+    if score is None:
+        score = calculate_trust_score(vendor, body).get("score")
+
+    return predict_score_after_success(score, vendor.get("completed_transactions", 0))
+
+
 @router.get("/payment-requests/{request_id}")
 def get_request_endpoint(request_id: str):
     request = get_payment_request_by_id(request_id)
@@ -132,6 +160,14 @@ def get_public_request_endpoint(public_slug: str):
 
     vendor = get_vendor_by_id(str(request["vendor_id"]))
     trust_check = get_trust_check_by_payment_request_id(str(request["id"]))
+    vendor_badge = get_vendor_badge(
+        request.get("trust_score_at_creation"),
+        vendor.get("completed_transactions") if vendor else 0,
+    )
+    try:
+        trust_history = get_vendor_trust_history(str(request["vendor_id"]), limit=8)
+    except Exception:
+        trust_history = []
     trust_payload = {
         "score": request.get("trust_score_at_creation"),
         "verdict": request.get("trust_verdict"),
@@ -146,7 +182,8 @@ def get_public_request_endpoint(public_slug: str):
         "seller": {
             "business_name": vendor["business_name"] if vendor else "Unknown",
             "category": vendor["category"] if vendor else "",
-            "social_handle": vendor.get("social_handle") if vendor else None
+            "social_handle": vendor.get("social_handle") if vendor else None,
+            "badge": vendor_badge,
         },
         "item": {
             "name": request["item_name"],
@@ -166,6 +203,11 @@ def get_public_request_endpoint(public_slug: str):
             "ai_engine": ai_explanation["engine"],
             "ai_model": ai_explanation["model"],
             "anomaly_warnings": ai_explanation["anomaly_warnings"],
+            "history": trust_history,
+            "prediction": predict_score_after_success(
+                trust_payload["score"],
+                vendor.get("completed_transactions") if vendor else 0,
+            ),
         },
         "payment_status": request["status"],
         "kora_reference": request["kora_reference"],

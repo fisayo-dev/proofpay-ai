@@ -218,14 +218,12 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
     product.item.currency,
   );
   const callbackUrl = `/payments/callback/${paymentConfig.payment_request_id}`;
-  const productImageUrl =
-    product.item.image_url && product.item.image_url.trim()
-      ? product.item.image_url
-      : "/images/products/ceramic-mug.jpg";
   const aiSummary =
     product.trust.ai_summary ||
     "ProofPay AI reviewed seller signals, payment context, and request details before sending you to checkout.";
   const anomalyWarnings = product.trust.anomaly_warnings || [];
+  const trustHistory = product.trust.history || [];
+  const vendorBadge = product.seller.badge;
 
   const redirectToCallback = () => {
     window.location.assign(callbackUrl);
@@ -342,6 +340,16 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
                     <VerificationIcon className="size-3.5" />
                     {verification.label}
                   </Badge>
+                  {vendorBadge ? (
+                    <Badge
+                      variant="outline"
+                      className="gap-1 rounded-md px-2.5 py-1"
+                      title={vendorBadge.description}
+                    >
+                      <span>{vendorBadge.icon}</span>
+                      {vendorBadge.label}
+                    </Badge>
+                  ) : null}
                 </div>
 
                 <div className="space-y-3">
@@ -432,6 +440,17 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
                   ) : null}
                 </div>
 
+                {product.trust.prediction ? (
+                  <div className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+                    <p className="text-sm font-semibold text-primary">
+                      Trust score prediction
+                    </p>
+                    <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                      {product.trust.prediction.message}
+                    </p>
+                  </div>
+                ) : null}
+
                 {anomalyWarnings.length > 0 ? (
                   <div className="rounded-lg border border-destructive/25 bg-destructive/5 px-4 py-3">
                     <p className="text-sm font-semibold text-destructive">
@@ -442,6 +461,33 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
                         <li key={warning}>- {warning}</li>
                       ))}
                     </ul>
+                  </div>
+                ) : null}
+
+                {trustHistory.length > 0 ? (
+                  <div className="rounded-lg border border-border/70 bg-background px-4 py-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm font-semibold">Reputation graph</p>
+                      <p className="text-xs text-muted-foreground">
+                        {trustHistory.length} checks
+                      </p>
+                    </div>
+                    <div className="mt-3 flex h-16 items-end gap-2">
+                      {trustHistory.slice(-8).map((point, index) => (
+                        <div
+                          key={`${point.created_at}-${index}`}
+                          className="flex flex-1 flex-col items-center gap-1"
+                        >
+                          <div
+                            className="w-full rounded-t-md bg-primary/70"
+                            style={{
+                              height: `${Math.max(10, Math.min(100, point.score))}%`,
+                            }}
+                            title={`${point.score}% - ${point.verdict}`}
+                          />
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 ) : null}
 

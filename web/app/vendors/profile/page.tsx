@@ -31,10 +31,11 @@ const ProfilePage = () => {
   if (!session) return null;
 
   const avatarUrl = getVendorAvatarUrl([
-    session.vendor_id,
-    session.business_name,
+    session.vendor_id || session.user_id || "",
+    session.business_name || session.role,
     session.full_name,
   ]);
+  const isVendor = session.role === "vendor";
 
   return (
     <section className="mx-auto max-w-2xl space-y-6 pb-20 sm:pb-24">
@@ -53,7 +54,7 @@ const ProfilePage = () => {
             <Avatar className="size-20 shadow-sm">
               <AvatarImage
                 src={avatarUrl}
-                alt={`${session.business_name} vendor avatar`}
+                alt={`${session.full_name} account avatar`}
               />
               <AvatarFallback>
                 {session.full_name.slice(0, 1).toUpperCase()}
@@ -76,13 +77,19 @@ const ProfilePage = () => {
               <span className="block text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 Business name
               </span>
-              <span>{session.business_name}</span>
+              <span>{session.business_name || "Buyer account"}</span>
             </div>
           </div>
 
-          <Button variant="outline" onClick={() => router.push("/vendors/new-product")}>
-            Create new product
-          </Button>
+          {isVendor ? (
+            <Button variant="outline" onClick={() => router.push("/vendors/new-product")}>
+              Create new product
+            </Button>
+          ) : (
+            <Button variant="outline" onClick={() => router.push("/#store")}>
+              Browse store
+            </Button>
+          )}
         </CardContent>
       </Card>
     </section>

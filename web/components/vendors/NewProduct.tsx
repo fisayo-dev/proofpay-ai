@@ -61,7 +61,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { DEFAULT_DELIVERY_METHOD, MAX_IMAGE_BYTES, CURRENCY, DELIVERY_METHODS } from "@/constants/products";
+import { DEFAULT_DELIVERY_METHOD, MAX_IMAGE_BYTES, CURRENCY, DELIVERY_METHODS, SUPPORTED_IMAGE_TYPES } from "@/constants/products";
 
 
 type CreatedProduct = {
@@ -271,11 +271,10 @@ const NewProductComponent = () => {
       return;
     }
 
-    // if (imageFile && !SUPPORTED_IMAGE_TYPES.includes(imageFile.type)) {
-    //   console.log("Image file type: ",imageFile.type)
-    //   setErrorMessage("Upload a JPEG, PNG, or WebP product image.");
-    //   return;
-    // }
+    if (imageFile && !SUPPORTED_IMAGE_TYPES.includes(imageFile.type)) {
+      setErrorMessage("Upload a JPEG, PNG, or WebP product image.");
+      return;
+    }
 
     if (imageFile && imageFile.size > MAX_IMAGE_BYTES) {
       setErrorMessage("Product image must be 5MB or smaller.");

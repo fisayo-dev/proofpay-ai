@@ -12,6 +12,7 @@ FastAPI backend for AI-scored payment requests, Kora checkout handoff, verified 
 - `KORA_WEBHOOK_URL`
 - `GROQ_API_KEY`
 - `GROQ_MODEL`
+- `XGBOOST_FRAUD_MODEL_PATH` (optional)
 - `FRONTEND_BASE_URL`
 - `BACKEND_BASE_URL`
 - `SESSION_SECRET`
@@ -21,9 +22,15 @@ FastAPI backend for AI-scored payment requests, Kora checkout handoff, verified 
 
 - `GET /api/v1/health`
 - `POST /api/v1/vendors`
+- `POST /api/v1/auth/signup`
+- `POST /api/v1/auth/login`
 - `GET /api/v1/vendors/{vendor_id}`
 - `GET /api/v1/vendors/{vendor_id}/requests`
+- `GET /api/v1/vendors/{vendor_id}/metrics`
+- `GET /api/v1/vendors/{vendor_id}/trust-history`
+- `GET /api/v1/vendors/{vendor_id}/badge`
 - `POST /api/v1/payment-requests`
+- `POST /api/v1/trust/predict`
 - `GET /api/v1/payment-requests/{id}`
 - `GET /api/v1/public/r/{public_slug}`
 - `GET /api/v1/payments/{payment_request_id}/status`
@@ -40,6 +47,13 @@ The public buyer endpoint calls Groq server-side when `GROQ_API_KEY` is configur
 - `GET /api/v1/public/r/{public_slug}` returns `trust.ai_summary`.
 - The summary explains the trust score, fraud/anomaly signals, and buyer recommendation in plain English.
 - If Groq fails or the key is missing, the backend returns a deterministic fallback summary.
+
+## Reputation and Fraud Layer
+
+- Vendor badges are derived from trust score and completed transaction count: `Top Seller`, `Verified`, `Rising Star`, or `New Vendor`.
+- Trust history comes from saved `trust_checks`, so the frontend can draw a reputation graph.
+- `POST /api/v1/trust/predict` estimates how much a successful payment can improve a vendor score.
+- XGBoost fraud scoring is optional. If `xgboost` or a model file is unavailable, the deterministic anomaly rules still run.
 
 ## Kora Flow
 
