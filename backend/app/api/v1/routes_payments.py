@@ -1,8 +1,11 @@
 # backend/app/api/v1/routes_payments.py
 
 import logging
+import json
+from pathlib import Path
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Header, HTTPException, Request
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from app.core.config import settings
 from app.services.payment_request_service import (
@@ -16,6 +19,12 @@ from app.services.payment_status_service import (
 )
 from app.services.kora_service import KoraVerificationError, verify_kora_charge
 from app.services.webhook_service import mark_payment_paid_from_checkout_callback
+from app.services.receipt_service import generate_receipt_pdf
+from app.api.v1.routes_webhooks import (
+    get_kora_webhook_probe,
+    process_kora_webhook_event,
+)
+from app.api.v1.routes_ws import notify_ws
 
 router = APIRouter(prefix="/api/v1", tags=["Payments"])
 logger = logging.getLogger("proofpay.payments")
@@ -202,6 +211,47 @@ def get_vendor_requests_endpoint(vendor_id: str):
         "total": len(requests),
         "requests": requests,
     }
+
+
+@router.get("/payments/{payment_request_id}/receipt")
+def get_payment_receipt_endpoint(payment_request_id: str):
+    """
+    Download PDF receipt for a paid payment request.
+    """
+    request = get_payment_request_by_id(payment_request_id)
+    if not request:
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "code": "PAYMENT_REQUEST_NOT_FOUND",
+                "message": "Payment request not found.",
+            },
+        )
+
+    if request["status"] != "paid":
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": "PAYMENT_NOT_PAID",
+                "message": "Receipt is only available for paid payments.",
+            },
+        )
+
+    receipt_path = Path("/tmp") / f"{request['kora_reference']}_receipt.pdf"
+    if not receipt_path.exists():
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "code": "RECEIPT_NOT_FOUND",
+                "message": "Receipt not yet generated. Please try again in a moment.",
+            },
+        )
+
+    return FileResponse(
+        str(receipt_path),
+        media_type="application/pdf",
+        filename=f"receipt_{request['kora_reference']}.pdf",
+    )
 
 
 @router.api_route("/payments/kora/webhook", methods=["GET", "HEAD"])
