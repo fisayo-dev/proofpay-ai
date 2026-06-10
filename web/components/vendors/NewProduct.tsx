@@ -83,6 +83,7 @@ type CreatedProduct = {
   name: string;
   description: string;
   publicUrl: string;
+  imageUrl?: string;
 };
 
 const getDefaultExpectedDate = () => {
@@ -318,6 +319,7 @@ const NewProductComponent = () => {
         name: itemName.trim(),
         description: itemDescription.trim(),
         publicUrl: getPublicUrl(res.public_url),
+        imageUrl: uploadedImageUrl ?? undefined,
       });
       setItemName("");
       setItemDescription("");
@@ -386,6 +388,14 @@ const NewProductComponent = () => {
 
             <CardContent className="space-y-6 px-5 pb-6 sm:px-8">
               <div className="rounded-2xl border border-border/70 bg-muted/20 p-4 sm:p-5">
+                {createdProduct.imageUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={createdProduct.imageUrl}
+                    alt={createdProduct.name}
+                    className="mb-3 h-44 w-full rounded-xl object-cover"
+                  />
+                )}
                 <p className="mb-2 text-xs font-medium uppercase text-muted-foreground">
                   Product
                 </p>
