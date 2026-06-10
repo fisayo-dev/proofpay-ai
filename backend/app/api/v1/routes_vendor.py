@@ -11,7 +11,9 @@ from app.services.auth_service import create_session_token
 from app.services.vendor_service import (
     VendorAlreadyExistsError,
     create_vendor,
+    get_vendor_analytics,
     get_vendor_by_id,
+    get_vendor_score_prediction,
 )
 
 router = APIRouter(prefix="/api/v1", tags=["Vendors"])
@@ -78,3 +80,25 @@ def get_vendor_endpoint(vendor_id: str):
             detail={"code": "VENDOR_NOT_FOUND", "message": "Vendor not found."}
         )
     return vendor
+
+
+@router.get("/vendors/{vendor_id}/score-prediction")
+def get_vendor_score_prediction_endpoint(vendor_id: str):
+    prediction = get_vendor_score_prediction(vendor_id)
+    if not prediction:
+        raise HTTPException(
+            status_code=404,
+            detail={"code": "VENDOR_NOT_FOUND", "message": "Vendor not found."}
+        )
+    return prediction
+
+
+@router.get("/vendors/{vendor_id}/analytics")
+def get_vendor_analytics_endpoint(vendor_id: str):
+    analytics = get_vendor_analytics(vendor_id)
+    if not analytics:
+        raise HTTPException(
+            status_code=404,
+            detail={"code": "VENDOR_NOT_FOUND", "message": "Vendor not found."}
+        )
+    return analytics

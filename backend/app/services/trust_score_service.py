@@ -2,12 +2,30 @@
 
 from app.services.anomaly_service import detect_anomalies
 
+CATEGORY_AMOUNT_RANGES_NAIRA = {
+    "food": (500, 15000),
+    "fashion": (1000, 80000),
+    "gadgets": (5000, 500000),
+    "services": (1000, 100000),
+    "tickets": (500, 50000),
+    "other": (500, 100000),
+}
+
 
 def _safe_int(value, default: int = 0) -> int:
     try:
         return int(value)
     except (TypeError, ValueError):
         return default
+
+
+def typical_amount_kobo_for_category(category: str | None) -> int:
+    normalized = str(category or "other").lower()
+    low, high = CATEGORY_AMOUNT_RANGES_NAIRA.get(
+        normalized,
+        CATEGORY_AMOUNT_RANGES_NAIRA["other"],
+    )
+    return int(((low + high) / 2) * 100)
 
 
 def calculate_trust_score(vendor: dict, payment_request: dict) -> dict:
@@ -115,15 +133,10 @@ def calculate_trust_score(vendor: dict, payment_request: dict) -> dict:
     features["amount_naira"] = amount_naira
 
     category = str(vendor.get("category", "") or "").lower()
-    category_ranges = {
-        "food": (500, 15000),
-        "fashion": (1000, 80000),
-        "gadgets": (5000, 500000),
-        "services": (1000, 100000),
-        "tickets": (500, 50000),
-        "other": (500, 100000),
-    }
-    low, high = category_ranges.get(category, (500, 100000))
+    low, high = CATEGORY_AMOUNT_RANGES_NAIRA.get(
+        category,
+        CATEGORY_AMOUNT_RANGES_NAIRA["other"],
+    )
 
     if amount_naira <= 0:
         score += 0

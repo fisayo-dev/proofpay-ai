@@ -6,6 +6,10 @@ from datetime import datetime, timezone
 import psycopg
 
 from app.db.connection import get_connection
+from app.services.trust_score_service import (
+    calculate_trust_score,
+    typical_amount_kobo_for_category,
+)
 
 
 class VendorAlreadyExistsError(Exception):
@@ -103,4 +107,113 @@ def get_vendor_for_scoring(vendor_id: str) -> dict | None:
         "completed_transactions": vendor.get("completed_transactions", 0),
         "total_transactions": vendor.get("total_transactions", 0),
         "dispute_count": vendor.get("dispute_count", 0),
+    }
+
+
+def get_vendor_score_prediction(vendor_id: str) -> dict | None:
+    vendor = get_vendor_for_scoring(vendor_id)
+    if not vendor:
+        return None
+
+    scoring_request = {
+        "amount_kobo": typical_amount_kobo_for_category(vendor.get("category")),
+    }
+    current_score = calculate_trust_score(vendor, scoring_request)["score"]
+
+    predicted_vendor = {
+        **vendor,
+        "completed_transactions": int(vendor.get("completed_transactions", 0) or 0) + 1,
+        "total_transactions": int(vendor.get("total_transactions", 0) or 0) + 1,
+    }
+    predicted_score = calculate_trust_score(predicted_vendor, scoring_request)["score"]
+
+    return {
+        "current_score": current_score,
+        "predicted_score_if_paid": predicted_score,
+        "message": (
+            "Complete this transaction to raise your trust score "
+            f"from {current_score} to {predicted_score}"
+        ),
+    }
+
+
+def get_vendor_analytics(vendor_id: str) -> dict | None:
+    if not get_vendor_by_id(vendor_id):
+        return None
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        WITH vendor_requests AS (
+            SELECT *
+            FROM payment_requests
+            WHERE vendor_id = %s
+        ),
+        request_transactions AS (
+            SELECT DISTINCT ON (payment_request_id)
+                payment_request_id,
+                payment_status,
+                paid_at
+            FROM transactions
+            ORDER BY payment_request_id, created_at DESC
+        )
+        SELECT
+            COUNT(vr.id) AS total_requests,
+            COUNT(vr.id) FILTER (
+                WHERE rt.payment_status = 'paid'
+                   OR vr.status IN ('paid', 'delivered', 'disputed')
+            ) AS paid_count,
+            COUNT(vr.id) FILTER (
+                WHERE rt.payment_status = 'failed'
+                   OR vr.status = 'failed'
+            ) AS failed_count,
+            COUNT(vr.id) FILTER (
+                WHERE COALESCE(rt.payment_status, 'pending') = 'pending'
+                  AND vr.status IN ('created', 'pending')
+            ) AS pending_count,
+            (
+                SELECT COUNT(*)
+                FROM disputes d
+                JOIN vendor_requests disputed_requests
+                  ON disputed_requests.id = d.payment_request_id
+            ) AS dispute_count,
+            AVG(vr.amount_kobo) AS average_amount_kobo,
+            EXTRACT(EPOCH FROM AVG(rt.paid_at - vr.created_at) FILTER (
+                WHERE rt.paid_at IS NOT NULL
+            )) AS average_time_to_payment_seconds
+        FROM vendor_requests vr
+        LEFT JOIN request_transactions rt
+          ON rt.payment_request_id = vr.id
+        """,
+        (vendor_id,),
+    )
+    row = cursor.fetchone()
+    conn.close()
+
+    analytics = dict(row or {})
+    total_requests = int(analytics.get("total_requests") or 0)
+    paid_count = int(analytics.get("paid_count") or 0)
+    average_amount_kobo = analytics.get("average_amount_kobo")
+    average_time = analytics.get("average_time_to_payment_seconds")
+
+    return {
+        "vendor_id": vendor_id,
+        "total_requests": total_requests,
+        "paid_count": paid_count,
+        "failed_count": int(analytics.get("failed_count") or 0),
+        "pending_count": int(analytics.get("pending_count") or 0),
+        "dispute_count": int(analytics.get("dispute_count") or 0),
+        "completion_rate": round(paid_count / total_requests, 4) if total_requests else 0.0,
+        "average_amount_naira": (
+            round(float(average_amount_kobo) / 100, 2)
+            if average_amount_kobo is not None
+            else 0.0
+        ),
+        "average_time_to_payment_seconds": (
+            round(float(average_time), 2)
+            if average_time is not None
+            else None
+        ),
     }
