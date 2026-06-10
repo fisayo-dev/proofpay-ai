@@ -359,7 +359,7 @@ const PaymentCallbackStatus = ({ paymentId }: PaymentCallbackStatusProps) => {
             <Button asChild>
               <Link href="/">Return home</Link>
             </Button>
-            {payment && paymentState !== "loading" ? (
+            {payment && paymentState === "success" ? (
               <Button
                 type="button"
                 variant="outline"
