@@ -1,6 +1,8 @@
 # backend/app/api/v1/routes_payments.py
 
-from fastapi import APIRouter, HTTPException
+import json
+
+from fastapi import APIRouter, Header, HTTPException, Request
 from app.core.config import settings
 from app.services.payment_request_service import (
     build_checkout_config,
@@ -10,6 +12,10 @@ from app.services.payment_request_service import (
 from app.services.payment_status_service import (
     get_payment_status,
     get_vendor_payment_requests,
+)
+from app.api.v1.routes_webhooks import (
+    get_kora_webhook_probe,
+    process_kora_webhook_event,
 )
 
 router = APIRouter(prefix="/api/v1", tags=["Payments"])
@@ -69,3 +75,25 @@ def get_vendor_requests_endpoint(vendor_id: str):
         "total": len(requests),
         "requests": requests,
     }
+
+
+@router.api_route("/payments/kora/webhook", methods=["GET", "HEAD"])
+@router.api_route("/payments/kora/webhook/", methods=["GET", "HEAD"])
+def kora_webhook_probe_endpoint():
+    return get_kora_webhook_probe()
+
+
+@router.post("/payments/kora/webhook")
+@router.post("/payments/kora/webhook/")
+async def kora_webhook_endpoint(
+    request: Request,
+    x_korapay_signature: str | None = Header(default=None),
+):
+    raw_body = await request.body()
+
+    try:
+        payload = json.loads(raw_body.decode("utf-8"))
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status_code=400, detail="Invalid JSON payload.") from exc
+
+    return process_kora_webhook_event(payload, x_korapay_signature, raw_body)
