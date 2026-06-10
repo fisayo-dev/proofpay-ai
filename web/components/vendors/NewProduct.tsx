@@ -3,6 +3,7 @@
 import {
   ChangeEvent,
   FormEvent,
+  useCallback,
   useEffect,
   useRef,
   useSyncExternalStore,
@@ -12,11 +13,13 @@ import Confetti from "react-confetti";
 import {
   CheckCircle2,
   Copy,
+  Download,
   ExternalLink,
   ImageIcon,
   Lock,
   MessageCircle,
   Plus,
+  QrCode,
   Send,
   Truck,
   Upload,
@@ -31,12 +34,24 @@ import {
 import { getCachedVendorId } from "@/lib/session";
 import { Button } from "@/components/ui/button";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { QRCodeCanvas } from "qrcode.react";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -89,7 +104,7 @@ const NewProductComponent = () => {
     getDefaultExpectedDate,
   );
   const [createdProduct, setCreatedProduct] = useState<CreatedProduct | null>(
-    { name: "good", description: "nice goods", publicUrl: "https://www.good.come" }
+    {name: "Oraimo headphone", description: "Sleek oraimo headphones", publicUrl: "https://"}
   );
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -99,6 +114,18 @@ const NewProductComponent = () => {
     () => getCachedVendorId(),
     () => null,
   );
+
+  const qrRef = useRef<HTMLCanvasElement>(null);
+
+  const handleDownloadQr = useCallback(() => {
+    const canvas = qrRef.current;
+    if (!canvas) return;
+    const url = canvas.toDataURL("image/png");
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "proofpay-qr.png";
+    a.click();
+  }, []);
 
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
 
@@ -333,8 +360,17 @@ const NewProductComponent = () => {
           />
         : null}
         <section className="mx-auto flex max-w-xl justify-center pb-20 sm:pb-24">
+          <AlertDialog>
           <Card className="w-full border border-border/70 bg-background shadow-[0_24px_80px_-48px_rgba(14,30,86,0.28)]">
-            <CardHeader className="items-center space-y-4 px-5 text-center sm:px-8">
+            <CardHeader className="relative items-center space-y-4 px-5 text-center sm:px-8">
+              <AlertDialogTrigger asChild>
+                <button
+                  type="button"
+                  className="cursor-pointer absolute right-5 top-5 flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                >
+                  <QrCode className="size-5" />
+                </button>
+              </AlertDialogTrigger>
               <div className="flex size-28 items-center justify-center rounded-full mx-auto bg-primary/10">
                 <CheckCircle2 className="size-12 md:size-16 text-primary" />
               </div>
@@ -440,6 +476,32 @@ const NewProductComponent = () => {
               </div>
             </CardContent>
           </Card>
+
+          <AlertDialogContent size="sm">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Scan to pay</AlertDialogTitle>
+              <AlertDialogDescription>
+                Scan this QR code with your phone to open the payment request
+                instantly.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="flex justify-center py-4">
+              <QRCodeCanvas
+                ref={qrRef}
+                value={createdProduct.publicUrl}
+                size={200}
+                level="M"
+              />
+            </div>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Close</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDownloadQr}>
+                <Download className="size-4" />
+                Download
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
         </section>
       </>
     );
