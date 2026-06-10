@@ -53,19 +53,17 @@ export function SiteHeader() {
           </div>
 
           <div className="hidden items-center space-x-4 lg:flex">
-            {session ?
+            {session ? (
               <>
-                {isVendor ? (
-                  <Button variant="outline" asChild>
-                    <Link href="/vendors/new-product">
-                      <Plus />
-                      Create Product
-                    </Link>
-                  </Button>
-                ) : null}
+                <Button variant="outline" asChild>
+                  <Link href="/vendors/new-product">
+                    <Plus />
+                    Create Product
+                  </Link>
+                </Button>
                 <Button variant="outline" asChild>
                   <Link href="/vendors/profile">
-                    {avatarUrl ?
+                    {avatarUrl ? (
                       <Avatar size="sm">
                         <AvatarImage
                           src={avatarUrl}
@@ -75,18 +73,21 @@ export function SiteHeader() {
                           {session.full_name.slice(0, 1).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
-                    : <User2 />}
+                    ) : (
+                      <User2 />
+                    )}
                     {session.full_name}
                   </Link>
                 </Button>
               </>
-            : <Button asChild>
+            ) : (
+              <Button asChild>
                 <Link href="/vendors/signup">
                   <User2 />
                   Signup as vendor
                 </Link>
               </Button>
-            }
+            )}
           </div>
 
           <Button
@@ -123,19 +124,27 @@ export function SiteHeader() {
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row">
-            {session ?
+              {session ? (
                 <>
                   {isVendor ? (
-                    <Button variant="outline" asChild className="w-full sm:flex-1">
+                    <Button
+                      variant="outline"
+                      asChild
+                      className="w-full sm:flex-1"
+                    >
                       <Link href="/vendors/new-product" onClick={closeMenu}>
                         <Plus />
                         Create Product
                       </Link>
                     </Button>
                   ) : null}
-                  <Button variant="outline" asChild className="w-full sm:flex-1">
+                  <Button
+                    variant="outline"
+                    asChild
+                    className="w-full sm:flex-1"
+                  >
                     <Link href="/vendors/profile" onClick={closeMenu}>
-                      {avatarUrl ?
+                      {avatarUrl ? (
                         <Avatar size="sm">
                           <AvatarImage
                             src={avatarUrl}
@@ -145,18 +154,21 @@ export function SiteHeader() {
                             {session.full_name.slice(0, 1).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
-                      : <User2 />}
+                      ) : (
+                        <User2 />
+                      )}
                       {session.full_name}
                     </Link>
                   </Button>
                 </>
-              : <Button asChild className="w-full sm:flex-1">
+              ) : (
+                <Button asChild className="w-full sm:flex-1">
                   <Link href="/vendors/signup" onClick={closeMenu}>
                     <User2 />
                     Signup as vendor
                   </Link>
                 </Button>
-              }
+              )}
             </div>
           </div>
         </div>
