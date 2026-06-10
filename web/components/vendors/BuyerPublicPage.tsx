@@ -5,6 +5,7 @@ import Script from "next/script";
 import {
   AlertTriangle,
   ArrowRight,
+  Award,
   BadgeCheck,
   Building2,
   ChevronDown,
@@ -55,6 +56,31 @@ const formatCurrency = (amount: number, currency: string) => {
     currency,
     minimumFractionDigits: 2,
   }).format(amount / 1);
+};
+
+const getVerificationBadge = (score: number) => {
+  if (score >= 80) {
+    return {
+      label: "Top seller",
+      Icon: Award,
+      className:
+        "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400",
+    };
+  }
+  if (score >= 65) {
+    return {
+      label: "Verified",
+      Icon: BadgeCheck,
+      className:
+        "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+    };
+  }
+  return {
+    label: "Rising star",
+    Icon: Sparkles,
+    className:
+      "border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400",
+  };
 };
 
 const getTrustTone = (score: number) => {
@@ -185,6 +211,8 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
   const [isKoraScriptReady, setIsKoraScriptReady] = useState(false);
   const trustTone = getTrustTone(product.trust.score);
   const TrustIcon = trustTone.Icon;
+  const verification = getVerificationBadge(product.trust.score);
+  const VerificationIcon = verification.Icon;
   const formattedAmount = formatCurrency(
     product.item.amount,
     product.item.currency,
@@ -303,6 +331,16 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
                     className="rounded-md px-2.5 py-1 text-muted-foreground"
                   >
                     {product.seller.category}
+                  </Badge>
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "gap-1.5 rounded-md px-2.5 py-1",
+                      verification.className,
+                    )}
+                  >
+                    <VerificationIcon className="size-3.5" />
+                    {verification.label}
                   </Badge>
                 </div>
 
