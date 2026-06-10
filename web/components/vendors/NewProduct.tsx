@@ -15,7 +15,9 @@ import {
   ExternalLink,
   ImageIcon,
   Lock,
+  MessageCircle,
   Plus,
+  Send,
   Truck,
   Upload,
   X,
@@ -87,7 +89,7 @@ const NewProductComponent = () => {
     getDefaultExpectedDate,
   );
   const [createdProduct, setCreatedProduct] = useState<CreatedProduct | null>(
-    null,
+    { name: "good", description: "nice goods", publicUrl: "https://www.good.come" }
   );
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -153,6 +155,27 @@ const NewProductComponent = () => {
     } catch {
       toast.error("Could not copy the public URL.");
     }
+  };
+
+  const handleShareToWhatsApp = () => {
+    if (!createdProduct) return;
+    const text = encodeURIComponent(
+      `I just created a payment request for "${createdProduct.name}" on ProofPay. Pay securely here: ${createdProduct.publicUrl}`,
+    );
+    window.open(`https://wa.me/?text=${text}`, "_blank", "noopener,noreferrer");
+  };
+
+  const handleShareToTelegram = () => {
+    if (!createdProduct) return;
+    const text = encodeURIComponent(
+      `I just created a payment request for "${createdProduct.name}" on ProofPay.`,
+    );
+    const url = encodeURIComponent(createdProduct.publicUrl);
+    window.open(
+      `https://t.me/share/url?url=${url}&text=${text}`,
+      "_blank",
+      "noopener,noreferrer",
+    );
   };
 
   const handleCreateAnotherProduct = () => {
@@ -365,6 +388,32 @@ const NewProductComponent = () => {
                       </div>
                     </div>
                   )}
+                </div>
+              </div>
+
+              <div className="space-y-3 mt-4">
+                <p className="text-center text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  Share via
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full gap-2"
+                    onClick={handleShareToWhatsApp}
+                  >
+                    <MessageCircle className="size-4 text-[#25D366]" />
+                    <span className="hidden sm:block">WhatsApp</span>
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full gap-2"
+                    onClick={handleShareToTelegram}
+                  >
+                    <Send className="size-4 text-[#0088cc]" />
+                    <span className="hidden sm:block">Telegram</span>
+                  </Button>
                 </div>
               </div>
 
