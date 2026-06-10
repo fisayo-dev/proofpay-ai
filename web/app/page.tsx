@@ -1,3 +1,4 @@
+import Faq from "@/components/home/faq";
 import Features from "@/components/home/features";
 import Hero from "@/components/home/hero";
 import { SiteFooter } from "@/components/home/site-footer";
@@ -11,6 +12,7 @@ export default function Home() {
       <Features />
       <VendorSection />
       <StoreSection />
+      <Faq />
       <SiteFooter />
     </div>
   );
