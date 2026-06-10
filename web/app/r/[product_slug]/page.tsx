@@ -6,10 +6,15 @@ import {
   getPublicProduct,
 } from "@/lib/actions/payment-requests";
 
+type ProductPageProps = {
+  params: Promise<{
+    product_slug: string;
+  }>;
+};
 
 const ProductPage = async ({
   params,
-}: PageProps<"/r/[product_slug]">) => {
+}: ProductPageProps) => {
   const { product_slug } = await params;
 
   let product: Awaited<ReturnType<typeof getPublicProduct>>;

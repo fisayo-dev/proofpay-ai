@@ -2,14 +2,17 @@
 
 import { ChangeEvent, FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Store, UserRound } from "lucide-react";
+import { Check, LogIn, Store, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { getFriendlyApiErrorMessage } from "@/lib/api-error";
-import signupVendor from "@/lib/actions/auth";
+import signupVendor, { login } from "@/lib/actions/auth";
 import { cn } from "@/lib/utils";
+
+type AccountType = "vendor" | "buyer";
+type AuthMode = "signup" | "login";
 
 const steps = [
   {
@@ -29,6 +32,8 @@ const steps = [
 const VendorSignupForm = () => {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(0);
+  const [accountType, setAccountType] = useState<AccountType>("vendor");
+  const [authMode, setAuthMode] = useState<AuthMode>("signup");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -55,7 +60,55 @@ const VendorSignupForm = () => {
     setVendorTouched({});
   };
 
-  const handleContinue = () => {
+  const routeAfterAuth = (role: AccountType) => {
+    if (role === "buyer") {
+      router.push("/#store");
+      return;
+    }
+
+    router.push("/vendors/profile");
+  };
+
+  const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    resetMessages();
+
+    const newErrors: Record<string, string> = {};
+    if (!email.trim()) {
+      newErrors.email = "Email is required.";
+    }
+    if (!password.trim()) {
+      newErrors.password = "Password is required.";
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setProfileErrors(newErrors);
+      setProfileTouched({ email: true, password: true });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const account = await login({
+        email: email.trim(),
+        password: password.trim(),
+      });
+      toast.success("Logged in successfully.");
+      routeAfterAuth(account.role);
+    } catch (error) {
+      setServerError(
+        getFriendlyApiErrorMessage(
+          error,
+          "We could not log you in. Please check your details and try again.",
+        ),
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleContinue = async () => {
     resetMessages();
 
     const newErrors: Record<string, string> = {};
@@ -82,6 +135,35 @@ const VendorSignupForm = () => {
         email: true,
         password: true,
       });
+      return;
+    }
+
+    if (accountType === "buyer") {
+      setIsSubmitting(true);
+      try {
+        await signupVendor({
+          role: "buyer",
+          full_name: `${firstName.trim()} ${lastName.trim()}`,
+          email: email.trim(),
+          password: password.trim(),
+          business_name: "",
+          category: "",
+          phone: "",
+          social_handle: "",
+          bank_account_name: "",
+        });
+        toast.success("Buyer account created successfully.");
+        routeAfterAuth("buyer");
+      } catch (error) {
+        setServerError(
+          getFriendlyApiErrorMessage(
+            error,
+            "We could not create your account. Please check your details and try again.",
+          ),
+        );
+      } finally {
+        setIsSubmitting(false);
+      }
       return;
     }
 
@@ -139,6 +221,7 @@ const VendorSignupForm = () => {
         full_name: `${firstName.trim()} ${lastName.trim()}`,
         email: email.trim(),
         password: password.trim(),
+        role: "vendor",
         business_name: businessName.trim(),
         category: category.trim(),
         phone: phone.trim(),
@@ -147,7 +230,7 @@ const VendorSignupForm = () => {
       });
 
       toast.success("Vendor account created successfully.");
-      router.push("/vendors/new-product");
+      routeAfterAuth("vendor");
     } catch (error) {
       setServerError(
         getFriendlyApiErrorMessage(
@@ -195,21 +278,47 @@ const VendorSignupForm = () => {
       <div className="mx-auto grid gap-10 pb-20 sm:pb-24">
         <div className="space-y-4">
           <h1 className="max-w-xl text-4xl font-semibold tracking-tight sm:text-5xl">
-            Signup as a Vendor
+            {authMode === "login" ? "Login to ProofPay" : "Create your ProofPay account"}
           </h1>
           <p className="max-w-2xl text-sm leading-7 text-muted-foreground sm:text-base">
-            Keep it simple. Start with your account details, then finish with
-            the business information ProofPay AI needs for your store.
+            Choose buyer if you want to shop safely, or vendor if you want to
+            create trusted payment requests and track your seller metrics.
           </p>
+          <div className="flex w-fit rounded-full border border-border/70 bg-muted/30 p-1">
+            {(["signup", "login"] as AuthMode[]).map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                onClick={() => {
+                  resetMessages();
+                  setAuthMode(mode);
+                  setCurrentStep(0);
+                }}
+                className={cn(
+                  "rounded-full px-4 py-2 text-sm font-medium capitalize transition-colors",
+                  authMode === mode
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {mode}
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="grid w-full gap-4">
-          {steps.map((step, index) => {
+        {authMode === "signup" ? (
+          <div className="grid w-full gap-4">
+            {steps.map((step, index) => {
             const Icon = step.icon;
             const isActive = currentStep === index;
             const isComplete = currentStep > index;
+            const disabledVendorStep = accountType === "buyer" && index === 1;
 
             return (
-              <div key={step.id} className="grid items-center gap-3">
+              <div
+                key={step.id}
+                className={cn("grid items-center gap-3", disabledVendorStep && "opacity-45")}
+              >
                 <div
                   className={cn(
                     "flex flex-1 items-center gap-3 rounded-2xl border px-4 py-3 transition-colors",
@@ -245,25 +354,54 @@ const VendorSignupForm = () => {
                 </div>
               </div>
             );
-          })}
-        </div>
+            })}
+          </div>
+        ) : null}
       </div>
       <div className="space-y-4">
         <Card className="border border-border/70 bg-background shadow-[0_24px_80px_-48px_rgba(14,30,86,0.28)] md:max-w-2xl md:flex-1">
           <CardHeader className="space-y-5 px-5 sm:px-6">
             <h2 className="text-3xl font-medium">
               {isProfileStep ?
-                "We want to know you?"
+                authMode === "login" ? "Welcome back" : "We want to know you?"
               : "Complete your seller profile"}
             </h2>
           </CardHeader>
 
           <CardContent className="px-5 sm:px-6">
-            <form onSubmit={handleSubmit} className="space-y-7">
+            <form onSubmit={authMode === "login" ? handleLogin : handleSubmit} className="space-y-7">
               {/* per-field error messages shown under each input */}
 
               {isProfileStep ?
                 <div className="grid gap-4 py-4 ">
+                  {authMode === "signup" ? (
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {(["vendor", "buyer"] as AccountType[]).map((role) => (
+                        <button
+                          key={role}
+                          type="button"
+                          onClick={() => setAccountType(role)}
+                          className={cn(
+                            "rounded-2xl border px-4 py-3 text-left transition-colors",
+                            accountType === role
+                              ? "border-primary/40 bg-primary/5"
+                              : "border-border/70 bg-muted/20 hover:bg-muted/40",
+                          )}
+                        >
+                          <span className="block text-sm font-semibold capitalize">
+                            {role}
+                          </span>
+                          <span className="mt-1 block text-xs leading-5 text-muted-foreground">
+                            {role === "vendor"
+                              ? "Create products and track seller trust."
+                              : "Shop from trusted vendors faster."}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                  {authMode === "signup" ? (
+                    <>
                   <label htmlFor="first_name" className="space-y-2">
                     <span className="block text-sm font-medium">
                       First name
@@ -299,6 +437,8 @@ const VendorSignupForm = () => {
                         <p className="text-xs mt-1 text-destructive">{profileErrors.last_name}</p>
                       ) : null}
                   </label>
+                    </>
+                  ) : null}
 
                   <label htmlFor="email" className="space-y-2">
                     <span className="block text-sm font-medium">Email</span>
@@ -432,11 +572,13 @@ const VendorSignupForm = () => {
 
               <div className="flex flex-col gap-3 border-t border-border/60 pt-5 sm:flex-row sm:items-center sm:justify-between">
                 <div className="text-sm text-muted-foreground">
-                  Step {currentStep + 1} of {steps.length}
+                  {authMode === "login"
+                    ? "Use the email you signed up with."
+                    : `Step ${currentStep + 1} of ${accountType === "buyer" ? 1 : steps.length}`}
                 </div>
 
                 <div className="flex flex-col gap-3 sm:flex-row">
-                  {!isProfileStep ?
+                  {authMode === "login" ? null : !isProfileStep ?
                     <Button
                       type="button"
                       variant="outline"
@@ -447,13 +589,22 @@ const VendorSignupForm = () => {
                     </Button>
                   : null}
 
-                  {isProfileStep ?
+                  {authMode === "login" ? (
+                    <Button type="submit" disabled={isSubmitting}>
+                      <LogIn className="size-4" />
+                      {isSubmitting ? "Logging in..." : "Login"}
+                    </Button>
+                  ) : isProfileStep ?
                     <Button
                       type="button"
                       disabled={isSubmitting}
                       onClick={handleContinue}
                     >
-                      Continue to vendor details
+                      {isSubmitting
+                        ? "Creating account..."
+                        : accountType === "buyer"
+                          ? "Create buyer account"
+                          : "Continue to vendor details"}
                     </Button>
                   : <Button type="submit" disabled={isSubmitting}>
                       {isSubmitting ? "Creating account..." : "Start selling"}

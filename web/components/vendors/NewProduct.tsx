@@ -235,11 +235,10 @@ const NewProductComponent = () => {
       return;
     }
 
-    // if (imageFile && !SUPPORTED_IMAGE_TYPES.includes(imageFile.type)) {
-    //   console.log("Image file type: ",imageFile.type)
-    //   setErrorMessage("Upload a JPEG, PNG, or WebP product image.");
-    //   return;
-    // }
+    if (imageFile && !SUPPORTED_IMAGE_TYPES.includes(imageFile.type)) {
+      setErrorMessage("Upload a JPEG, PNG, or WebP product image.");
+      return;
+    }
 
     if (imageFile && imageFile.size > MAX_IMAGE_BYTES) {
       setErrorMessage("Product image must be 5MB or smaller.");

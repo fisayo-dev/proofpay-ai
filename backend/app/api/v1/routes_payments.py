@@ -1,12 +1,17 @@
 # backend/app/api/v1/routes_payments.py
 
+import json
 import logging
 import json
 from pathlib import Path
 
 from fastapi import APIRouter, Header, HTTPException, Request
-from fastapi.responses import FileResponse
 from pydantic import BaseModel
+from app.api.v1.routes_webhooks import (
+    get_kora_webhook_probe,
+    process_kora_webhook_event,
+)
+from app.api.v1.routes_ws import notify_ws
 from app.core.config import settings
 from app.services.payment_request_service import (
     build_checkout_config,
@@ -16,6 +21,12 @@ from app.services.payment_request_service import (
 from app.services.payment_status_service import (
     get_payment_status,
     get_vendor_payment_requests,
+)
+from app.services.vendor_service import get_vendor_by_id
+from app.services.vendor_reputation_service import (
+    get_vendor_badge,
+    get_vendor_metrics,
+    get_vendor_trust_history,
 )
 from app.services.kora_service import KoraVerificationError, verify_kora_charge
 from app.services.webhook_service import mark_payment_paid_from_checkout_callback
@@ -282,3 +293,45 @@ async def kora_webhook_endpoint(
     ):
         await notify_ws(result["payment_request_id"], "paid")
     return result
+
+
+@router.get("/vendors/{vendor_id}/metrics")
+def get_vendor_metrics_endpoint(vendor_id: str):
+    vendor = get_vendor_by_id(vendor_id)
+    if not vendor:
+        raise HTTPException(
+            status_code=404,
+            detail={"code": "VENDOR_NOT_FOUND", "message": "Vendor not found."},
+        )
+    return get_vendor_metrics(vendor_id)
+
+
+@router.get("/vendors/{vendor_id}/trust-history")
+def get_vendor_trust_history_endpoint(vendor_id: str):
+    vendor = get_vendor_by_id(vendor_id)
+    if not vendor:
+        raise HTTPException(
+            status_code=404,
+            detail={"code": "VENDOR_NOT_FOUND", "message": "Vendor not found."},
+        )
+    return {
+        "vendor_id": vendor_id,
+        "history": get_vendor_trust_history(vendor_id),
+    }
+
+
+@router.get("/vendors/{vendor_id}/badge")
+def get_vendor_badge_endpoint(vendor_id: str):
+    vendor = get_vendor_by_id(vendor_id)
+    if not vendor:
+        raise HTTPException(
+            status_code=404,
+            detail={"code": "VENDOR_NOT_FOUND", "message": "Vendor not found."},
+        )
+    return {
+        "vendor_id": vendor_id,
+        "badge": get_vendor_badge(
+            vendor.get("trust_score"),
+            vendor.get("completed_transactions", 0),
+        ),
+    }

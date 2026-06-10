@@ -1,5 +1,7 @@
 # backend/app/services/anomaly_service.py
 
+from app.services.xgboost_fraud_service import score_xgboost_fraud_risk
+
 
 def _safe_int(value, default: int = 0) -> int:
     try:
@@ -50,8 +52,18 @@ def detect_anomalies(vendor: dict, payment_request: dict) -> dict:
         flags.append("Payment amount is a large round number - verify item details")
         risk_multiplier *= 0.98
 
+    xgboost_result = score_xgboost_fraud_risk(vendor, payment_request)
+    if xgboost_result["available"]:
+        if xgboost_result["risk_label"] == "high":
+            flags.append("XGBoost model flagged this payment as high fraud risk")
+            risk_multiplier *= 0.80
+        elif xgboost_result["risk_label"] == "medium":
+            flags.append("XGBoost model detected a moderate fraud pattern")
+            risk_multiplier *= 0.92
+
     return {
         "anomaly_flags": flags,
         "risk_multiplier": round(risk_multiplier, 3),
         "anomaly_detected": len(flags) > 0,
+        "xgboost": xgboost_result,
     }

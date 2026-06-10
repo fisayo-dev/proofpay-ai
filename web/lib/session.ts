@@ -3,10 +3,12 @@
 const SESSION_KEY = "vendor_session";
 
 export type VendorSession = {
-  vendor_id: string;
+  user_id?: string | null;
+  vendor_id?: string | null;
+  role: "vendor" | "buyer";
   full_name: string;
   email: string;
-  business_name: string;
+  business_name?: string;
   expires_at: number;
 };
 
@@ -30,16 +32,20 @@ function parseCookies(): Record<string, string> {
 }
 
 export function setSession(data: {
-  vendor_id: string;
+  user_id?: string | null;
+  vendor_id?: string | null;
+  role?: "vendor" | "buyer";
   full_name: string;
   email: string;
-  business_name: string;
+  business_name?: string;
 }): void {
   const session: VendorSession = {
+    user_id: data.user_id,
     vendor_id: data.vendor_id,
+    role: data.role || "vendor",
     full_name: data.full_name,
     email: data.email,
-    business_name: data.business_name,
+    business_name: data.business_name || "",
     expires_at: Date.now() + 24 * 60 * 60 * 1000,
   };
   document.cookie = serializeCookie(JSON.stringify(session), session.expires_at);

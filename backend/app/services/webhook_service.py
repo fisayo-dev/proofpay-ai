@@ -142,6 +142,7 @@ def mark_payment_paid(kora_reference: str, payload: dict) -> str | None:
         (now, kora_reference)
     )
     row = cursor.fetchone()
+    payment_requests_updated = getattr(cursor, "rowcount", "unknown")
     if isinstance(row, dict):
         payment_request_id = str(row["id"]) if row.get("id") else None
     elif row:
@@ -170,6 +171,7 @@ def mark_payment_paid(kora_reference: str, payload: dict) -> str | None:
         payment_requests_updated,
         transactions_updated,
     )
+    return payment_request_id
 
     # Generate receipt PDF in background if payment was updated
     if payment_request_id:
