@@ -1,6 +1,6 @@
 "use client";
 
-import { BadgeCheck, ChartNoAxesColumn, CreditCard, Package, ShieldCheck } from "lucide-react";
+import { BadgeCheck, ChartNoAxesColumn, CreditCard, Package, Rocket, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { useRef } from "react";
 
@@ -20,7 +20,7 @@ const tiers = [
     price: 0,
     fee: "3%",
     badge: "Basic",
-    badgeIcon: ShieldCheck,
+    badgeIcon: BadgeCheck,
     analytics: "None",
     products: "3 – 4",
     popular: false,
@@ -30,7 +30,7 @@ const tiers = [
     price: 1500,
     fee: "2%",
     badge: "Verified",
-    badgeIcon: BadgeCheck,
+    badgeIcon: Rocket,
     analytics: "Full dashboard",
     products: "Unlimited",
     popular: true,
