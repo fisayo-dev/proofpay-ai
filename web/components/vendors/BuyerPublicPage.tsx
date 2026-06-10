@@ -580,7 +580,7 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
                         Social handle
                       </p>
                       <p className="truncate text-sm font-medium">
-                        @{product.seller.social_handle}
+                        @{product.seller.social_handle.replace(/^@+/, "")}
                       </p>
                     </div>
                   </div>

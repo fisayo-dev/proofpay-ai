@@ -197,6 +197,8 @@ const VendorSignupForm = () => {
     }
     if (!socialHandle.trim()) {
       newErrors.social_handle = "Social handle is required.";
+    } else if (!/^[a-zA-Z0-9_]+$/.test(socialHandle.trim())) {
+      newErrors.social_handle = "Only letters, numbers, and underscores allowed.";
     }
     if (!bankAccountName.trim()) {
       newErrors.bank_account_name = "Bank account name is required.";
@@ -246,7 +248,10 @@ const VendorSignupForm = () => {
   const handleInputChange =
     (setter: (value: string) => void, field?: string) =>
     (event: ChangeEvent<HTMLInputElement>) => {
-      setter(event.target.value);
+      const value = field === "social_handle"
+        ? event.target.value.replace(/^@+/, "").replace(/[^a-zA-Z0-9_]/g, "")
+        : event.target.value;
+      setter(value);
       if (field) {
         const isVendorField = field.startsWith("business_") || field === "category" || field === "phone" || field === "social_handle" || field === "bank_account_name";
         if (isVendorField) {
@@ -541,6 +546,9 @@ const VendorSignupForm = () => {
                       {vendorErrors.social_handle && vendorTouched.social_handle ? (
                         <p className="text-xs mt-1 text-destructive">{vendorErrors.social_handle}</p>
                       ) : null}
+                      <p className="text-xs text-muted-foreground">
+                        Letters, numbers, and underscores only.
+                      </p>
                   </label>
 
                   <label
