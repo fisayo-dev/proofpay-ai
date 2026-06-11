@@ -2,12 +2,12 @@
 
 import { useState, useSyncExternalStore } from "react";
 import { header_links } from "@/constants/home";
-import { getCachedSession } from "@/lib/session";
+import { clearSession, getCachedSession } from "@/lib/session";
 import { getVendorAvatarUrl } from "@/lib/avatar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "../ui/button";
 import Link from "next/link";
-import { Menu, Plus, User2, X } from "lucide-react";
+import { LogOut, Menu, Plus, User2, X } from "lucide-react";
 
 export function SiteHeader() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -18,6 +18,10 @@ export function SiteHeader() {
   );
 
   const closeMenu = () => setIsMenuOpen(false);
+  const handleLogout = () => {
+    clearSession();
+    window.location.assign("/");
+  };
   const avatarUrl = session
     ? getVendorAvatarUrl([
         session.vendor_id || session.user_id || "",
@@ -55,12 +59,14 @@ export function SiteHeader() {
           <div className="hidden items-center space-x-4 lg:flex">
             {session ? (
               <>
-                <Button variant="outline" asChild>
-                  <Link href="/vendors/new-product">
-                    <Plus />
-                    Create Product
-                  </Link>
-                </Button>
+                {isVendor ? (
+                  <Button variant="outline" asChild>
+                    <Link href="/vendors/new-product">
+                      <Plus />
+                      Create Product
+                    </Link>
+                  </Button>
+                ) : null}
                 <Button variant="outline" asChild>
                   <Link href="/vendors/profile">
                     {avatarUrl ? (
@@ -78,6 +84,10 @@ export function SiteHeader() {
                     )}
                     {session.full_name}
                   </Link>
+                </Button>
+                <Button variant="outline" onClick={handleLogout}>
+                  <LogOut />
+                  Logout
                 </Button>
               </>
             ) : (
@@ -167,6 +177,17 @@ export function SiteHeader() {
                       )}
                       {session.full_name}
                     </Link>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full sm:flex-1"
+                    onClick={() => {
+                      closeMenu();
+                      handleLogout();
+                    }}
+                  >
+                    <LogOut />
+                    Logout
                   </Button>
                 </>
               ) : (
