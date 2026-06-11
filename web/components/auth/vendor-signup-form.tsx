@@ -34,9 +34,8 @@ const VendorSignupForm = () => {
   const searchParams = useSearchParams();
   const [currentStep, setCurrentStep] = useState(0);
   const [accountType, setAccountType] = useState<AccountType>("vendor");
-  const [authMode, setAuthMode] = useState<AuthMode>(
-    searchParams.get("mode") === "login" ? "login" : "signup",
-  );
+  const authMode: AuthMode =
+    searchParams.get("mode") === "login" ? "login" : "signup";
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -289,30 +288,10 @@ const VendorSignupForm = () => {
             {authMode === "login" ? "Login to ProofPay" : "Create your ProofPay account"}
           </h1>
           <p className="max-w-2xl text-sm leading-7 text-muted-foreground sm:text-base">
-            Choose buyer if you want to shop safely, or vendor if you want to
-            create trusted payment requests and track your seller metrics.
+            {authMode === "login"
+              ? "Use your account email and password to continue to your dashboard or store account."
+              : "Choose buyer if you want to shop safely, or vendor if you want to create trusted payment requests and track your seller metrics."}
           </p>
-          <div className="flex w-fit rounded-full border border-border/70 bg-muted/30 p-1">
-            {(["signup", "login"] as AuthMode[]).map((mode) => (
-              <button
-                key={mode}
-                type="button"
-                onClick={() => {
-                  resetMessages();
-                  setAuthMode(mode);
-                  setCurrentStep(0);
-                }}
-                className={cn(
-                  "rounded-full px-4 py-2 text-sm font-medium capitalize transition-colors",
-                  authMode === mode
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                {mode}
-              </button>
-            ))}
-          </div>
         </div>
         {authMode === "signup" ? (
           <div className="grid w-full gap-4">
