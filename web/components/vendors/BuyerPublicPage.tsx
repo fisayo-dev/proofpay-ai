@@ -223,6 +223,19 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
     "ProofPay AI reviewed seller signals, payment context, and request details before sending you to checkout.";
   const anomalyWarnings = product.trust.anomaly_warnings || [];
   const trustHistory = product.trust.history || [];
+  const visibleReasons = product.trust.reasons.slice(0, 4);
+  const signalCount = product.trust.reasons.length;
+  const graphPoints =
+    trustHistory.length > 0
+      ? trustHistory.slice(-8)
+      : [
+          {
+            score: product.trust.score,
+            verdict: product.trust.verdict,
+            created_at: "current",
+            payment_request_id: product.payment_request_id,
+          },
+        ];
   const vendorBadge = product.seller.badge;
 
   const redirectToCallback = () => {
@@ -464,32 +477,32 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
                   </div>
                 ) : null}
 
-                {trustHistory.length > 0 ? (
-                  <div className="rounded-lg border border-border/70 bg-background px-4 py-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm font-semibold">Reputation graph</p>
-                      <p className="text-xs text-muted-foreground">
-                        {trustHistory.length} checks
-                      </p>
-                    </div>
-                    <div className="mt-3 flex h-16 items-end gap-2">
-                      {trustHistory.slice(-8).map((point, index) => (
-                        <div
-                          key={`${point.created_at}-${index}`}
-                          className="flex flex-1 flex-col items-center gap-1"
-                        >
-                          <div
-                            className="w-full rounded-t-md bg-primary/70"
-                            style={{
-                              height: `${Math.max(10, Math.min(100, point.score))}%`,
-                            }}
-                            title={`${point.score}% - ${point.verdict}`}
-                          />
-                        </div>
-                      ))}
-                    </div>
+                <div className="rounded-lg border border-border/70 bg-background px-4 py-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-sm font-semibold">Reputation graph</p>
+                    <p className="text-xs text-muted-foreground">
+                      {trustHistory.length > 0
+                        ? `${trustHistory.length} checks`
+                        : "First check"}
+                    </p>
                   </div>
-                ) : null}
+                  <div className="mt-3 flex h-16 items-end gap-2">
+                    {graphPoints.map((point, index) => (
+                      <div
+                        key={`${point.created_at}-${index}`}
+                        className="flex h-full flex-1 flex-col justify-end"
+                      >
+                        <div
+                          className="w-full rounded-t-md bg-primary/70"
+                          style={{
+                            height: `${Math.max(10, Math.min(100, point.score))}%`,
+                          }}
+                          title={`${point.score}% - ${point.verdict}`}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
 
                 <button
                   type="button"
@@ -498,8 +511,8 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
                   aria-expanded={toggleReason}
                 >
                   <span className="font-semibold">
-                    Why this score? ({product.trust.reasons.length} signals
-                    checked)
+                    Why this score? (showing {visibleReasons.length} of{" "}
+                    {signalCount} signals checked)
                   </span>
                   <ChevronDown
                     className={cn(
@@ -510,7 +523,7 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
                 </button>
                 {toggleReason ? (
                   <div className="grid gap-2">
-                    {product.trust.reasons.slice(0, 4).map((reason) => (
+                    {visibleReasons.map((reason) => (
                       <div
                         key={reason}
                         className="rounded-lg border border-border/60 bg-background px-4 py-3"

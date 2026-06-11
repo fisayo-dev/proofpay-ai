@@ -1,7 +1,7 @@
 "use client";
 
 import { ChangeEvent, FormEvent, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Check, LogIn, Store, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -31,9 +31,12 @@ const steps = [
 
 const VendorSignupForm = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [currentStep, setCurrentStep] = useState(0);
   const [accountType, setAccountType] = useState<AccountType>("vendor");
-  const [authMode, setAuthMode] = useState<AuthMode>("signup");
+  const [authMode, setAuthMode] = useState<AuthMode>(
+    searchParams.get("mode") === "login" ? "login" : "signup",
+  );
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");

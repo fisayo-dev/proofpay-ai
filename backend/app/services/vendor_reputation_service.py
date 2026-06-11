@@ -1,8 +1,18 @@
 from __future__ import annotations
 
-from datetime import datetime
+import json
+import uuid
+from datetime import datetime, timezone
 
 from app.db.connection import get_connection
+from app.services.trust_score_service import calculate_trust_score
+
+
+def _safe_int(value, default: int = 0) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
 
 
 def get_vendor_badge(score: int | float | None, completed_transactions: int | None = 0) -> dict:
@@ -60,10 +70,117 @@ def predict_score_after_success(current_score: int | float | None, completed_tra
     }
 
 
+def update_vendor_reputation_after_paid(cursor, payment_request_id: str) -> dict | None:
+    """
+    Feed a successful payment back into the vendor profile.
+
+    This is what makes the product feel alive: after payment success, the
+    vendor's completed transaction count and current trust score move forward,
+    and a fresh trust check is saved for the reputation graph.
+    """
+    cursor.execute(
+        """
+        SELECT
+            pr.id AS payment_request_id,
+            pr.vendor_id,
+            pr.item_name,
+            pr.item_description,
+            pr.amount_kobo,
+            pr.currency,
+            pr.delivery_method,
+            v.business_name,
+            v.category,
+            v.phone,
+            v.bank_account_name,
+            v.social_handle,
+            v.completed_transactions,
+            v.total_transactions,
+            v.dispute_count
+        FROM payment_requests pr
+        JOIN vendors v ON v.id = pr.vendor_id
+        WHERE pr.id = %s
+        LIMIT 1
+        """,
+        (payment_request_id,),
+    )
+    row = cursor.fetchone()
+    if not row:
+        return None
+
+    row = dict(row)
+    now = datetime.now(timezone.utc).isoformat()
+    completed_transactions = _safe_int(row.get("completed_transactions")) + 1
+    total_transactions = max(
+        _safe_int(row.get("total_transactions")) + 1,
+        completed_transactions,
+    )
+
+    scoring_vendor = {
+        "vendor_id": str(row["vendor_id"]),
+        "business_name": row.get("business_name"),
+        "category": row.get("category"),
+        "phone": row.get("phone"),
+        "bank_account_name": row.get("bank_account_name"),
+        "social_handle": row.get("social_handle"),
+        "completed_transactions": completed_transactions,
+        "total_transactions": total_transactions,
+        "dispute_count": row.get("dispute_count") or 0,
+    }
+    scoring_request = {
+        "item_name": row.get("item_name"),
+        "item_description": row.get("item_description"),
+        "amount_kobo": row.get("amount_kobo") or 0,
+        "currency": row.get("currency") or "NGN",
+        "delivery_method": row.get("delivery_method"),
+    }
+    trust = calculate_trust_score(scoring_vendor, scoring_request)
+
+    cursor.execute(
+        """
+        UPDATE vendors
+        SET completed_transactions = %s,
+            total_transactions = %s,
+            trust_score = %s,
+            updated_at = %s
+        WHERE id = %s
+        """,
+        (
+            completed_transactions,
+            total_transactions,
+            trust.get("score"),
+            now,
+            row["vendor_id"],
+        ),
+    )
+
+    cursor.execute(
+        """
+        INSERT INTO trust_checks (
+            id, payment_request_id, vendor_id,
+            score, verdict, reasons,
+            feature_snapshot, model_version, created_at
+        )
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """,
+        (
+            str(uuid.uuid4()),
+            payment_request_id,
+            row["vendor_id"],
+            trust.get("score"),
+            trust.get("verdict"),
+            json.dumps(trust.get("reasons", [])),
+            json.dumps(trust.get("features", {})),
+            "post-payment-reputation-v1",
+            now,
+        ),
+    )
+    return trust
+
+
 def _rows_to_history(rows: list[dict]) -> list[dict]:
     return [
         {
-            "score": row.get("score"),
+            "score": int(row.get("score") or 0),
             "verdict": row.get("verdict"),
             "created_at": str(row.get("created_at")),
             "payment_request_id": str(row.get("payment_request_id")) if row.get("payment_request_id") else None,

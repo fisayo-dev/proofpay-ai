@@ -160,8 +160,13 @@ def get_public_request_endpoint(public_slug: str):
 
     vendor = get_vendor_by_id(str(request["vendor_id"]))
     trust_check = get_trust_check_by_payment_request_id(str(request["id"]))
+    current_vendor_score = (
+        vendor.get("trust_score")
+        if vendor and vendor.get("trust_score") is not None
+        else request.get("trust_score_at_creation")
+    )
     vendor_badge = get_vendor_badge(
-        request.get("trust_score_at_creation"),
+        current_vendor_score,
         vendor.get("completed_transactions") if vendor else 0,
     )
     try:
@@ -205,7 +210,7 @@ def get_public_request_endpoint(public_slug: str):
             "anomaly_warnings": ai_explanation["anomaly_warnings"],
             "history": trust_history,
             "prediction": predict_score_after_success(
-                trust_payload["score"],
+                current_vendor_score,
                 vendor.get("completed_transactions") if vendor else 0,
             ),
         },

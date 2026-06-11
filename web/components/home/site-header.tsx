@@ -81,12 +81,20 @@ export function SiteHeader() {
                 </Button>
               </>
             ) : (
-              <Button asChild>
-                <Link href="/vendors/signup">
-                  <User2 />
-                  Signup as vendor
-                </Link>
-              </Button>
+              <>
+                <Button variant="outline" asChild>
+                  <Link href="/vendors/signup?mode=login">
+                    <User2 />
+                    Login as vendor
+                  </Link>
+                </Button>
+                <Button asChild>
+                  <Link href="/vendors/signup">
+                    <User2 />
+                    Signup as vendor
+                  </Link>
+                </Button>
+              </>
             )}
           </div>
 
@@ -162,12 +170,24 @@ export function SiteHeader() {
                   </Button>
                 </>
               ) : (
-                <Button asChild className="w-full sm:flex-1">
-                  <Link href="/vendors/signup" onClick={closeMenu}>
-                    <User2 />
-                    Signup as vendor
-                  </Link>
-                </Button>
+                <>
+                  <Button
+                    variant="outline"
+                    asChild
+                    className="w-full sm:flex-1"
+                  >
+                    <Link href="/vendors/signup?mode=login" onClick={closeMenu}>
+                      <User2 />
+                      Login as vendor
+                    </Link>
+                  </Button>
+                  <Button asChild className="w-full sm:flex-1">
+                    <Link href="/vendors/signup" onClick={closeMenu}>
+                      <User2 />
+                      Signup as vendor
+                    </Link>
+                  </Button>
+                </>
               )}
             </div>
           </div>

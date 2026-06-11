@@ -169,7 +169,11 @@ class WebhookServiceTest(unittest.TestCase):
         cursor = FakeCursor(fetchone_result={"id": "req_123"})
         conn = FakeConnection(cursor)
 
-        with patch.object(webhook_service, "get_connection", return_value=conn):
+        with (
+            patch.object(webhook_service, "get_connection", return_value=conn),
+            patch.object(webhook_service, "_update_vendor_reputation_safely", return_value={"score": 63}),
+            patch.object(webhook_service, "_generate_receipt_safely"),
+        ):
             payment_request_id = webhook_service.mark_payment_paid(
                 "PPAY-123",
                 {"status": "success"},
