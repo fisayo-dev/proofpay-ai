@@ -8,6 +8,14 @@ from app.core.config import settings
 logger = logging.getLogger("proofpay.ai")
 
 GROQ_CHAT_COMPLETIONS_URL = "https://api.groq.com/openai/v1/chat/completions"
+GROQ_FALLBACK_MODELS = [
+    "llama-3.1-8b-instant",
+    "llama3-8b-8192",
+]
+
+
+def _normalize_secret(value: str | None) -> str:
+    return (value or "").strip().strip('"').strip("'")
 
 
 def _safe_amount_naira(payment_request: dict) -> float:
@@ -112,37 +120,63 @@ def generate_ai_trust_explanation(vendor: dict, payment_request: dict, trust: di
         "model": None,
     }
 
-    if not settings.groq_api_key:
+    groq_api_key = _normalize_secret(settings.groq_api_key)
+    if not groq_api_key:
         return fallback
 
-    body = {
-        "model": settings.groq_model,
-        "messages": _build_prompt(vendor, payment_request, trust),
-        "temperature": 0.2,
-        "max_tokens": 130,
-    }
-    request = urllib.request.Request(
-        GROQ_CHAT_COMPLETIONS_URL,
-        data=json.dumps(body).encode("utf-8"),
-        headers={
-            "Authorization": f"Bearer {settings.groq_api_key}",
-            "Content-Type": "application/json",
-        },
-        method="POST",
-    )
+    messages = _build_prompt(vendor, payment_request, trust)
+    models_to_try = []
+    primary_model = (settings.groq_model or "").strip()
+    if primary_model:
+        models_to_try.append(primary_model)
+    for model in GROQ_FALLBACK_MODELS:
+        if model not in models_to_try:
+            models_to_try.append(model)
 
+    last_error = None
     try:
-        with urllib.request.urlopen(request, timeout=8) as response:
-            data = json.loads(response.read().decode("utf-8"))
-            summary = data["choices"][0]["message"]["content"].strip()
-    except (KeyError, IndexError, json.JSONDecodeError, TimeoutError, urllib.error.URLError) as exc:
-        logger.warning("Groq trust explanation failed: %s", exc)
-        return fallback
+        for model in models_to_try:
+            body = {
+                "model": model,
+                "messages": messages,
+                "temperature": 0.2,
+                "max_tokens": 130,
+            }
+            request = urllib.request.Request(
+                GROQ_CHAT_COMPLETIONS_URL,
+                data=json.dumps(body).encode("utf-8"),
+                headers={
+                    "Authorization": f"Bearer {groq_api_key}",
+                    "Content-Type": "application/json",
+                },
+                method="POST",
+            )
 
-    return {
-        **fallback,
-        "summary": summary,
-        "ai_powered": True,
-        "engine": "groq-chat-completions",
-        "model": settings.groq_model,
-    }
+            try:
+                with urllib.request.urlopen(request, timeout=8) as response:
+                    data = json.loads(response.read().decode("utf-8"))
+                    summary = data["choices"][0]["message"]["content"].strip()
+                    return {
+                        **fallback,
+                        "summary": summary,
+                        "ai_powered": True,
+                        "engine": "groq-chat-completions",
+                        "model": model,
+                    }
+            except urllib.error.HTTPError as exc:
+                error_body = exc.read().decode("utf-8", errors="replace")
+                last_error = f"HTTP {exc.code}: {error_body[:500]}"
+                logger.warning(
+                    "Groq trust explanation failed for model=%s: %s",
+                    model,
+                    last_error,
+                )
+                if exc.code not in {403, 404}:
+                    break
+    except (KeyError, IndexError, json.JSONDecodeError, TimeoutError, urllib.error.URLError) as exc:
+        last_error = str(exc)
+
+    if last_error:
+        logger.warning("Groq trust explanation fell back to rules: %s", last_error)
+        return fallback
+    return fallback

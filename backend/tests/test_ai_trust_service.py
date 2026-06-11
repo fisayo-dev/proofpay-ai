@@ -1,6 +1,7 @@
 import json
 import unittest
 from unittest.mock import patch
+import urllib.error
 
 from app.services import ai_trust_service
 
@@ -60,6 +61,56 @@ class AITrustServiceTest(unittest.TestCase):
         self.assertEqual(result["model"], "llama-test")
         self.assertIn("low risk", result["summary"])
         self.assertTrue(urlopen.called)
+
+    def test_generate_ai_trust_explanation_strips_quoted_key(self):
+        groq_body = {
+            "choices": [{"message": {"content": "This request looks reasonable."}}]
+        }
+
+        with (
+            patch.object(ai_trust_service.settings, "groq_api_key", '"test-key"'),
+            patch.object(ai_trust_service.settings, "groq_model", "llama-test"),
+            patch.object(ai_trust_service.urllib.request, "urlopen", return_value=FakeResponse(groq_body)) as urlopen,
+        ):
+            ai_trust_service.generate_ai_trust_explanation(
+                {"business_name": "Favour Fits"},
+                {"item_name": "Black hoodie", "amount_kobo": 750000},
+                {"score": 95, "verdict": "Trusted", "reasons": ["No disputes on record"]},
+            )
+
+        request = urlopen.call_args.args[0]
+        self.assertEqual(request.headers["Authorization"], "Bearer test-key")
+
+    def test_generate_ai_trust_explanation_falls_back_to_next_model_on_forbidden(self):
+        groq_body = {
+            "choices": [{"message": {"content": "Fallback model generated a trust summary."}}]
+        }
+        forbidden = urllib.error.HTTPError(
+            url="https://api.groq.com/openai/v1/chat/completions",
+            code=403,
+            msg="Forbidden",
+            hdrs=None,
+            fp=None,
+        )
+
+        with (
+            patch.object(ai_trust_service.settings, "groq_api_key", "test-key"),
+            patch.object(ai_trust_service.settings, "groq_model", "blocked-model"),
+            patch.object(
+                ai_trust_service.urllib.request,
+                "urlopen",
+                side_effect=[forbidden, FakeResponse(groq_body)],
+            ) as urlopen,
+        ):
+            result = ai_trust_service.generate_ai_trust_explanation(
+                {"business_name": "Favour Fits"},
+                {"item_name": "Black hoodie", "amount_kobo": 750000},
+                {"score": 95, "verdict": "Trusted", "reasons": ["No disputes on record"]},
+            )
+
+        self.assertTrue(result["ai_powered"])
+        self.assertEqual(result["model"], ai_trust_service.GROQ_FALLBACK_MODELS[0])
+        self.assertEqual(urlopen.call_count, 2)
 
     def test_generate_ai_trust_explanation_falls_back_when_groq_fails(self):
         with (
