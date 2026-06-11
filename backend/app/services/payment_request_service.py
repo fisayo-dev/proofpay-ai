@@ -216,6 +216,66 @@ def get_payment_request_by_slug(slug: str) -> dict | None:
     return dict(row) if row else None
 
 
+def list_public_store_products(limit: int = 12) -> list[dict]:
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        SELECT
+            pr.id,
+            pr.public_slug,
+            pr.item_name,
+            pr.item_description,
+            pr.amount_kobo,
+            pr.currency,
+            pr.image_url,
+            pr.trust_score_at_creation,
+            pr.trust_verdict,
+            pr.created_at,
+            v.id AS vendor_id,
+            v.business_name,
+            v.category,
+            v.social_handle,
+            v.completed_transactions
+        FROM payment_requests pr
+        JOIN vendors v ON v.id = pr.vendor_id
+        WHERE pr.public_slug IS NOT NULL
+        ORDER BY pr.created_at DESC
+        LIMIT %s
+        """,
+        (limit,),
+    )
+    rows = cursor.fetchall()
+    conn.close()
+
+    return [
+        {
+            "id": str(row["id"]),
+            "public_slug": row["public_slug"],
+            "image": row.get("image_url"),
+            "vendor": {
+                "id": str(row["vendor_id"]),
+                "business_name": row["business_name"],
+                "category": row["category"],
+                "social_handle": row.get("social_handle") or "",
+                "completed_transactions": row.get("completed_transactions") or 0,
+            },
+            "payment_request": {
+                "item_name": row["item_name"],
+                "item_description": row.get("item_description") or "",
+                "amount": amount_kobo_to_naira(row["amount_kobo"]),
+                "currency": row["currency"],
+            },
+            "trust": {
+                "score": row.get("trust_score_at_creation") or 0,
+                "verdict": row.get("trust_verdict") or "Manual Review Needed",
+            },
+        }
+        for row in rows
+    ]
+
+
 def get_trust_check_by_payment_request_id(payment_request_id: str) -> dict | None:
     conn = get_connection()
     cursor = conn.cursor()

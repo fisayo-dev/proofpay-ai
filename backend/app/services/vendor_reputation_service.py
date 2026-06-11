@@ -23,28 +23,28 @@ def get_vendor_badge(score: int | float | None, completed_transactions: int | No
         return {
             "key": "top_seller",
             "label": "Top Seller",
-            "icon": "🏆",
+            "icon": "Top",
             "description": "High trust score with strong completed transaction history.",
         }
     if score_value >= 75 and completed >= 5:
         return {
             "key": "verified",
             "label": "Verified",
-            "icon": "✅",
+            "icon": "OK",
             "description": "Strong trust profile and enough completed transactions.",
         }
     if score_value >= 60 or completed >= 3:
         return {
             "key": "rising_star",
             "label": "Rising Star",
-            "icon": "⭐",
+            "icon": "Star",
             "description": "Promising vendor with growing ProofPay activity.",
         }
 
     return {
         "key": "new_vendor",
         "label": "New Vendor",
-        "icon": "🧾",
+        "icon": "New",
         "description": "Limited transaction history. Review the trust signals before paying.",
     }
 

@@ -20,6 +20,7 @@ const signupVendor = async (
       full_name: response.data.full_name,
       email: response.data.email,
       business_name: response.data.business_name || "",
+      trust_score: response.data.trust_score ?? null,
     });
 
     return response.data;
@@ -46,6 +47,7 @@ export const login = async (
       full_name: response.data.full_name,
       email: response.data.email,
       business_name: response.data.business_name || "",
+      trust_score: response.data.trust_score ?? null,
     });
 
     return response.data;

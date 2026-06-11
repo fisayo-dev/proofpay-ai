@@ -1,7 +1,7 @@
 "use client";
 
 import { ChangeEvent, FormEvent, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Check, LogIn, Store, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -30,7 +30,6 @@ const steps = [
 ] as const;
 
 const VendorSignupForm = () => {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [currentStep, setCurrentStep] = useState(0);
   const [accountType, setAccountType] = useState<AccountType>("vendor");
@@ -64,11 +63,11 @@ const VendorSignupForm = () => {
 
   const routeAfterAuth = (role: AccountType) => {
     if (role === "buyer") {
-      router.push("/#store");
+      window.location.assign("/#store");
       return;
     }
 
-    router.push("/vendors/profile");
+    window.location.assign("/vendors/profile");
   };
 
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
@@ -289,7 +288,7 @@ const VendorSignupForm = () => {
           </h1>
           <p className="max-w-2xl text-sm leading-7 text-muted-foreground sm:text-base">
             {authMode === "login"
-              ? "Use your account email and password to continue to your dashboard or store account."
+              ? "Choose your account type, then use your email and password to continue."
               : "Choose buyer if you want to shop safely, or vendor if you want to create trusted payment requests and track your seller metrics."}
           </p>
         </div>
@@ -361,32 +360,30 @@ const VendorSignupForm = () => {
 
               {isProfileStep ?
                 <div className="grid gap-4 py-4 ">
-                  {authMode === "signup" ? (
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      {(["vendor", "buyer"] as AccountType[]).map((role) => (
-                        <button
-                          key={role}
-                          type="button"
-                          onClick={() => setAccountType(role)}
-                          className={cn(
-                            "rounded-2xl border px-4 py-3 text-left transition-colors",
-                            accountType === role
-                              ? "border-primary/40 bg-primary/5"
-                              : "border-border/70 bg-muted/20 hover:bg-muted/40",
-                          )}
-                        >
-                          <span className="block text-sm font-semibold capitalize">
-                            {role}
-                          </span>
-                          <span className="mt-1 block text-xs leading-5 text-muted-foreground">
-                            {role === "vendor"
-                              ? "Create products and track seller trust."
-                              : "Shop from trusted vendors faster."}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  ) : null}
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {(["vendor", "buyer"] as AccountType[]).map((role) => (
+                      <button
+                        key={role}
+                        type="button"
+                        onClick={() => setAccountType(role)}
+                        className={cn(
+                          "rounded-2xl border px-4 py-3 text-left transition-colors",
+                          accountType === role
+                            ? "border-primary/40 bg-primary/5"
+                            : "border-border/70 bg-muted/20 hover:bg-muted/40",
+                        )}
+                      >
+                        <span className="block text-sm font-semibold capitalize">
+                          {role}
+                        </span>
+                        <span className="mt-1 block text-xs leading-5 text-muted-foreground">
+                          {role === "vendor"
+                            ? "Create products and track seller trust."
+                            : "Shop from trusted vendors faster."}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
                   {authMode === "signup" ? (
                     <>
                   <label htmlFor="first_name" className="space-y-2">
@@ -582,7 +579,7 @@ const VendorSignupForm = () => {
                   {authMode === "login" ? (
                     <Button type="submit" disabled={isSubmitting}>
                       <LogIn className="size-4" />
-                      {isSubmitting ? "Logging in..." : "Login"}
+                      {isSubmitting ? "Logging in..." : `Login as ${accountType}`}
                     </Button>
                   ) : isProfileStep ?
                     <Button
