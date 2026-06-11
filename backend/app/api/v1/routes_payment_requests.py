@@ -210,7 +210,7 @@ def get_public_request_endpoint(public_slug: str):
             "anomaly_warnings": ai_explanation["anomaly_warnings"],
             "history": trust_history,
             "prediction": predict_score_after_success(
-                current_vendor_score,
+                trust_payload["score"],
                 vendor.get("completed_transactions") if vendor else 0,
             ),
         },

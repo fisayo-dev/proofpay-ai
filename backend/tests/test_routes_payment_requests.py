@@ -27,6 +27,8 @@ class PublicPaymentRequestRouteTest(unittest.TestCase):
             "business_name": "Favour Fits",
             "category": "fashion",
             "social_handle": "@favourfits",
+            "trust_score": 50,
+            "completed_transactions": 0,
         }
         trust_check = {
             "reasons": [
@@ -64,6 +66,7 @@ class PublicPaymentRequestRouteTest(unittest.TestCase):
         self.assertEqual(response["item"]["amount"], 7500.99)
         self.assertEqual(response["item"]["image_url"], "https://example.com/black-hoodie.jpg")
         self.assertEqual(response["trust"]["score"], 72)
+        self.assertEqual(response["trust"]["prediction"]["current_score"], 72)
         self.assertEqual(response["trust"]["verdict"], "Caution")
         self.assertEqual(response["trust"]["reasons"], trust_check["reasons"])
         self.assertEqual(response["trust"]["model_version"], "rules-v1")
