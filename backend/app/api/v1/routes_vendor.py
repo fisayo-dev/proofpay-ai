@@ -15,6 +15,7 @@ from app.services.vendor_service import (
     create_vendor,
     get_vendor_analytics,
     get_vendor_by_id,
+    get_vendor_score_prediction,
     login_account,
 )
 

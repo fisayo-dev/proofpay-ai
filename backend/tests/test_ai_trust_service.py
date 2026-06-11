@@ -1,23 +1,7 @@
-import json
 import unittest
 from unittest.mock import patch
-import urllib.error
 
 from app.services import ai_trust_service
-
-
-class FakeResponse:
-    def __init__(self, body: dict):
-        self.body = body
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc, traceback):
-        return False
-
-    def read(self):
-        return json.dumps(self.body).encode("utf-8")
 
 
 class AITrustServiceTest(unittest.TestCase):
@@ -35,42 +19,36 @@ class AITrustServiceTest(unittest.TestCase):
         self.assertIn("Trusted", result["summary"])
 
     def test_generate_ai_trust_explanation_calls_groq_when_key_exists(self):
-        groq_body = {
-            "choices": [
-                {
-                    "message": {
-                        "content": "Favour Fits looks low risk based on completed transactions and no disputes."
-                    }
-                }
-            ]
-        }
-
         with (
             patch.object(ai_trust_service.settings, "groq_api_key", "test-key"),
             patch.object(ai_trust_service.settings, "groq_model", "llama-test"),
-            patch.object(ai_trust_service.urllib.request, "urlopen", return_value=FakeResponse(groq_body)) as urlopen,
+            patch.object(
+                ai_trust_service,
+                "_call_groq_sdk",
+                return_value="Favour Fits looks low risk based on completed transactions and no disputes.",
+            ) as groq_call,
         ):
             result = ai_trust_service.generate_ai_trust_explanation(
                 {"business_name": "Favour Fits", "completed_transactions": 14},
                 {"item_name": "Black hoodie", "amount_kobo": 750000},
                 {"score": 95, "verdict": "Trusted", "reasons": ["No disputes on record"]},
-            )
+        )
 
         self.assertTrue(result["ai_powered"])
-        self.assertEqual(result["engine"], "groq-chat-completions")
+        self.assertEqual(result["engine"], "groq-sdk")
         self.assertEqual(result["model"], "llama-test")
         self.assertIn("low risk", result["summary"])
-        self.assertTrue(urlopen.called)
+        self.assertTrue(groq_call.called)
 
     def test_generate_ai_trust_explanation_strips_quoted_key(self):
-        groq_body = {
-            "choices": [{"message": {"content": "This request looks reasonable."}}]
-        }
-
         with (
             patch.object(ai_trust_service.settings, "groq_api_key", '"test-key"'),
             patch.object(ai_trust_service.settings, "groq_model", "llama-test"),
-            patch.object(ai_trust_service.urllib.request, "urlopen", return_value=FakeResponse(groq_body)) as urlopen,
+            patch.object(
+                ai_trust_service,
+                "_call_groq_sdk",
+                return_value="This request looks reasonable.",
+            ) as groq_call,
         ):
             ai_trust_service.generate_ai_trust_explanation(
                 {"business_name": "Favour Fits"},
@@ -78,29 +56,25 @@ class AITrustServiceTest(unittest.TestCase):
                 {"score": 95, "verdict": "Trusted", "reasons": ["No disputes on record"]},
             )
 
-        request = urlopen.call_args.args[0]
-        self.assertEqual(request.headers["Authorization"], "Bearer test-key")
+        self.assertEqual(groq_call.call_args.args[0], "test-key")
 
     def test_generate_ai_trust_explanation_falls_back_to_next_model_on_forbidden(self):
-        groq_body = {
-            "choices": [{"message": {"content": "Fallback model generated a trust summary."}}]
-        }
-        forbidden = urllib.error.HTTPError(
-            url="https://api.groq.com/openai/v1/chat/completions",
-            code=403,
-            msg="Forbidden",
-            hdrs=None,
-            fp=None,
-        )
-
         with (
             patch.object(ai_trust_service.settings, "groq_api_key", "test-key"),
             patch.object(ai_trust_service.settings, "groq_model", "blocked-model"),
             patch.object(
-                ai_trust_service.urllib.request,
-                "urlopen",
-                side_effect=[forbidden, FakeResponse(groq_body)],
-            ) as urlopen,
+                ai_trust_service,
+                "_call_groq_sdk",
+                side_effect=[
+                    Exception("HTTP 403: model blocked"),
+                    "Fallback model generated a trust summary.",
+                ],
+            ) as groq_call,
+            patch.object(
+                ai_trust_service,
+                "_call_groq_http",
+                side_effect=Exception("HTTP 403: model blocked"),
+            ),
         ):
             result = ai_trust_service.generate_ai_trust_explanation(
                 {"business_name": "Favour Fits"},
@@ -110,12 +84,13 @@ class AITrustServiceTest(unittest.TestCase):
 
         self.assertTrue(result["ai_powered"])
         self.assertEqual(result["model"], ai_trust_service.GROQ_FALLBACK_MODELS[0])
-        self.assertEqual(urlopen.call_count, 2)
+        self.assertEqual(groq_call.call_count, 2)
 
     def test_generate_ai_trust_explanation_falls_back_when_groq_fails(self):
         with (
             patch.object(ai_trust_service.settings, "groq_api_key", "test-key"),
-            patch.object(ai_trust_service.urllib.request, "urlopen", side_effect=TimeoutError("timeout")),
+            patch.object(ai_trust_service, "_call_groq_sdk", side_effect=TimeoutError("timeout")),
+            patch.object(ai_trust_service, "_call_groq_http", side_effect=TimeoutError("timeout")),
         ):
             result = ai_trust_service.generate_ai_trust_explanation(
                 {"business_name": "Fresh Vendor"},

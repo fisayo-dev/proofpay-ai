@@ -7,6 +7,7 @@ import psycopg
 
 from app.db.connection import get_connection
 from app.services.auth_service import hash_password, verify_password
+from app.services.trust_score_service import calculate_trust_score
 
 
 class VendorAlreadyExistsError(Exception):
@@ -15,6 +16,19 @@ class VendorAlreadyExistsError(Exception):
 
 class InvalidLoginError(Exception):
     """Raised when login credentials do not match an account."""
+
+
+def typical_amount_kobo_for_category(category: str | None) -> int:
+    normalized = str(category or "").strip().lower()
+    if normalized in {"gadgets", "electronics", "phones"}:
+        return 5000000
+    if normalized in {"fashion", "clothing"}:
+        return 750000
+    if normalized in {"food", "snacks"}:
+        return 350000
+    if normalized in {"software", "services", "design"}:
+        return 1000000
+    return 500000
 
 
 def _ensure_user_auth_columns(cursor) -> None:

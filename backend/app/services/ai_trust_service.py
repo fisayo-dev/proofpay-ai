@@ -2,6 +2,7 @@ import json
 import logging
 import urllib.error
 import urllib.request
+from typing import Any
 
 from app.core.config import settings
 
@@ -108,6 +109,60 @@ def _build_prompt(vendor: dict, payment_request: dict, trust: dict) -> list[dict
     ]
 
 
+def _call_groq_sdk(api_key: str, model: str, messages: list[dict]) -> str:
+    from groq import Groq
+
+    client = Groq(api_key=api_key)
+    chat = client.chat.completions.create(
+        model=model,
+        messages=messages,
+        temperature=0.2,
+        max_tokens=130,
+    )
+    return chat.choices[0].message.content.strip()
+
+
+def _call_groq_http(api_key: str, model: str, messages: list[dict]) -> str:
+    body = {
+        "model": model,
+        "messages": messages,
+        "temperature": 0.2,
+        "max_tokens": 130,
+    }
+    request = urllib.request.Request(
+        GROQ_CHAT_COMPLETIONS_URL,
+        data=json.dumps(body).encode("utf-8"),
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+            "User-Agent": "ProofPayAI/1.0",
+        },
+        method="POST",
+    )
+
+    with urllib.request.urlopen(request, timeout=8) as response:
+        data = json.loads(response.read().decode("utf-8"))
+        return data["choices"][0]["message"]["content"].strip()
+
+
+def _extract_error_detail(exc: Exception) -> tuple[int | None, str]:
+    status_code = getattr(exc, "status_code", None)
+    response = getattr(exc, "response", None)
+    if response is not None:
+        status_code = getattr(response, "status_code", status_code)
+        try:
+            body: Any = response.text
+        except Exception:
+            body = str(exc)
+        return status_code, str(body)[:500]
+
+    if isinstance(exc, urllib.error.HTTPError):
+        body = exc.read().decode("utf-8", errors="replace")
+        return exc.code, body[:500]
+
+    return status_code, str(exc)[:500]
+
+
 def generate_ai_trust_explanation(vendor: dict, payment_request: dict, trust: dict) -> dict:
     anomaly_warnings = trust.get("anomaly_warnings") or trust.get("features", {}).get("anomaly_flags", [])
     verdict = trust.get("verdict")
@@ -134,47 +189,31 @@ def generate_ai_trust_explanation(vendor: dict, payment_request: dict, trust: di
             models_to_try.append(model)
 
     last_error = None
-    try:
-        for model in models_to_try:
-            body = {
-                "model": model,
-                "messages": messages,
-                "temperature": 0.2,
-                "max_tokens": 130,
-            }
-            request = urllib.request.Request(
-                GROQ_CHAT_COMPLETIONS_URL,
-                data=json.dumps(body).encode("utf-8"),
-                headers={
-                    "Authorization": f"Bearer {groq_api_key}",
-                    "Content-Type": "application/json",
-                },
-                method="POST",
-            )
-
+    for model in models_to_try:
+        for client_name, client_call in (
+            ("groq-sdk", _call_groq_sdk),
+            ("groq-http", _call_groq_http),
+        ):
             try:
-                with urllib.request.urlopen(request, timeout=8) as response:
-                    data = json.loads(response.read().decode("utf-8"))
-                    summary = data["choices"][0]["message"]["content"].strip()
-                    return {
-                        **fallback,
-                        "summary": summary,
-                        "ai_powered": True,
-                        "engine": "groq-chat-completions",
-                        "model": model,
-                    }
-            except urllib.error.HTTPError as exc:
-                error_body = exc.read().decode("utf-8", errors="replace")
-                last_error = f"HTTP {exc.code}: {error_body[:500]}"
+                summary = client_call(groq_api_key, model, messages)
+                return {
+                    **fallback,
+                    "summary": summary,
+                    "ai_powered": True,
+                    "engine": client_name,
+                    "model": model,
+                }
+            except Exception as exc:
+                status_code, detail = _extract_error_detail(exc)
+                last_error = f"HTTP {status_code}: {detail}" if status_code else detail
                 logger.warning(
-                    "Groq trust explanation failed for model=%s: %s",
+                    "Groq trust explanation failed client=%s model=%s: %s",
+                    client_name,
                     model,
                     last_error,
                 )
-                if exc.code not in {403, 404}:
+                if status_code not in {403, 404}:
                     break
-    except (KeyError, IndexError, json.JSONDecodeError, TimeoutError, urllib.error.URLError) as exc:
-        last_error = str(exc)
 
     if last_error:
         logger.warning("Groq trust explanation fell back to rules: %s", last_error)
