@@ -71,10 +71,7 @@ export const header_links = [
     link: "/pricing",
     text: "Pricing",
   },
-  {
-    link: "https://github.com/fisayo-dev/proofpay-ai/",
-    text: "Github",
-  },
+ 
 ];
 
 export const store_products: StoreProduct[] = [
