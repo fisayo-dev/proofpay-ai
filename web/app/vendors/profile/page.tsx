@@ -271,8 +271,7 @@ const ProfilePage = () => {
             </CardHeader>
             <CardContent className="grid gap-4">
               <p className="text-sm leading-7 text-muted-foreground">
-                {aiAdvice?.summary ||
-                  "ProofPay AI will analyze your vendor metrics after your first payment requests."}
+                AI-powered suggestions to improve your vendor profile.
               </p>
               <div className="grid gap-3 sm:grid-cols-2">
                 {(aiAdvice?.suggestions?.length

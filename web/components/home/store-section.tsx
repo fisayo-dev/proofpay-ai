@@ -29,6 +29,7 @@ const hasImage = (src?: string | null): src is string =>
   !!src && !src.includes("localhost") && !src.includes("127.0.0.1");
 
 const ProductImage = ({ product }: { product: StoreProduct }) => {
+  console.log(product)
   const [errored, setErrored] = useState(false);
 
   if (!hasImage(product.image) || errored) {
