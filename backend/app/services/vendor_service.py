@@ -36,6 +36,11 @@ def _ensure_user_auth_columns(cursor) -> None:
     cursor.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT", ())
 
 
+def _ensure_vendor_subscription_columns(cursor) -> None:
+    cursor.execute("ALTER TABLE vendors ADD COLUMN IF NOT EXISTS subscription_plan TEXT DEFAULT 'free'", ())
+    cursor.execute("ALTER TABLE vendors ADD COLUMN IF NOT EXISTS subscription_started_at TEXT", ())
+
+
 def _account_from_rows(user: dict, vendor: dict | None = None) -> dict:
     return {
         "user_id": user.get("id"),
@@ -45,6 +50,7 @@ def _account_from_rows(user: dict, vendor: dict | None = None) -> dict:
         "email": user.get("email"),
         "business_name": vendor.get("business_name") if vendor else "",
         "trust_score": vendor.get("trust_score") if vendor else None,
+        "subscription_plan": vendor.get("subscription_plan", "free") if vendor else "free",
         "created_at": user.get("created_at"),
     }
 
@@ -61,6 +67,7 @@ def create_vendor(data: dict) -> dict:
         user = None
         if user_id:
             _ensure_user_auth_columns(cursor)
+            _ensure_vendor_subscription_columns(cursor)
             cursor.execute("""
                 INSERT INTO users (id, full_name, email, role, password_hash, created_at)
                 VALUES (%s, %s, %s, 'vendor', %s, %s)
@@ -162,6 +169,7 @@ def login_account(email: str, password: str | None = None) -> dict:
     conn = get_connection()
     cursor = conn.cursor()
     _ensure_user_auth_columns(cursor)
+    _ensure_vendor_subscription_columns(cursor)
     cursor.execute(
         """
         SELECT
@@ -173,7 +181,8 @@ def login_account(email: str, password: str | None = None) -> dict:
             u.created_at,
             v.id AS vendor_id,
             v.business_name,
-            v.trust_score
+            v.trust_score,
+            v.subscription_plan
         FROM users u
         LEFT JOIN vendors v ON v.user_id = u.id
         WHERE LOWER(u.email) = LOWER(%s)
@@ -195,6 +204,7 @@ def login_account(email: str, password: str | None = None) -> dict:
         "email": row.get("email"),
         "business_name": row.get("business_name") or "",
         "trust_score": row.get("trust_score"),
+        "subscription_plan": row.get("subscription_plan", "free"),
         "created_at": row.get("created_at"),
     }
 

@@ -28,7 +28,7 @@ const tiers = [
   {
     name: "Pro",
     price: 1500,
-    fee: "2%",
+    fee: "1%",
     badge: "Verified",
     badgeIcon: Rocket,
     analytics: "Full dashboard",
@@ -196,7 +196,8 @@ const PriceTier = () => {
                       <Link href="/vendors/signup" title="Get started free">Get started free</Link>
                     </Button>
                   : <Button asChild className="w-full">
-                      <Link href="/vendors/signup" title="Upgrade to Pro">Upgrade to Pro</Link>
+                      <Link href="/subscription/checkout?plan=pro" title="Upgrade to Pro">Upgrade to Pro</Link>
+        
                     </Button>
                   }
                 </CardFooter>

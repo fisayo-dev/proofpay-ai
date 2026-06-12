@@ -197,12 +197,37 @@ const ProfilePage = () => {
               </span>
               <span>{session.business_name || "Buyer account"}</span>
             </div>
+            {session.role === "vendor" && (
+              <div>
+                <span className="block text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  Subscription
+                </span>
+                <span className="flex items-center gap-2">
+                  {session.subscription_plan === "pro" ? (
+                    <>
+                      <span className="inline-block w-2 h-2 bg-yellow-500 rounded-full"></span>
+                      Pro Plan
+                    </>
+                  ) : (
+                    <>
+                      <span className="inline-block w-2 h-2 bg-gray-400 rounded-full"></span>
+                      Free Plan
+                    </>
+                  )}
+                </span>
+              </div>
+            )}
           </div>
 
           {isVendor ? (
-            <Button variant="outline" onClick={() => router.push("/vendors/new-product")}>
-              Create new product
-            </Button>
+            <div className="flex gap-3 flex-col sm:flex-row">
+              <Button variant="outline" onClick={() => router.push("/vendors/products")}>
+                View Products
+              </Button>
+              <Button onClick={() => router.push("/vendors/new-product")}>
+                Create new product
+              </Button>
+            </div>
           ) : (
             <Button variant="outline" onClick={() => router.push("/#store")}>
               Browse store
