@@ -291,7 +291,7 @@ const StoreSection = () => {
               </Badge>
             </div>
             <p className="text-sm leading-7 text-muted-foreground">
-              {recommendations?.summary.summary ||
+              {
                 "ProofPay ranks products using trust score, completed sales, and recent listings so buyers can start with safer options."}
             </p>
           </div>
