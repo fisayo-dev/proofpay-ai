@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Sparkles, TrendingUp } from "lucide-react";
 import { store_products, type StoreProduct } from "@/constants/home";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -15,9 +16,21 @@ import { nairaFormatter } from "@/utils/store";
 import api from "@/lib/axios";
 import { useHomeGsap } from "./use-home-gsap";
 
+type BuyerRecommendations = {
+  summary: {
+    summary: string;
+    ai_powered: boolean;
+  };
+  popular: StoreProduct[];
+  most_trusted: StoreProduct[];
+  latest: StoreProduct[];
+};
+
 const StoreSection = () => {
   const rootRef = useRef<HTMLElement>(null);
   const [liveProducts, setLiveProducts] = useState<StoreProduct[]>([]);
+  const [recommendations, setRecommendations] =
+    useState<BuyerRecommendations | null>(null);
 
   useEffect(() => {
     let ignore = false;
@@ -31,6 +44,15 @@ const StoreSection = () => {
       })
       .catch(() => {
         if (!ignore) setLiveProducts([]);
+      });
+
+    api
+      .get<BuyerRecommendations>("/public/recommendations")
+      .then((response) => {
+        if (!ignore) setRecommendations(response.data);
+      })
+      .catch(() => {
+        if (!ignore) setRecommendations(null);
       });
 
     return () => {
@@ -209,6 +231,53 @@ const StoreSection = () => {
             and ProofPay AI trust verdict so buyers can review the essentials
             before paying.
           </p>
+        </div>
+      </div>
+
+      <div
+        data-store-animate
+        className="mx-auto mt-8 grid max-w-5xl gap-4 rounded-2xl border border-primary/15 bg-primary/[0.03] p-4 shadow-[0_18px_60px_-40px_rgba(14,30,86,0.4)] sm:p-5 lg:grid-cols-[1.2fr_0.8fr]"
+      >
+        <div className="flex gap-3">
+          <span className="mt-1 flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <Sparkles className="size-4" />
+          </span>
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-lg font-semibold">AI buyer recommendations</h3>
+              <Badge variant={recommendations?.summary.ai_powered ? "default" : "secondary"}>
+                {recommendations?.summary.ai_powered ? "AI guided" : "Data guided"}
+              </Badge>
+            </div>
+            <p className="text-sm leading-7 text-muted-foreground">
+              {recommendations?.summary.summary ||
+                "ProofPay ranks products using trust score, completed sales, and recent listings so buyers can start with safer options."}
+            </p>
+          </div>
+        </div>
+
+        <div className="grid gap-3 text-sm">
+          {(recommendations?.most_trusted?.length
+            ? recommendations.most_trusted.slice(0, 2)
+            : products.slice(0, 2)
+          ).map((product) => (
+            <Link
+              key={`rec-${product.id}`}
+              href={product.public_slug ? `/r/${product.public_slug}` : "#store"}
+              className="flex items-center justify-between gap-3 rounded-xl border border-border/70 bg-background px-4 py-3 transition hover:border-primary/40"
+            >
+              <div>
+                <p className="font-medium">{product.payment_request.item_name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {product.vendor.business_name} · {product.vendor.completed_transactions} sales
+                </p>
+              </div>
+              <span className="flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+                <TrendingUp className="size-3" />
+                {product.trust.score}/100
+              </span>
+            </Link>
+          ))}
         </div>
       </div>
 
