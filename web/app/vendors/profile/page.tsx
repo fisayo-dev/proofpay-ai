@@ -3,7 +3,7 @@
 import { useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Lightbulb, Sparkles } from "lucide-react";
+import { FileText, Lightbulb, Sparkles } from "lucide-react";
 import { getCachedSession } from "@/lib/session";
 import { getVendorAvatarUrl } from "@/lib/avatar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -16,6 +16,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import api from "@/lib/axios";
+import { LabelList, Pie, PieChart } from "recharts"
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from "@/components/ui/chart"
 
 type VendorAnalytics = {
   trust_score: number;
@@ -50,10 +57,12 @@ const formatDuration = (seconds: number | null) => {
 
 const clampPercent = (value: number) => Math.max(0, Math.min(100, value));
 
-const getStatusBarWidth = (count: number, total: number) => {
-  if (total <= 0) return 0;
-  return clampPercent(Math.round((count / total) * 100));
-};
+const statusChartConfig = {
+  count: { label: "Status" },
+  paid: { label: "Paid", color: "hsl(143, 80%, 40%)" },
+  pending: { label: "Pending", color: "hsl(38, 92%, 50%)" },
+  failed: { label: "Failed", color: "hsl(0, 72%, 51%)" },
+} satisfies ChartConfig
 
 const ProfilePage = () => {
   const router = useRouter();
@@ -118,33 +127,13 @@ const ProfilePage = () => {
   const disputeCount = analytics?.dispute_count ?? 0;
   const totalRequests =
     analytics?.total_requests ?? paidCount + pendingCount + failedCount;
-  const statusTotal = Math.max(
-    totalRequests,
-    paidCount + pendingCount + failedCount,
-    1,
-  );
   const averageOrderValue = analytics?.average_amount_naira ?? 0;
   const averagePaymentTime =
     analytics?.average_time_to_payment_seconds ?? null;
-  const statusBreakdown = [
-    {
-      label: "Paid",
-      count: paidCount,
-      className: "bg-emerald-500",
-      textClassName: "text-emerald-700",
-    },
-    {
-      label: "Pending",
-      count: pendingCount,
-      className: "bg-amber-500",
-      textClassName: "text-amber-700",
-    },
-    {
-      label: "Failed",
-      count: failedCount,
-      className: "bg-red-500",
-      textClassName: "text-red-700",
-    },
+  const statusChartData = [
+    { label: "paid", count: paidCount, fill: "var(--color-paid)" },
+    { label: "pending", count: pendingCount, fill: "var(--color-pending)" },
+    { label: "failed", count: failedCount, fill: "var(--color-failed)" },
   ];
 
   return (
@@ -250,12 +239,12 @@ const ProfilePage = () => {
             </Card>
           </div>
 
-          <Card className="border-primary/20 bg-primary/[0.03]">
+          <Card className="border-primary/20 bg-primary/3">
             <CardHeader>
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <span className="flex size-9 items-center justify-center rounded-full bg-primary/10 text-primary">
-                    <Sparkles className="size-4" />
+                    <FileText className="size-4" />
                   </span>
                   <div>
                     <CardTitle className="text-xl">ProofPay AI Advisor</CardTitle>
@@ -350,29 +339,30 @@ const ProfilePage = () => {
                   Paid, pending, and failed payment requests.
                 </p>
               </CardHeader>
-              <CardContent className="grid gap-4">
-                {statusBreakdown.map((status) => {
-                  const width = getStatusBarWidth(status.count, statusTotal);
+              <CardContent className="flex flex-col items-center gap-4">
+                <ChartContainer
+                  config={statusChartConfig}
+                  className="mx-auto aspect-square max-h-[180px] w-full"
+                >
+                  <PieChart>
+                    <ChartTooltip
+                      content={<ChartTooltipContent hideLabel />}
+                    />
+                    <Pie data={statusChartData} dataKey="count" nameKey="label">
+                      <LabelList
+                        dataKey="label"
+                        className="fill-background"
+                        stroke="none"
+                        fontSize={12}
+                        formatter={(value: any) =>
+                          String(value).charAt(0).toUpperCase() + String(value).slice(1)
+                        }
+                      />
+                    </Pie>
+                  </PieChart>
+                </ChartContainer>
 
-                  return (
-                    <div key={status.label} className="space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="font-medium">{status.label}</span>
-                        <span className={status.textClassName}>
-                          {status.count} / {statusTotal}
-                        </span>
-                      </div>
-                      <div className="h-3 overflow-hidden rounded-full bg-muted">
-                        <div
-                          className={`h-full rounded-full ${status.className}`}
-                          style={{ width: `${width}%` }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-
-                <div className="rounded-lg border border-border/70 p-4">
+                <div className="rounded-lg border border-border/70 p-4 w-full">
                   <div className="flex items-center justify-between text-sm">
                     <span className="font-medium">Disputes</span>
                     <span className="font-semibold text-destructive">
