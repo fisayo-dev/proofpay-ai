@@ -8,6 +8,7 @@ import type {
   ColorBlindMode,
   LineSpacing,
 } from "@/context/accessibility-context";
+import Link from "next/link";
 
 function Toggle({
   label,
@@ -209,6 +210,7 @@ export function AccessibilityPanel() {
               value={settings.colorBlindMode}
               onChange={(v) => updateSetting("colorBlindMode", v)}
             />
+            <section className="p-2 text-center text-sm">View <Link href="https://wave.webaim.org/report#/https://proofpay-ai.vercel.app/" target="_blank" className="font-bold hover:underline">WAVE</Link> web accessibility result.</section>
           </div>
         </div>
       </div>
