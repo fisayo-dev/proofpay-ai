@@ -1,6 +1,6 @@
 "use client";
 
-import { BadgeCheck, ChartNoAxesColumn, CreditCard, Package, Rocket, ShieldCheck } from "lucide-react";
+import { BadgeCheck, ChartNoAxesColumn, CreditCard, Package, Rocket } from "lucide-react";
 import Link from "next/link";
 import { useRef } from "react";
 

@@ -51,6 +51,23 @@ def build_checkout_config(
     }
 
 
+def normalize_image_url(image_url: str | None) -> str | None:
+    if not image_url:
+        return None
+
+    value = str(image_url).strip()
+    if not value:
+        return None
+
+    if "localhost" in value or "127.0.0.1" in value:
+        return None
+
+    if value.startswith("/uploads/"):
+        return f"{settings.backend_base_url.rstrip('/')}{value}"
+
+    return value
+
+
 def create_payment_request(data: dict) -> dict:
     vendor_id = data["vendor_id"]
     amount_kobo = data["amount_kobo"]
@@ -244,16 +261,26 @@ def list_public_store_products(limit: int = 12) -> list[dict]:
         ORDER BY pr.created_at DESC
         LIMIT %s
         """,
-        (limit,),
+        (limit * 4,),
     )
     rows = cursor.fetchall()
     conn.close()
 
-    return [
-        {
+    products = []
+    seen = set()
+    for row in rows:
+        dedupe_key = (
+            str(row["vendor_id"]),
+            str(row["item_name"] or "").strip().lower(),
+            int(row["amount_kobo"] or 0),
+        )
+        if dedupe_key in seen:
+            continue
+        seen.add(dedupe_key)
+        products.append({
             "id": str(row["id"]),
             "public_slug": row["public_slug"],
-            "image": row.get("image_url"),
+            "image": normalize_image_url(row.get("image_url")),
             "vendor": {
                 "id": str(row["vendor_id"]),
                 "business_name": row["business_name"],
@@ -271,9 +298,12 @@ def list_public_store_products(limit: int = 12) -> list[dict]:
                 "score": row.get("trust_score_at_creation") or 0,
                 "verdict": row.get("trust_verdict") or "Manual Review Needed",
             },
-        }
-        for row in rows
-    ]
+        })
+
+        if len(products) >= limit:
+            break
+
+    return products
 
 
 def get_trust_check_by_payment_request_id(payment_request_id: str) -> dict | None:

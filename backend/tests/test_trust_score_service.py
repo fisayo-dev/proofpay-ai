@@ -105,6 +105,28 @@ class TrustScoreServiceTest(unittest.TestCase):
         self.assertEqual(result["features"]["risk_multiplier"], 1.0)
         self.assertEqual(result["features"]["anomaly_flags"], [])
 
+    def test_penalizes_low_completion_rate_vendor(self):
+        vendor = {
+            "business_name": "TobiTech",
+            "category": "software",
+            "phone": "+2348012345678",
+            "bank_account_name": "TOBI TECH",
+            "social_handle": "@olatunji_oluwatobiloba1",
+            "completed_transactions": 1,
+            "total_transactions": 29,
+            "dispute_count": 0,
+        }
+        payment_request = {"amount_kobo": 1500000}
+
+        result = calculate_trust_score(vendor, payment_request)
+
+        self.assertLess(result["score"], 60)
+        self.assertEqual(result["features"]["payment_completion_rate"], 0.034)
+        self.assertIn(
+            "Low payment completion rate - many requests have not converted yet",
+            result["reasons"],
+        )
+
     def test_zero_amount_returns_valid_manual_review_score(self):
         vendor = {
             "business_name": "Test",

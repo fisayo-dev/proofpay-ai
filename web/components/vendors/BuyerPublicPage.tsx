@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Script from "next/script";
 import {
   AlertTriangle,
@@ -9,7 +8,6 @@ import {
   BadgeCheck,
   Building2,
   ChevronDown,
-  ImageIcon,
   LockKeyhole,
   PackageCheck,
   ShieldCheck,
@@ -56,6 +54,16 @@ const formatCurrency = (amount: number, currency: string) => {
     currency,
     minimumFractionDigits: 2,
   }).format(amount / 1);
+};
+
+const FALLBACK_PRODUCT_IMAGE = "/images/products/ceramic-mug.jpg";
+
+const getSafeImageSrc = (src?: string | null) => {
+  if (!src || src.includes("localhost") || src.includes("127.0.0.1")) {
+    return FALLBACK_PRODUCT_IMAGE;
+  }
+
+  return src;
 };
 
 const getVerificationBadge = (score: number) => {
@@ -311,22 +319,17 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
         <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[minmax(0,1fr)_390px] lg:items-start">
           <div className="space-y-6">
             <section className="overflow-hidden rounded-xl border border-border/70 bg-card shadow-[0_24px_80px_-52px_rgba(15,23,42,0.35)]">
-              {product.item.image_url && product.item.image_url.trim() ? (
-                <div className="relative aspect-4/3 w-full bg-muted sm:aspect-video">
-                  <Image
-                    src={product.item.image_url}
-                    alt={`${product.item.name} product preview`}
-                    fill
-                    priority
-                    sizes="(min-width: 1024px) 720px, 100vw"
-                    className="object-cover"
-                  />
-                </div>
-              ) : (
-                <div className="flex aspect-4/3 w-full items-center justify-center bg-muted sm:aspect-video">
-                  <ImageIcon className="size-16 text-muted-foreground/40" />
-                </div>
-              )}
+              <div className="relative aspect-4/3 w-full overflow-hidden bg-muted sm:aspect-video">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={getSafeImageSrc(product.item.image_url)}
+                  alt={`${product.item.name} product preview`}
+                  className="h-full w-full object-cover"
+                  onError={(event) => {
+                    event.currentTarget.src = FALLBACK_PRODUCT_IMAGE;
+                  }}
+                />
+              </div>
 
               <div className="grid gap-5 p-5 sm:p-6">
                 <div className="flex flex-wrap items-center gap-2">

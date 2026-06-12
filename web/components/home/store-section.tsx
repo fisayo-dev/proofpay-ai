@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Sparkles, TrendingUp } from "lucide-react";
@@ -24,6 +23,16 @@ type BuyerRecommendations = {
   popular: StoreProduct[];
   most_trusted: StoreProduct[];
   latest: StoreProduct[];
+};
+
+const FALLBACK_PRODUCT_IMAGE = "/images/products/ceramic-mug.jpg";
+
+const getSafeImageSrc = (src?: string | null) => {
+  if (!src || src.includes("localhost") || src.includes("127.0.0.1")) {
+    return FALLBACK_PRODUCT_IMAGE;
+  }
+
+  return src;
 };
 
 const StoreSection = () => {
@@ -61,7 +70,22 @@ const StoreSection = () => {
   }, []);
 
   const products = useMemo(
-    () => (liveProducts.length > 0 ? liveProducts : store_products),
+    () => {
+      const source = liveProducts.length > 0 ? liveProducts : store_products;
+      const seen = new Set<string>();
+
+      return source.filter((product) => {
+        const key = [
+          product.vendor.id || product.vendor.business_name,
+          product.payment_request.item_name.trim().toLowerCase(),
+          product.payment_request.amount,
+        ].join("|");
+
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    },
     [liveProducts],
   );
 
@@ -300,13 +324,15 @@ const StoreSection = () => {
             className="h-full overflow-hidden border border-border/70 bg-background/80 pt-0 shadow-[0_20px_60px_-30px_rgba(14,30,86,0.35)] backdrop-blur-sm transition group-hover/card:-translate-y-1 group-hover/card:shadow-[0_24px_70px_-34px_rgba(14,30,86,0.45)]"
           >
             <div className="relative aspect-4/3 overflow-hidden">
-              <Image
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 data-store-image
-                src={product.image || "/images/products/ceramic-mug.jpg"}
+                src={getSafeImageSrc(product.image)}
                 alt={product.payment_request.item_name}
-                fill
-                className="object-cover transition-transform duration-500 group-hover/card:scale-105"
-                sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
+                className="h-full w-full object-cover transition-transform duration-500 group-hover/card:scale-105"
+                onError={(event) => {
+                  event.currentTarget.src = FALLBACK_PRODUCT_IMAGE;
+                }}
               />
               <div className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-linear-to-t from-black/75 to-transparent px-4 py-4 text-white">
                 <div>

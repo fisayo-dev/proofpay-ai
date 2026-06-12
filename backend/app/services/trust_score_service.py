@@ -58,8 +58,10 @@ def calculate_trust_score(vendor: dict, payment_request: dict) -> dict:
     # Factor 2: Transaction history (25 points)
     completed = _safe_int(vendor.get("completed_transactions", 0))
     total = _safe_int(vendor.get("total_transactions", 0))
+    payment_completion_rate = completed / total if total > 0 else 0
     features["completed_transactions"] = completed
     features["total_transactions"] = total
+    features["payment_completion_rate"] = round(payment_completion_rate, 3)
 
     if completed >= 20:
         score += 25
@@ -74,11 +76,20 @@ def calculate_trust_score(vendor: dict, payment_request: dict) -> dict:
         score += 15
         reasons.append(f"Vendor has {completed} completed transactions - early history")
     elif completed >= 1:
-        score += 7
+        score += 5
         reasons.append(f"Vendor has {completed} completed transaction(s) - limited history")
     else:
         score += 2
         reasons.append("Vendor has no completed transactions yet - new seller")
+
+    if total >= 5 and payment_completion_rate < 0.35:
+        score -= 14
+        reasons.append("Low payment completion rate - many requests have not converted yet")
+    elif total >= 5 and payment_completion_rate < 0.60:
+        score -= 8
+        reasons.append("Moderate payment completion rate - review seller follow-through")
+    elif total >= 5 and payment_completion_rate >= 0.80:
+        reasons.append("Strong payment completion rate")
 
     # Factor 3: Dispute history (25 points)
     disputes = _safe_int(vendor.get("dispute_count", 0))
@@ -89,9 +100,12 @@ def calculate_trust_score(vendor: dict, payment_request: dict) -> dict:
     if total == 0:
         score += 15
         reasons.append("No dispute history yet - not enough completed transactions")
-    elif disputes == 0:
+    elif disputes == 0 and completed >= 3 and payment_completion_rate >= 0.6:
         score += 25
         reasons.append("No disputes on record")
+    elif disputes == 0:
+        score += 14
+        reasons.append("No disputes reported, but transaction completion history is still limited")
     elif dispute_rate <= 0.05:
         score += 20
         reasons.append("Very low dispute rate - highly reliable")
@@ -175,6 +189,8 @@ def calculate_trust_score(vendor: dict, payment_request: dict) -> dict:
         reasons.extend(anomaly_result["anomaly_flags"])
     else:
         adjusted_score = score
+
+    adjusted_score = max(0, min(100, adjusted_score))
 
     if adjusted_score >= 80:
         verdict = "Trusted"

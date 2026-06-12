@@ -109,19 +109,45 @@ export function SiteHeader() {
             )}
           </div>
 
-          <Button
-            variant="outline"
-            size="icon"
-            className="lg:hidden"
-            aria-label={
-              isMenuOpen ? "Close navigation menu" : "Open navigation menu"
-            }
-            title={isMenuOpen ? "Close navigation menu" : "Open navigation menu"}
-            aria-expanded={isMenuOpen}
-            onClick={() => setIsMenuOpen((open) => !open)}
-          >
-            {isMenuOpen ? <X /> : <Menu />}
-          </Button>
+          <div className="flex items-center gap-2 lg:hidden">
+            {session ? (
+              <Button
+                variant="outline"
+                size="icon"
+                asChild
+                aria-label="Open dashboard"
+                title="Open dashboard"
+              >
+                <Link href="/vendors/profile">
+                  {avatarUrl ? (
+                    <Avatar size="sm">
+                      <AvatarImage
+                        src={avatarUrl}
+                        alt={`${session.full_name} account avatar`}
+                      />
+                      <AvatarFallback>
+                        {session.full_name.slice(0, 1).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                  ) : (
+                    <User2 />
+                  )}
+                </Link>
+              </Button>
+            ) : null}
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label={
+                isMenuOpen ? "Close navigation menu" : "Open navigation menu"
+              }
+              title={isMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+              aria-expanded={isMenuOpen}
+              onClick={() => setIsMenuOpen((open) => !open)}
+            >
+              {isMenuOpen ? <X /> : <Menu />}
+            </Button>
+          </div>
         </div>
 
         <div

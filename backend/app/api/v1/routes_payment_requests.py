@@ -12,6 +12,7 @@ from app.services.payment_request_service import (
     get_payment_request_by_slug,
     get_trust_check_by_payment_request_id,
     list_public_store_products,
+    normalize_image_url,
 )
 from app.services.ai_trust_service import (
     generate_ai_trust_explanation,
@@ -243,7 +244,7 @@ def get_public_request_endpoint(public_slug: str):
             "description": request.get("item_description"),
             "amount": amount_kobo_to_naira(request["amount_kobo"]),
             "currency": request["currency"],
-            "image_url": request.get("image_url"),
+            "image_url": normalize_image_url(request.get("image_url")),
         },
         "trust": {
             "score": trust_payload["score"],

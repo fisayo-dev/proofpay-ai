@@ -21,6 +21,15 @@ type ChartContextProps = {
   config: ChartConfig
 }
 
+type ChartPayloadItem = {
+  dataKey?: string | number
+  name?: string | number
+  value?: unknown
+  color?: string
+  payload?: Record<string, unknown>
+  [key: string]: unknown
+}
+
 const ChartContext = React.createContext<ChartContextProps | null>(null)
 
 function useChart() {
@@ -119,19 +128,18 @@ function ChartTooltipContent({
   labelKey?: string
   labelClassName?: string
   active?: boolean
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  payload?: any[]
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  label?: any
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  labelFormatter?: (label: any, payload: any[]) => React.ReactNode
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  payload?: ChartPayloadItem[]
+  label?: unknown
+  labelFormatter?: (
+    label: React.ReactNode,
+    payload: ChartPayloadItem[]
+  ) => React.ReactNode
   formatter?: (
-    value: any,
-    name: any,
-    item: any,
+    value: unknown,
+    name: string | number,
+    item: ChartPayloadItem,
     index: number,
-    payload: any
+    payload: Record<string, unknown> | undefined
   ) => React.ReactNode
   color?: string
 }) {
@@ -141,10 +149,10 @@ function ChartTooltipContent({
     if (hideLabel || !payload?.length) return null
 
     const [item] = payload
-    const key = `${labelKey || item.dataKey || item.name || "value"}`
-    const itemConfig = getPayloadConfigFromPayload(config, item, key)
-    const value =
-      !labelKey && typeof label === "string"
+      const key = `${labelKey || item.dataKey || item.name || "value"}`
+      const itemConfig = getPayloadConfigFromPayload(config, item, key)
+      const value =
+        !labelKey && typeof label === "string"
         ? config[label as keyof typeof config]?.label || label
         : itemConfig?.label
 
@@ -174,22 +182,27 @@ function ChartTooltipContent({
     >
       {!nestLabel ? tooltipLabel : null}
       <div className="grid gap-1.5">
-        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-        {payload.map((item: any, index: number) => {
+        {payload.map((item, index: number) => {
           const key = `${nameKey || item.name || item.dataKey || "value"}`
           const itemConfig = getPayloadConfigFromPayload(config, item, key)
-          const indicatorColor = color || item.payload?.fill || item.color
+          const payloadFill =
+            typeof item.payload?.fill === "string" ? item.payload.fill : undefined
+          const indicatorColor = color || payloadFill || item.color
+          const itemName =
+            typeof item.name === "string" || typeof item.name === "number"
+              ? item.name
+              : undefined
 
           return (
             <div
-              key={item.dataKey}
+              key={`${item.dataKey || item.name || index}`}
               className={cn(
                 "flex w-full flex-wrap items-stretch gap-2 [&>svg]:h-2.5 [&>svg]:w-2.5 [&>svg]:text-muted-foreground",
                 indicator === "dot" && "items-center"
               )}
             >
-              {formatter && item?.value !== undefined && item.name ? (
-                formatter(item.value, item.name, item, index, item.payload)
+              {formatter && item?.value !== undefined && itemName ? (
+                formatter(item.value, itemName, item, index, item.payload)
               ) : (
                 <>
                   {itemConfig?.icon ? (
@@ -226,9 +239,9 @@ function ChartTooltipContent({
                         {itemConfig?.label || item.name}
                       </span>
                     </div>
-                    {item.value && (
+                    {item.value !== undefined && item.value !== null && (
                       <span className="font-mono font-medium tabular-nums text-foreground">
-                        {item.value.toLocaleString()}
+                        {String(item.value)}
                       </span>
                     )}
                   </div>
@@ -242,10 +255,9 @@ function ChartTooltipContent({
   )
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getPayloadConfigFromPayload(
   config: ChartConfig,
-  payload: any,
+  payload: ChartPayloadItem,
   key: string
 ) {
   if (typeof payload !== "object" || payload === null) return undefined
