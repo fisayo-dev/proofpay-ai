@@ -8,6 +8,7 @@ import {
   BadgeCheck,
   Building2,
   ChevronDown,
+  ImageIcon,
   LockKeyhole,
   PackageCheck,
   ShieldCheck,
@@ -56,14 +57,31 @@ const formatCurrency = (amount: number, currency: string) => {
   }).format(amount / 1);
 };
 
-const FALLBACK_PRODUCT_IMAGE = "/images/products/ceramic-mug.jpg";
+const ProductImage = ({
+  src,
+  alt,
+}: {
+  src?: string | null;
+  alt: string;
+}) => {
+  const [errored, setErrored] = useState(false);
 
-const getSafeImageSrc = (src?: string | null) => {
-  if (!src || src.includes("localhost") || src.includes("127.0.0.1")) {
-    return FALLBACK_PRODUCT_IMAGE;
+  if (!src || errored) {
+    return (
+      <div className="flex h-full w-full items-center justify-center bg-muted">
+        <ImageIcon className="size-14 text-muted-foreground/40" />
+      </div>
+    );
   }
 
-  return src;
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className="h-full w-full object-cover"
+      onError={() => setErrored(true)}
+    />
+  );
 };
 
 const getVerificationBadge = (score: number) => {
@@ -320,14 +338,9 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
           <div className="space-y-6">
             <section className="overflow-hidden rounded-xl border border-border/70 bg-card shadow-[0_24px_80px_-52px_rgba(15,23,42,0.35)]">
               <div className="relative aspect-4/3 w-full overflow-hidden bg-muted sm:aspect-video">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={getSafeImageSrc(product.item.image_url)}
+                <ProductImage
+                  src={product.item.image_url}
                   alt={`${product.item.name} product preview`}
-                  className="h-full w-full object-cover"
-                  onError={(event) => {
-                    event.currentTarget.src = FALLBACK_PRODUCT_IMAGE;
-                  }}
                 />
               </div>
 
