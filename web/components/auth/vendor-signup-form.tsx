@@ -66,7 +66,7 @@ const VendorSignupForm = () => {
       return;
     }
 
-    router.push("/vendors/profile");
+    window.location.href = "/vendors/profile";
   };
 
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
