@@ -359,7 +359,6 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
                       className="gap-1 rounded-md px-2.5 py-1"
                       title={vendorBadge.description}
                     >
-                      <span>{vendorBadge.icon}</span>
                       {vendorBadge.label}
                     </Badge>
                   ) : null}

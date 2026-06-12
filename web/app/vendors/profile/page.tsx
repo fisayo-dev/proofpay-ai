@@ -113,7 +113,7 @@ const ProfilePage = () => {
             </CardTitle>
             {isVendor && analytics?.badge ? (
               <Badge variant="outline" className="w-fit">
-                {analytics.badge.icon} {analytics.badge.label}
+                {analytics.badge.label}
               </Badge>
             ) : null}
           </div>
@@ -194,7 +194,7 @@ const ProfilePage = () => {
                 Average order value
               </p>
               <p className="mt-2 text-3xl font-semibold">
-                ₦{(analytics?.average_amount_naira ?? 0).toLocaleString()}
+                NGN {(analytics?.average_amount_naira ?? 0).toLocaleString()}
               </p>
             </CardContent>
           </Card>
