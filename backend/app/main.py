@@ -14,6 +14,7 @@ from app.api.v1.routes_demo import router as demo_router
 from app.api.v1.routes_disputes import router as disputes_router
 from app.api.v1.routes_payment_requests import router as payment_router
 from app.api.v1.routes_payments import router as payments_router
+from app.api.v1.routes_subscriptions import router as subscriptions_router
 from app.api.v1.routes_uploads import router as uploads_router
 from app.api.v1.routes_vendor import router as vendor_router
 from app.api.v1.routes_webhooks import router as webhooks_router
@@ -95,6 +96,7 @@ async def log_requests(request: Request, call_next):
 app.include_router(vendor_router)
 app.include_router(payment_router)
 app.include_router(payments_router)
+app.include_router(subscriptions_router)
 app.include_router(uploads_router)
 app.include_router(disputes_router)
 app.include_router(demo_router)
