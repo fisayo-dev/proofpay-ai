@@ -131,7 +131,7 @@ const ProfilePage = () => {
   ];
 
   return (
-    <section className="mx-auto max-w-5xl space-y-6 pb-20 sm:pb-24">
+    <section className="mx-auto space-y-6 pb-20 sm:pb-24">
       <div className="space-y-2">
         <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
           Profile
