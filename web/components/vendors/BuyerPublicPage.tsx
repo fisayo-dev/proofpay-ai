@@ -478,9 +478,6 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
                       <p className="text-sm font-semibold">
                         Vendor trust score history
                       </p>
-                      <p className="text-xs text-muted-foreground">
-                        Y-axis: trust score. X-axis: recent checks.
-                      </p>
                     </div>
                     <p className="text-xs text-muted-foreground">
                       {trustHistory.length > 0
