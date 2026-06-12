@@ -1,10 +1,10 @@
 "use client";
 
-import Image from "next/image";
 import Script from "next/script";
 import {
   AlertTriangle,
   ArrowRight,
+  Award,
   BadgeCheck,
   Building2,
   ChevronDown,
@@ -55,6 +55,58 @@ const formatCurrency = (amount: number, currency: string) => {
     currency,
     minimumFractionDigits: 2,
   }).format(amount / 1);
+};
+
+const ProductImage = ({
+  src,
+  alt,
+}: {
+  src?: string | null;
+  alt: string;
+}) => {
+  const [errored, setErrored] = useState(false);
+
+  if (!src || errored) {
+    return (
+      <div className="flex h-full w-full items-center justify-center bg-muted">
+        <ImageIcon className="size-14 text-muted-foreground/40" />
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className="h-full w-full object-cover"
+      onError={() => setErrored(true)}
+    />
+  );
+};
+
+const getVerificationBadge = (score: number) => {
+  if (score >= 80) {
+    return {
+      label: "Top seller",
+      Icon: Award,
+      className:
+        "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400",
+    };
+  }
+  if (score >= 65) {
+    return {
+      label: "Verified",
+      Icon: BadgeCheck,
+      className:
+        "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+    };
+  }
+  return {
+    label: "Rising star",
+    Icon: Sparkles,
+    className:
+      "border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400",
+  };
 };
 
 const getTrustTone = (score: number) => {
@@ -167,14 +219,11 @@ const TrustScorePill = ({ score }: { score: number }) => {
   return (
     <div
       className={cn(
-        "flex items-center  gap-5 rounded-full border px-3 py-1.5 text-sm font-semibold tracking-tight",
+        "justify-center flex items-center rounded-full border p-2 h-12 w-12 text-sm font-semibold tracking-tight",
         style.className,
       )}
     >
-      <span>{score}%</span>
-      <span className="text-[11px] font-medium uppercase tracking-[0.18em] opacity-80">
-        {style.label}
-      </span>
+      {score}%
     </div>
   );
 };
@@ -188,16 +237,31 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
   const [isKoraScriptReady, setIsKoraScriptReady] = useState(false);
   const trustTone = getTrustTone(product.trust.score);
   const TrustIcon = trustTone.Icon;
+  const verification = getVerificationBadge(product.trust.score);
+  const VerificationIcon = verification.Icon;
   const formattedAmount = formatCurrency(
     product.item.amount,
     product.item.currency,
   );
   const callbackUrl = `/payments/callback/${paymentConfig.payment_request_id}`;
   const aiSummary =
-    product.trust.ai_summary ||
+    product.trust.ai_summary?.replace(/^"|"$/g, "") ||
     "ProofPay AI reviewed seller signals, payment context, and request details before sending you to checkout.";
   const anomalyWarnings = product.trust.anomaly_warnings || [];
   const trustHistory = product.trust.history || [];
+  const visibleReasons = product.trust.reasons.slice(0, 4);
+  const signalCount = product.trust.reasons.length;
+  const graphPoints =
+    trustHistory.length > 0
+      ? trustHistory.slice(-8)
+      : [
+          {
+            score: product.trust.score,
+            verdict: product.trust.verdict,
+            created_at: "current",
+            payment_request_id: product.payment_request_id,
+          },
+        ];
   const vendorBadge = product.seller.badge;
 
   const redirectToCallback = () => {
@@ -273,22 +337,12 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
         <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[minmax(0,1fr)_390px] lg:items-start">
           <div className="space-y-6">
             <section className="overflow-hidden rounded-xl border border-border/70 bg-card shadow-[0_24px_80px_-52px_rgba(15,23,42,0.35)]">
-              {product.item.image_url && product.item.image_url.trim() ? (
-                <div className="relative aspect-4/3 w-full bg-muted sm:aspect-video">
-                  <Image
-                    src={product.item.image_url}
-                    alt={`${product.item.name} product preview`}
-                    fill
-                    priority
-                    sizes="(min-width: 1024px) 720px, 100vw"
-                    className="object-cover"
-                  />
-                </div>
-              ) : (
-                <div className="flex aspect-4/3 w-full items-center justify-center bg-muted sm:aspect-video">
-                  <ImageIcon className="size-16 text-muted-foreground/40" />
-                </div>
-              )}
+              <div className="relative aspect-4/3 w-full overflow-hidden bg-muted sm:aspect-video">
+                <ProductImage
+                  src={product.item.image_url}
+                  alt={`${product.item.name} product preview`}
+                />
+              </div>
 
               <div className="grid gap-5 p-5 sm:p-6">
                 <div className="flex flex-wrap items-center gap-2">
@@ -305,13 +359,22 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
                   >
                     {product.seller.category}
                   </Badge>
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "gap-1.5 rounded-md px-2.5 py-1",
+                      verification.className,
+                    )}
+                  >
+                    <VerificationIcon className="size-3.5" />
+                    {verification.label}
+                  </Badge>
                   {vendorBadge ? (
                     <Badge
                       variant="outline"
                       className="gap-1 rounded-md px-2.5 py-1"
                       title={vendorBadge.description}
                     >
-                      <span>{vendorBadge.icon}</span>
                       {vendorBadge.label}
                     </Badge>
                   ) : null}
@@ -372,8 +435,8 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
                       <TrustIcon className="size-3.5" />
                       <span>{trustTone.label}</span>
                     </Badge>
-                    <div className="space-y-2">
-                      <CardTitle className="text-2xl sm:text-3xl">
+                    <div className="space-y-2 mt-4">
+                      <CardTitle className="text-2xl sm:text-3xl font-bold">
                         {product.trust.verdict}
                       </CardTitle>
                       <CardDescription className="max-w-2xl text-sm leading-7">
@@ -390,14 +453,8 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
                 <div className="rounded-lg border border-border/70 bg-background px-4 py-3">
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge variant="secondary" className="gap-2 rounded-md">
-                      <Sparkles className="size-3.5" />
-                      {product.trust.ai_powered ? "Groq AI" : "AI fallback"}
+                      AI summary
                     </Badge>
-                    {product.trust.ai_model ? (
-                      <span className="text-xs text-muted-foreground">
-                        {product.trust.ai_model}
-                      </span>
-                    ) : null}
                   </div>
                   {product.trust.ai_recommendation ? (
                     <p className="mt-2 text-sm leading-6 text-muted-foreground">
@@ -430,42 +487,63 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
                   </div>
                 ) : null}
 
-                {trustHistory.length > 0 ? (
-                  <div className="rounded-lg border border-border/70 bg-background px-4 py-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm font-semibold">Reputation graph</p>
-                      <p className="text-xs text-muted-foreground">
-                        {trustHistory.length} checks
+                <div className="rounded-lg border border-border/70 bg-background px-4 py-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold">
+                        Vendor trust score history
                       </p>
                     </div>
-                    <div className="mt-3 flex h-16 items-end gap-2">
-                      {trustHistory.slice(-8).map((point, index) => (
-                        <div
-                          key={`${point.created_at}-${index}`}
-                          className="flex flex-1 flex-col items-center gap-1"
-                        >
+                    <p className="text-xs text-muted-foreground">
+                      {trustHistory.length > 0
+                        ? `${trustHistory.length} checks`
+                        : "First check"}
+                    </p>
+                  </div>
+                  <div className="mt-4 grid grid-cols-[2rem_1fr] gap-3">
+                    <div className="flex h-20 items-center justify-center">
+                      <span className="-rotate-90 whitespace-nowrap text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+                        Score
+                      </span>
+                    </div>
+                    <div>
+                      <div className="flex h-20 items-end gap-2 border-l border-b border-border/70 pl-2">
+                        {graphPoints.map((point, index) => (
                           <div
-                            className="w-full rounded-t-md bg-primary/70"
-                            style={{
-                              height: `${Math.max(10, Math.min(100, point.score))}%`,
-                            }}
-                            title={`${point.score}% - ${point.verdict}`}
-                          />
-                        </div>
-                      ))}
+                            key={`${point.created_at}-${index}`}
+                            className="flex h-full flex-1 flex-col justify-end"
+                          >
+                            <div
+                              className="w-full rounded-t-md bg-primary/70"
+                              style={{
+                                height: `${Math.max(10, Math.min(100, point.score))}%`,
+                              }}
+                              title={`${point.score}% - ${point.verdict}`}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                      <p className="mt-1 text-center text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+                        Recent trust checks
+                      </p>
                     </div>
                   </div>
-                ) : null}
+                </div>
 
                 <button
                   type="button"
+                  title={
+                    toggleReason
+                      ? "Hide trust score reasons"
+                      : "Show trust score reasons"
+                  }
                   className="flex w-full items-center justify-between rounded-lg border border-border/70 bg-background px-4 py-3 text-left transition-colors hover:bg-muted/50"
                   onClick={() => setToggleReason(!toggleReason)}
                   aria-expanded={toggleReason}
                 >
                   <span className="font-semibold">
-                    Why this score? ({product.trust.reasons.length} signals
-                    checked)
+                    Why this score? (showing {visibleReasons.length} of{" "}
+                    {signalCount} signals checked)
                   </span>
                   <ChevronDown
                     className={cn(
@@ -476,7 +554,7 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
                 </button>
                 {toggleReason ? (
                   <div className="grid gap-2">
-                    {product.trust.reasons.slice(0, 4).map((reason) => (
+                    {visibleReasons.map((reason) => (
                       <div
                         key={reason}
                         className="rounded-lg border border-border/60 bg-background px-4 py-3"
@@ -546,7 +624,7 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
                         Social handle
                       </p>
                       <p className="truncate text-sm font-medium">
-                        @{product.seller.social_handle}
+                        @{product.seller.social_handle.replace(/^@+/, "")}
                       </p>
                     </div>
                   </div>
@@ -563,12 +641,12 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
                   }}
                 >
                   <AlertDialogTrigger asChild>
-                    <Button className="w-full">
+                    <Button className="w-full" title="Proceed to checkout">
                       <span>Buy now</span>
                       <ArrowRight />
                     </Button>
                   </AlertDialogTrigger>
-                  <AlertDialogContent>
+                  <AlertDialogContent  className="sm:max-w-2xl">
                     <form onSubmit={handleCheckout} className="grid gap-4">
                       <AlertDialogHeader>
                         <AlertDialogTitle>Checkout details</AlertDialogTitle>
@@ -613,10 +691,10 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
                       </div>
 
                       <AlertDialogFooter>
-                        <AlertDialogCancel type="button">
+                        <AlertDialogCancel type="button" title="Cancel checkout">
                           Cancel
                         </AlertDialogCancel>
-                        <Button type="submit">
+                        <Button type="submit" title="Proceed to Kora checkout">
                           Proceed to checkout
                           <ArrowRight />
                         </Button>

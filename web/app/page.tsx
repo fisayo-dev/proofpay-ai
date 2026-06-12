@@ -24,6 +24,7 @@ export default function Home() {
       <VendorSection />
       <StoreSection />
       {!session && <PriceTier />}
+      <PriceTier />
       <Faq />
       <SiteFooter />
     </div>

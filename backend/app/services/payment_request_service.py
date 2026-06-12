@@ -51,6 +51,20 @@ def build_checkout_config(
     }
 
 
+def normalize_image_url(image_url: str | None) -> str | None:
+    if not image_url:
+        return None
+
+    value = str(image_url).strip()
+    if not value:
+        return None
+
+    if value.startswith("/uploads/"):
+        return f"{settings.backend_base_url.rstrip('/')}{value}"
+
+    return value
+
+
 def create_payment_request(data: dict) -> dict:
     vendor_id = data["vendor_id"]
     amount_kobo = data["amount_kobo"]
@@ -214,6 +228,79 @@ def get_payment_request_by_slug(slug: str) -> dict | None:
     conn.close()
 
     return dict(row) if row else None
+
+
+def list_public_store_products(limit: int = 12) -> list[dict]:
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        SELECT
+            pr.id,
+            pr.public_slug,
+            pr.item_name,
+            pr.item_description,
+            pr.amount_kobo,
+            pr.currency,
+            pr.image_url,
+            pr.trust_score_at_creation,
+            pr.trust_verdict,
+            pr.created_at,
+            v.id AS vendor_id,
+            v.business_name,
+            v.category,
+            v.social_handle,
+            v.completed_transactions
+        FROM payment_requests pr
+        JOIN vendors v ON v.id = pr.vendor_id
+        WHERE pr.public_slug IS NOT NULL
+        ORDER BY pr.created_at DESC
+        LIMIT %s
+        """,
+        (limit * 4,),
+    )
+    rows = cursor.fetchall()
+    conn.close()
+
+    products = []
+    seen = set()
+    for row in rows:
+        dedupe_key = (
+            str(row["vendor_id"]),
+            str(row["item_name"] or "").strip().lower(),
+            int(row["amount_kobo"] or 0),
+        )
+        if dedupe_key in seen:
+            continue
+        seen.add(dedupe_key)
+        products.append({
+            "id": str(row["id"]),
+            "public_slug": row["public_slug"],
+            "image": normalize_image_url(row.get("image_url")),
+            "vendor": {
+                "id": str(row["vendor_id"]),
+                "business_name": row["business_name"],
+                "category": row["category"],
+                "social_handle": row.get("social_handle") or "",
+                "completed_transactions": row.get("completed_transactions") or 0,
+            },
+            "payment_request": {
+                "item_name": row["item_name"],
+                "item_description": row.get("item_description") or "",
+                "amount": amount_kobo_to_naira(row["amount_kobo"]),
+                "currency": row["currency"],
+            },
+            "trust": {
+                "score": row.get("trust_score_at_creation") or 0,
+                "verdict": row.get("trust_verdict") or "Manual Review Needed",
+            },
+        })
+
+        if len(products) >= limit:
+            break
+
+    return products
 
 
 def get_trust_check_by_payment_request_id(payment_request_id: str) -> dict | None:

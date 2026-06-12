@@ -11,8 +11,13 @@ from app.services.payment_request_service import (
     get_payment_request_by_id,
     get_payment_request_by_slug,
     get_trust_check_by_payment_request_id,
+    list_public_store_products,
+    normalize_image_url,
 )
-from app.services.ai_trust_service import generate_ai_trust_explanation
+from app.services.ai_trust_service import (
+    generate_ai_trust_explanation,
+    generate_buyer_recommendation_summary,
+)
 from app.services.trust_score_service import calculate_trust_score
 from app.services.vendor_service import get_vendor_by_id, get_vendor_for_scoring
 from app.services.vendor_reputation_service import (
@@ -37,6 +42,50 @@ class CreatePaymentRequestBody(BaseModel):
     delivery_method: Optional[str] = None
     expected_delivery_date: Optional[str] = None
     image_url: Optional[str] = None
+
+
+@router.get("/public/store-products")
+def list_public_store_products_endpoint():
+    try:
+        return {"products": list_public_store_products(limit=12)}
+    except psycopg.OperationalError:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/public/recommendations")
+def list_public_recommendations_endpoint():
+    try:
+        products = list_public_store_products(limit=12)
+        most_trusted = sorted(
+            products,
+            key=lambda product: (
+                int(product.get("trust", {}).get("score") or 0),
+                int(product.get("vendor", {}).get("completed_transactions") or 0),
+            ),
+            reverse=True,
+        )[:3]
+        popular = sorted(
+            products,
+            key=lambda product: (
+                int(product.get("vendor", {}).get("completed_transactions") or 0),
+                int(product.get("trust", {}).get("score") or 0),
+            ),
+            reverse=True,
+        )[:3]
+        latest = products[:3]
+
+        return {
+            "summary": generate_buyer_recommendation_summary(products),
+            "popular": popular,
+            "most_trusted": most_trusted,
+            "latest": latest,
+        }
+    except psycopg.OperationalError:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/payment-requests", status_code=201)
@@ -160,8 +209,13 @@ def get_public_request_endpoint(public_slug: str):
 
     vendor = get_vendor_by_id(str(request["vendor_id"]))
     trust_check = get_trust_check_by_payment_request_id(str(request["id"]))
+    current_vendor_score = (
+        vendor.get("trust_score")
+        if vendor and vendor.get("trust_score") is not None
+        else request.get("trust_score_at_creation")
+    )
     vendor_badge = get_vendor_badge(
-        request.get("trust_score_at_creation"),
+        current_vendor_score,
         vendor.get("completed_transactions") if vendor else 0,
     )
     try:
@@ -190,7 +244,7 @@ def get_public_request_endpoint(public_slug: str):
             "description": request.get("item_description"),
             "amount": amount_kobo_to_naira(request["amount_kobo"]),
             "currency": request["currency"],
-            "image_url": request.get("image_url"),
+            "image_url": normalize_image_url(request.get("image_url")),
         },
         "trust": {
             "score": trust_payload["score"],

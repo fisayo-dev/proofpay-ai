@@ -197,6 +197,7 @@ const PriceTier = () => {
                     </Button>
                   : <Button asChild className="w-full">
                       <Link href="/subscription/checkout?plan=pro" title="Upgrade to Pro">Upgrade to Pro</Link>
+        
                     </Button>
                   }
                 </CardFooter>

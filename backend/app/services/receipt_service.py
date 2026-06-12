@@ -5,12 +5,6 @@ import os
 from datetime import datetime
 from pathlib import Path
 
-from reportlab.lib.pagesizes import letter
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import inch
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
-from reportlab.lib import colors
-
 from app.db.connection import get_connection
 from app.services.payment_request_service import amount_kobo_to_naira
 
@@ -21,6 +15,18 @@ RECEIPT_DIR = Path("/tmp")
 
 def _format_naira(amount: float) -> str:
     return f"₦{amount:,.2f}"
+
+
+def _format_receipt_date(value) -> str:
+    if not value:
+        return "Pending"
+    if hasattr(value, "strftime"):
+        return value.strftime("%B %d, %Y at %I:%M %p")
+    try:
+        parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        return parsed.strftime("%B %d, %Y at %I:%M %p")
+    except ValueError:
+        return str(value)
 
 
 def get_payment_request_full(payment_request_id: str) -> dict | None:
@@ -42,10 +48,18 @@ def get_payment_request_full(payment_request_id: str) -> dict | None:
             pr.status,
             pr.trust_score_at_creation,
             pr.created_at,
-            pr.paid_at,
+            tx.paid_at,
             v.business_name
         FROM payment_requests pr
         JOIN vendors v ON pr.vendor_id = v.id
+        LEFT JOIN LATERAL (
+            SELECT paid_at
+            FROM transactions
+            WHERE payment_request_id = pr.id
+              AND paid_at IS NOT NULL
+            ORDER BY paid_at DESC
+            LIMIT 1
+        ) tx ON true
         WHERE pr.id = %s
         """,
         (payment_request_id,)
@@ -68,6 +82,16 @@ def generate_receipt_pdf(payment_request_id: str) -> str | None:
     payment = get_payment_request_full(payment_request_id)
     if not payment:
         logger.warning("Receipt generation failed: payment not found payment_id=%s", payment_request_id)
+        return None
+
+    try:
+        from reportlab.lib import colors
+        from reportlab.lib.pagesizes import letter
+        from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+        from reportlab.lib.units import inch
+        from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+    except ImportError as exc:
+        logger.warning("Receipt generation skipped because reportlab is unavailable: %s", exc)
         return None
 
     kora_reference = payment["kora_reference"]
@@ -129,7 +153,7 @@ def generate_receipt_pdf(payment_request_id: str) -> str | None:
         payment_data = [
             ["Payment Reference:", kora_reference],
             ["Status:", payment["status"].upper()],
-            ["Date:", payment["paid_at"].strftime("%B %d, %Y at %I:%M %p") if payment["paid_at"] else "Pending"],
+            ["Date:", _format_receipt_date(payment.get("paid_at"))],
         ]
         payment_table = Table(payment_data, colWidths=[2.5 * inch, 2.5 * inch])
         payment_table.setStyle(

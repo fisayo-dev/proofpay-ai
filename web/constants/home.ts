@@ -15,10 +15,12 @@ type TrustDetails = {
   reasons: string[];
 };
 
-type StoreProduct = {
+export type StoreProduct = {
   id: string;
-  image: string;
+  public_slug?: string;
+  image?: string | null;
   vendor: {
+    id?: string;
     business_name: string;
     category: string;
     social_handle: string;
@@ -26,6 +28,7 @@ type StoreProduct = {
   };
   payment_request: {
     item_name: string;
+    item_description?: string;
     amount: number;
     currency: string;
     delivery_method: string;
@@ -33,7 +36,7 @@ type StoreProduct = {
   trust: TrustDetails;
 };
 
-type Vendor = {
+export type Vendor = {
   id: string;
   business_name: string;
   category: string;
@@ -65,9 +68,10 @@ export const header_links = [
     text: "Store",
   },
   {
-    link: "https://github.com/fisayo-dev/proofpay-ai/",
-    text: "Github",
+    link: "/pricing",
+    text: "Pricing",
   },
+ 
 ];
 
 export const store_products: StoreProduct[] = [

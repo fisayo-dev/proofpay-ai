@@ -9,6 +9,7 @@ export type VendorSession = {
   full_name: string;
   email: string;
   business_name?: string;
+  trust_score?: number | null;
   expires_at: number;
 };
 
@@ -38,6 +39,7 @@ export function setSession(data: {
   full_name: string;
   email: string;
   business_name?: string;
+  trust_score?: number | null;
 }): void {
   const session: VendorSession = {
     user_id: data.user_id,
@@ -46,6 +48,7 @@ export function setSession(data: {
     full_name: data.full_name,
     email: data.email,
     business_name: data.business_name || "",
+    trust_score: data.trust_score ?? null,
     expires_at: Date.now() + 24 * 60 * 60 * 1000,
   };
   document.cookie = serializeCookie(JSON.stringify(session), session.expires_at);

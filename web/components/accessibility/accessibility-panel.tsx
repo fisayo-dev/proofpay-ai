@@ -8,6 +8,7 @@ import type {
   ColorBlindMode,
   LineSpacing,
 } from "@/context/accessibility-context";
+import Link from "next/link";
 
 function Toggle({
   label,
@@ -152,6 +153,7 @@ export function AccessibilityPanel() {
               onClick={resetSettings}
               className="rounded-lg p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
               aria-label="Reset accessibility settings"
+              title="Reset accessibility settings"
             >
               <RotateCcw className="size-4" />
             </button>
@@ -160,6 +162,7 @@ export function AccessibilityPanel() {
               onClick={() => setPanelOpen(false)}
               className="rounded-lg p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
               aria-label="Close accessibility panel"
+              title="Close accessibility panel"
             >
               <X className="size-4" />
             </button>
@@ -209,6 +212,7 @@ export function AccessibilityPanel() {
               value={settings.colorBlindMode}
               onChange={(v) => updateSetting("colorBlindMode", v)}
             />
+            <section className="p-2 text-center text-sm">View <Link href="https://wave.webaim.org/report#/https://proofpay-ai.vercel.app/" target="_blank" className="font-bold hover:underline">WAVE</Link> web accessibility result.</section>
           </div>
         </div>
       </div>

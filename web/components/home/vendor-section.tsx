@@ -1,7 +1,8 @@
 "use client";
 
-import { AlertTriangle, ShieldCheck } from "lucide-react";
-import { useRef } from "react";
+import { Award, BadgeCheck, Sparkles } from "lucide-react";
+import Link from "next/link";
+import { useMemo, useRef, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { vendors } from "@/constants/home";
@@ -9,30 +10,63 @@ import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { useHomeGsap } from "./use-home-gsap";
 
-const verdictStyles = {
-  Trusted: {
-    badgeClassName: "border-primary/25 bg-primary/10 text-primary",
-    iconClassName: "text-primary",
-    icon: ShieldCheck,
-  },
-  Caution: {
-    badgeClassName: "border-warning/35 bg-warning/15 text-warning-foreground",
-    iconClassName: "text-warning",
-    icon: AlertTriangle,
-  },
-  "Manual Review Needed": {
-    badgeClassName: "border-destructive/30 bg-destructive/10 text-destructive",
-    iconClassName: "text-destructive",
-    icon: AlertTriangle,
-  },
-} as const;
+const getVerificationBadge = (score: number) => {
+  if (score >= 80) {
+    return {
+      label: "Top seller",
+      Icon: Award,
+      className:
+        "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400",
+    };
+  }
+  if (score >= 65) {
+    return {
+      label: "Verified",
+      Icon: BadgeCheck,
+      className:
+        "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+    };
+  }
+  return {
+    label: "Rising star",
+    Icon: Sparkles,
+    className:
+      "border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400",
+  };
+};
 
 const filters = ["Reputation", "Trusted", "Caution", "Manual Review"] as const;
+type VendorFilter = (typeof filters)[number];
 const initialRevealSpeed = 2;
+
+const filterDescriptions: Record<VendorFilter, string> = {
+  Reputation: "Ranked by trust score and completed sales history.",
+  Trusted: "Vendors with strong trust scores and healthy transaction history.",
+  Caution: "Vendors buyers should review more carefully before paying.",
+  "Manual Review": "Vendors with limited or risky signals that need extra checks.",
+};
 
 const VendorSection = () => {
   const rootRef = useRef<HTMLElement>(null);
-  const displayedVendors = vendors.slice(0, 6);
+  const [activeFilter, setActiveFilter] = useState<VendorFilter>("Reputation");
+  const displayedVendors = useMemo(() => {
+    if (activeFilter === "Reputation") {
+      return [...vendors]
+        .sort(
+          (a, b) =>
+            b.score - a.score ||
+            b.completed_transactions - a.completed_transactions,
+        )
+        .slice(0, 6);
+    }
+
+    const targetVerdict =
+      activeFilter === "Manual Review" ? "Manual Review Needed" : activeFilter;
+
+    return vendors
+      .filter((vendor) => vendor.verdict === targetVerdict)
+      .slice(0, 6);
+  }, [activeFilter]);
 
   useHomeGsap(rootRef, (gsap, ScrollTrigger, prefersReducedMotion) => {
     if (prefersReducedMotion) {
@@ -192,12 +226,14 @@ const VendorSection = () => {
           <button
             key={filter}
             type="button"
+            title={filterDescriptions[filter]}
             data-vendor-animate
             data-vendor-filter
-            data-vendor-filter-active={filter === "Trusted" ? "" : undefined}
+            data-vendor-filter-active={filter === activeFilter ? "" : undefined}
+            onClick={() => setActiveFilter(filter)}
             className={cn(
               "shrink-0 rounded-full px-5 py-2 font-medium text-foreground/80 transition hover:bg-muted",
-              filter === "Trusted" &&
+              filter === activeFilter &&
                 "bg-primary text-primary-foreground hover:bg-primary",
             )}
           >
@@ -205,15 +241,20 @@ const VendorSection = () => {
           </button>
         ))}
       </div>
+      <p className="mt-3 text-center text-sm text-muted-foreground">
+        {filterDescriptions[activeFilter]}
+      </p>
 
       <div className="mt-10 grid gap-x-6 gap-y-8 sm:grid-cols-2 xl:grid-cols-3">
         {displayedVendors.map((vendor, index) => {
-          const vendorStyle = verdictStyles[vendor.verdict];
-          const VendorIcon = vendorStyle.icon;
+          const verification = getVerificationBadge(vendor.score);
+          const VerificationIcon = verification.Icon;
 
           return (
-            <article
+            <Link
+              href={`/vendors/${vendor.id}`}
               key={index}
+              title={`View ${vendor.business_name} vendor profile`}
               data-vendor-animate
               data-vendor-card
               className={cn(
@@ -254,13 +295,11 @@ const VendorSection = () => {
                       variant="outline"
                       className={cn(
                         "gap-1 rounded-md text-[11px]",
-                        vendorStyle.badgeClassName,
+                        verification.className,
                       )}
                     >
-                      <VendorIcon
-                        className={cn("size-3", vendorStyle.iconClassName)}
-                      />
-                      {vendor.verdict}
+                      <VerificationIcon className="size-3" />
+                      {verification.label}
                     </Badge>
                     <Badge
                       data-vendor-badge
@@ -272,7 +311,7 @@ const VendorSection = () => {
                   </div>
                 </div>
               </div>
-            </article>
+            </Link>
           );
         })}
       </div>

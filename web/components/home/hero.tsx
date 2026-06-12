@@ -152,14 +152,14 @@ const Hero = () => {
         </div>
 
         <div className="grid md:flex items-center justify-center gap-2 md:gap-4">
-          <Link data-hero-animate data-hero-action href="/vendors/signup">
+          <Link data-hero-animate data-hero-action href="/vendors/signup" title="Start Shopping">
             <Button>
               <ShoppingCart />
               <span>Start Shopping</span>
             </Button>
           </Link>
 
-          <Link data-hero-animate data-hero-action href="/vendors/signup">
+          <Link data-hero-animate data-hero-action href="/vendors/signup" title="Sell your products">
             <Button variant="outline">
               <ArrowUpRight />
               <span>Sell your products</span>

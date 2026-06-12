@@ -1,7 +1,7 @@
 "use client";
 
 import { ChangeEvent, FormEvent, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Check, LogIn, Store, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -30,10 +30,11 @@ const steps = [
 ] as const;
 
 const VendorSignupForm = () => {
-  const router = useRouter();
+  const searchParams = useSearchParams();
   const [currentStep, setCurrentStep] = useState(0);
   const [accountType, setAccountType] = useState<AccountType>("vendor");
-  const [authMode, setAuthMode] = useState<AuthMode>("signup");
+  const authMode: AuthMode =
+    searchParams.get("mode") === "login" ? "login" : "signup";
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -62,11 +63,11 @@ const VendorSignupForm = () => {
 
   const routeAfterAuth = (role: AccountType) => {
     if (role === "buyer") {
-      router.push("/#store");
+      window.location.assign("/#store");
       return;
     }
 
-    router.push("/vendors/profile");
+    window.location.assign("/vendors/profile");
   };
 
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
@@ -197,6 +198,8 @@ const VendorSignupForm = () => {
     }
     if (!socialHandle.trim()) {
       newErrors.social_handle = "Social handle is required.";
+    } else if (!/^[a-zA-Z0-9_]+$/.test(socialHandle.trim())) {
+      newErrors.social_handle = "Only letters, numbers, and underscores allowed.";
     }
     if (!bankAccountName.trim()) {
       newErrors.bank_account_name = "Bank account name is required.";
@@ -246,7 +249,10 @@ const VendorSignupForm = () => {
   const handleInputChange =
     (setter: (value: string) => void, field?: string) =>
     (event: ChangeEvent<HTMLInputElement>) => {
-      setter(event.target.value);
+      const value = field === "social_handle"
+        ? event.target.value.replace(/^@+/, "").replace(/[^a-zA-Z0-9_]/g, "")
+        : event.target.value;
+      setter(value);
       if (field) {
         const isVendorField = field.startsWith("business_") || field === "category" || field === "phone" || field === "social_handle" || field === "bank_account_name";
         if (isVendorField) {
@@ -281,30 +287,10 @@ const VendorSignupForm = () => {
             {authMode === "login" ? "Login to ProofPay" : "Create your ProofPay account"}
           </h1>
           <p className="max-w-2xl text-sm leading-7 text-muted-foreground sm:text-base">
-            Choose buyer if you want to shop safely, or vendor if you want to
-            create trusted payment requests and track your seller metrics.
+            {authMode === "login"
+              ? "Choose your account type, then use your email and password to continue."
+              : "Choose buyer if you want to shop safely, or vendor if you want to create trusted payment requests and track your seller metrics."}
           </p>
-          <div className="flex w-fit rounded-full border border-border/70 bg-muted/30 p-1">
-            {(["signup", "login"] as AuthMode[]).map((mode) => (
-              <button
-                key={mode}
-                type="button"
-                onClick={() => {
-                  resetMessages();
-                  setAuthMode(mode);
-                  setCurrentStep(0);
-                }}
-                className={cn(
-                  "rounded-full px-4 py-2 text-sm font-medium capitalize transition-colors",
-                  authMode === mode
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                {mode}
-              </button>
-            ))}
-          </div>
         </div>
         {authMode === "signup" ? (
           <div className="grid w-full gap-4">
@@ -374,32 +360,31 @@ const VendorSignupForm = () => {
 
               {isProfileStep ?
                 <div className="grid gap-4 py-4 ">
-                  {authMode === "signup" ? (
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      {(["vendor", "buyer"] as AccountType[]).map((role) => (
-                        <button
-                          key={role}
-                          type="button"
-                          onClick={() => setAccountType(role)}
-                          className={cn(
-                            "rounded-2xl border px-4 py-3 text-left transition-colors",
-                            accountType === role
-                              ? "border-primary/40 bg-primary/5"
-                              : "border-border/70 bg-muted/20 hover:bg-muted/40",
-                          )}
-                        >
-                          <span className="block text-sm font-semibold capitalize">
-                            {role}
-                          </span>
-                          <span className="mt-1 block text-xs leading-5 text-muted-foreground">
-                            {role === "vendor"
-                              ? "Create products and track seller trust."
-                              : "Shop from trusted vendors faster."}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  ) : null}
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {(["vendor", "buyer"] as AccountType[]).map((role) => (
+                      <button
+                        key={role}
+                        type="button"
+                        onClick={() => setAccountType(role)}
+                        title={`Select ${role} account type`}
+                        className={cn(
+                          "rounded-2xl border px-4 py-3 text-left transition-colors",
+                          accountType === role
+                            ? "border-primary/40 bg-primary/5"
+                            : "border-border/70 bg-muted/20 hover:bg-muted/40",
+                        )}
+                      >
+                        <span className="block text-sm font-semibold capitalize">
+                          {role}
+                        </span>
+                        <span className="mt-1 block text-xs leading-5 text-muted-foreground">
+                          {role === "vendor"
+                            ? "Create products and track seller trust."
+                            : "Shop from trusted vendors faster."}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
                   {authMode === "signup" ? (
                     <>
                   <label htmlFor="first_name" className="space-y-2">
@@ -541,6 +526,9 @@ const VendorSignupForm = () => {
                       {vendorErrors.social_handle && vendorTouched.social_handle ? (
                         <p className="text-xs mt-1 text-destructive">{vendorErrors.social_handle}</p>
                       ) : null}
+                      <p className="text-xs text-muted-foreground">
+                        Letters, numbers, and underscores only.
+                      </p>
                   </label>
 
                   <label
@@ -583,6 +571,7 @@ const VendorSignupForm = () => {
                       type="button"
                       variant="outline"
                       disabled={isSubmitting}
+                      title="Go back to previous step"
                       onClick={handleBack}
                     >
                       Back
@@ -590,14 +579,15 @@ const VendorSignupForm = () => {
                   : null}
 
                   {authMode === "login" ? (
-                    <Button type="submit" disabled={isSubmitting}>
+                    <Button type="submit" disabled={isSubmitting} title={`Login as ${accountType}`}>
                       <LogIn className="size-4" />
-                      {isSubmitting ? "Logging in..." : "Login"}
+                      {isSubmitting ? "Logging in..." : `Login as ${accountType}`}
                     </Button>
                   ) : isProfileStep ?
                     <Button
                       type="button"
                       disabled={isSubmitting}
+                      title={accountType === "buyer" ? "Create buyer account" : "Continue to vendor details"}
                       onClick={handleContinue}
                     >
                       {isSubmitting
@@ -606,7 +596,7 @@ const VendorSignupForm = () => {
                           ? "Create buyer account"
                           : "Continue to vendor details"}
                     </Button>
-                  : <Button type="submit" disabled={isSubmitting}>
+                  : <Button type="submit" disabled={isSubmitting} title="Start selling">
                       {isSubmitting ? "Creating account..." : "Start selling"}
                     </Button>
                   }

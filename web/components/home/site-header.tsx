@@ -2,12 +2,12 @@
 
 import { useState, useSyncExternalStore } from "react";
 import { header_links } from "@/constants/home";
-import { getCachedSession } from "@/lib/session";
+import { clearSession, getCachedSession } from "@/lib/session";
 import { getVendorAvatarUrl } from "@/lib/avatar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "../ui/button";
 import Link from "next/link";
-import { Menu, Plus, User2, X } from "lucide-react";
+import { LogOut, Menu, Plus, User2, X } from "lucide-react";
 
 export function SiteHeader() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -18,6 +18,10 @@ export function SiteHeader() {
   );
 
   const closeMenu = () => setIsMenuOpen(false);
+  const handleLogout = () => {
+    clearSession();
+    window.location.assign("/");
+  };
   const avatarUrl = session
     ? getVendorAvatarUrl([
         session.vendor_id || session.user_id || "",
@@ -44,6 +48,7 @@ export function SiteHeader() {
                 <Link
                   href={link.link}
                   key={index}
+                  title={link.text}
                   className="cursor-pointer rounded-full px-3 py-2 hover:bg-gray-100"
                 >
                   {link.text}
@@ -53,19 +58,19 @@ export function SiteHeader() {
           </div>
 
           <div className="hidden items-center space-x-4 lg:flex">
-            {session ?
+            {session ? (
               <>
                 {isVendor ? (
                   <Button variant="outline" asChild>
-                    <Link href="/vendors/new-product">
+                    <Link href="/vendors/new-product" title="New Product">
                       <Plus />
-                      Create Product
+                      New Product
                     </Link>
                   </Button>
                 ) : null}
                 <Button variant="outline" asChild>
-                  <Link href="/vendors/profile">
-                    {avatarUrl ?
+                  <Link href="/vendors/profile" title={`${session.full_name} profile`}>
+                    {avatarUrl ? (
                       <Avatar size="sm">
                         <AvatarImage
                           src={avatarUrl}
@@ -75,32 +80,74 @@ export function SiteHeader() {
                           {session.full_name.slice(0, 1).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
-                    : <User2 />}
+                    ) : (
+                      <User2 />
+                    )}
                     {session.full_name}
                   </Link>
                 </Button>
+                <Button variant="outline" onClick={handleLogout} title="Logout">
+                  <LogOut />
+                  Logout
+                </Button>
               </>
-            : <Button asChild>
-                <Link href="/vendors/signup">
-                  <User2 />
-                  Signup as vendor
-                </Link>
-              </Button>
-            }
+            ) : (
+              <>
+                <Button variant="outline" asChild>
+                  <Link href="/vendors/signup?mode=login" title="Login">
+                    <User2 />
+                    Login
+                  </Link>
+                </Button>
+                <Button asChild>
+                  <Link href="/vendors/signup" title="Sign up">
+                    <User2 />
+                    Sign up
+                  </Link>
+                </Button>
+              </>
+            )}
           </div>
 
-          <Button
-            variant="outline"
-            size="icon"
-            className="lg:hidden"
-            aria-label={
-              isMenuOpen ? "Close navigation menu" : "Open navigation menu"
-            }
-            aria-expanded={isMenuOpen}
-            onClick={() => setIsMenuOpen((open) => !open)}
-          >
-            {isMenuOpen ? <X /> : <Menu />}
-          </Button>
+          <div className="flex items-center gap-2 lg:hidden">
+            {session ? (
+              <Button
+                variant="outline"
+                size="icon"
+                asChild
+                aria-label="Open dashboard"
+                title="Open dashboard"
+              >
+                <Link href="/vendors/profile">
+                  {avatarUrl ? (
+                    <Avatar size="sm">
+                      <AvatarImage
+                        src={avatarUrl}
+                        alt={`${session.full_name} account avatar`}
+                      />
+                      <AvatarFallback>
+                        {session.full_name.slice(0, 1).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                  ) : (
+                    <User2 />
+                  )}
+                </Link>
+              </Button>
+            ) : null}
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label={
+                isMenuOpen ? "Close navigation menu" : "Open navigation menu"
+              }
+              title={isMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+              aria-expanded={isMenuOpen}
+              onClick={() => setIsMenuOpen((open) => !open)}
+            >
+              {isMenuOpen ? <X /> : <Menu />}
+            </Button>
+          </div>
         </div>
 
         <div
@@ -114,6 +161,7 @@ export function SiteHeader() {
                 <Link
                   href={link.link}
                   key={index}
+                  title={link.text}
                   onClick={closeMenu}
                   className="rounded-2xl px-4 py-3 hover:bg-white/20"
                 >
@@ -123,19 +171,27 @@ export function SiteHeader() {
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row">
-            {session ?
+              {session ? (
                 <>
                   {isVendor ? (
-                    <Button variant="outline" asChild className="w-full sm:flex-1">
-                      <Link href="/vendors/new-product" onClick={closeMenu}>
+                    <Button
+                      variant="outline"
+                      asChild
+                      className="w-full sm:flex-1"
+                    >
+                      <Link href="/vendors/new-product" title="New Product" onClick={closeMenu}>
                         <Plus />
-                        Create Product
+                        New Product
                       </Link>
                     </Button>
                   ) : null}
-                  <Button variant="outline" asChild className="w-full sm:flex-1">
-                    <Link href="/vendors/profile" onClick={closeMenu}>
-                      {avatarUrl ?
+                  <Button
+                    variant="outline"
+                    asChild
+                    className="w-full sm:flex-1"
+                  >
+                    <Link href="/vendors/profile" title={`${session.full_name} profile`} onClick={closeMenu}>
+                      {avatarUrl ? (
                         <Avatar size="sm">
                           <AvatarImage
                             src={avatarUrl}
@@ -145,18 +201,45 @@ export function SiteHeader() {
                             {session.full_name.slice(0, 1).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
-                      : <User2 />}
+                      ) : (
+                        <User2 />
+                      )}
                       {session.full_name}
                     </Link>
                   </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full sm:flex-1"
+                    title="Logout"
+                    onClick={() => {
+                      closeMenu();
+                      handleLogout();
+                    }}
+                  >
+                    <LogOut />
+                    Logout
+                  </Button>
                 </>
-              : <Button asChild className="w-full sm:flex-1">
-                  <Link href="/vendors/signup" onClick={closeMenu}>
-                    <User2 />
-                    Signup as vendor
-                  </Link>
-                </Button>
-              }
+              ) : (
+                <>
+                  <Button
+                    variant="outline"
+                    asChild
+                    className="w-full sm:flex-1"
+                  >
+                    <Link href="/vendors/signup?mode=login" title="Login" onClick={closeMenu}>
+                      <User2 />
+                      Login
+                    </Link>
+                  </Button>
+                  <Button asChild className="w-full sm:flex-1">
+                    <Link href="/vendors/signup" title="Sign up" onClick={closeMenu}>
+                      <User2 />
+                      Sign up
+                    </Link>
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>

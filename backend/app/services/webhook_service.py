@@ -8,8 +8,30 @@ from datetime import datetime, timezone
 
 from app.db.connection import get_connection
 from app.services.receipt_service import generate_receipt_pdf
+from app.services.vendor_reputation_service import update_vendor_reputation_after_paid
 
 logger = logging.getLogger("proofpay.webhooks")
+
+
+def _generate_receipt_safely(payment_request_id: str) -> None:
+    try:
+        generate_receipt_pdf(payment_request_id)
+    except Exception:
+        logger.exception(
+            "Receipt generation failed after payment update payment_request_id=%s",
+            payment_request_id,
+        )
+
+
+def _update_vendor_reputation_safely(cursor, payment_request_id: str) -> dict | None:
+    try:
+        return update_vendor_reputation_after_paid(cursor, payment_request_id)
+    except Exception:
+        logger.exception(
+            "Vendor reputation update failed after payment update payment_request_id=%s",
+            payment_request_id,
+        )
+        return None
 
 
 def _canonical_json(payload_data: dict) -> str:
@@ -163,19 +185,22 @@ def mark_payment_paid(kora_reference: str, payload: dict) -> str | None:
     )
     transactions_updated = getattr(cursor, "rowcount", "unknown")
 
+    trust_update = None
+    if payment_request_id:
+        trust_update = _update_vendor_reputation_safely(cursor, payment_request_id)
+
     conn.commit()
     conn.close()
     logger.info(
-        "Kora webhook paid update reference=%s payment_requests_updated=%s transactions_updated=%s",
+        "Kora webhook paid update reference=%s payment_requests_updated=%s transactions_updated=%s reputation_score=%s",
         kora_reference or "<missing>",
         payment_requests_updated,
         transactions_updated,
+        trust_update.get("score") if trust_update else None,
     )
-    return payment_request_id
 
-    # Generate receipt PDF in background if payment was updated
     if payment_request_id:
-        generate_receipt_pdf(payment_request_id)
+        _generate_receipt_safely(payment_request_id)
 
     return payment_request_id
 
@@ -214,17 +239,21 @@ def mark_payment_paid_from_checkout_callback(kora_reference: str) -> None:
     )
     transactions_updated = getattr(cursor, "rowcount", "unknown")
 
+    trust_update = None
+    if payment_request_id:
+        trust_update = _update_vendor_reputation_safely(cursor, payment_request_id)
+
     conn.commit()
     conn.close()
     logger.info(
-        "Kora checkout callback paid update reference=%s transactions_updated=%s",
+        "Kora checkout callback paid update reference=%s transactions_updated=%s reputation_score=%s",
         kora_reference or "<missing>",
         transactions_updated,
+        trust_update.get("score") if trust_update else None,
     )
 
-    # Generate receipt PDF in background if payment was updated
     if payment_request_id:
-        generate_receipt_pdf(payment_request_id)
+        _generate_receipt_safely(payment_request_id)
 
 
 def mark_payment_failed(kora_reference: str, payload: dict) -> None:

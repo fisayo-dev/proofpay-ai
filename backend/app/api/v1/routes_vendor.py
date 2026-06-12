@@ -8,6 +8,7 @@ import psycopg
 
 from app.core.config import settings
 from app.services.auth_service import create_session_token, public_session_payload
+from app.services.ai_trust_service import generate_vendor_growth_advice
 from app.services.vendor_service import (
     InvalidLoginError,
     VendorAlreadyExistsError,
@@ -15,6 +16,7 @@ from app.services.vendor_service import (
     create_vendor,
     get_vendor_analytics,
     get_vendor_by_id,
+    get_vendor_score_prediction,
     login_account,
 )
 
@@ -176,3 +178,16 @@ def get_vendor_analytics_endpoint(vendor_id: str):
             detail={"code": "VENDOR_NOT_FOUND", "message": "Vendor not found."}
         )
     return analytics
+
+
+@router.get("/vendors/{vendor_id}/ai-advice")
+def get_vendor_ai_advice_endpoint(vendor_id: str):
+    vendor = get_vendor_by_id(vendor_id)
+    analytics = get_vendor_analytics(vendor_id)
+    if not vendor or not analytics:
+        raise HTTPException(
+            status_code=404,
+            detail={"code": "VENDOR_NOT_FOUND", "message": "Vendor not found."}
+        )
+
+    return generate_vendor_growth_advice(vendor, analytics)

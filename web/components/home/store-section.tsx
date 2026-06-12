@@ -1,8 +1,9 @@
 "use client";
 
-import Image from "next/image";
-import { useRef } from "react";
-import { store_products } from "@/constants/home";
+import Link from "next/link";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ImageIcon, Sparkles, TrendingUp } from "lucide-react";
+import { store_products, type StoreProduct } from "@/constants/home";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -11,10 +12,99 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { nairaFormatter } from "@/utils/store";
+import api from "@/lib/axios";
 import { useHomeGsap } from "./use-home-gsap";
+
+type BuyerRecommendations = {
+  summary: {
+    summary: string;
+    ai_powered: boolean;
+  };
+  popular: StoreProduct[];
+  most_trusted: StoreProduct[];
+  latest: StoreProduct[];
+};
+
+const hasImage = (src?: string | null): src is string => !!src;
+
+const ProductImage = ({ product }: { product: StoreProduct }) => {
+  const [errored, setErrored] = useState(false);
+
+  if (!hasImage(product.image) || errored) {
+    return (
+      <div
+        data-store-image
+        className="flex h-full w-full items-center justify-center bg-muted"
+      >
+        <ImageIcon className="size-14 text-muted-foreground/40" />
+      </div>
+    );
+  }
+
+  return (
+    <img
+      data-store-image
+      src={product.image}
+      alt={product.payment_request.item_name}
+      className="h-full w-full object-cover transition-transform duration-500 group-hover/card:scale-105"
+      onError={() => setErrored(true)}
+    />
+  );
+};
 
 const StoreSection = () => {
   const rootRef = useRef<HTMLElement>(null);
+  const [liveProducts, setLiveProducts] = useState<StoreProduct[]>([]);
+  const [recommendations, setRecommendations] =
+    useState<BuyerRecommendations | null>(null);
+
+  useEffect(() => {
+    let ignore = false;
+
+    api
+      .get<{ products: StoreProduct[] }>("/public/store-products")
+      .then((response) => {
+        if (!ignore && response.data.products?.length) {
+          setLiveProducts(response.data.products);
+        }
+      })
+      .catch(() => {
+        if (!ignore) setLiveProducts([]);
+      });
+
+    api
+      .get<BuyerRecommendations>("/public/recommendations")
+      .then((response) => {
+        if (!ignore) setRecommendations(response.data);
+      })
+      .catch(() => {
+        if (!ignore) setRecommendations(null);
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
+  const products = useMemo(
+    () => {
+      const source = liveProducts.length > 0 ? liveProducts : store_products;
+      const seen = new Set<string>();
+
+      return source.filter((product) => {
+        const key = [
+          product.vendor.id || product.vendor.business_name,
+          product.payment_request.item_name.trim().toLowerCase(),
+          product.payment_request.amount,
+        ].join("|");
+
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    },
+    [liveProducts],
+  );
 
   useHomeGsap(rootRef, (gsap, _ScrollTrigger, prefersReducedMotion) => {
     if (prefersReducedMotion) {
@@ -185,23 +275,73 @@ const StoreSection = () => {
         </div>
       </div>
 
+      <div
+        data-store-animate
+        className="mx-auto mt-8 grid max-w-5xl gap-4 rounded-2xl border border-primary/15 bg-primary/[0.03] p-4 shadow-[0_18px_60px_-40px_rgba(14,30,86,0.4)] sm:p-5 lg:grid-cols-[1.2fr_0.8fr]"
+      >
+        <div className="flex items-center gap-3">
+          <span className="mt-1 flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <Sparkles className="size-4" />
+          </span>
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-lg font-semibold">AI buyer recommendations</h3>
+              <Badge variant={recommendations?.summary.ai_powered ? "default" : "secondary"}>
+                {recommendations?.summary.ai_powered ? "AI guided" : "Data guided"}
+              </Badge>
+            </div>
+            <p className="text-sm leading-7 text-muted-foreground">
+              {
+                "ProofPay ranks products using trust score, completed sales, and recent listings so buyers can start with safer options."}
+            </p>
+          </div>
+        </div>
+
+        <div className="grid gap-3 text-sm">
+          {(recommendations?.most_trusted?.length
+            ? recommendations.most_trusted.slice(0, 2)
+            : products.slice(0, 2)
+          ).map((product) => (
+            <Link
+              key={`rec-${product.id}`}
+              href={product.public_slug ? `/r/${product.public_slug}` : "#store"}
+              className="flex items-center justify-between gap-3 rounded-xl border border-border/70 bg-background px-4 py-3 transition hover:border-primary/40"
+            >
+              <div>
+                <p className="font-medium">{product.payment_request.item_name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {product.vendor.business_name} · {product.vendor.completed_transactions} sales
+                </p>
+              </div>
+              <span className="flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+                <TrendingUp className="size-3" />
+                {product.trust.score}/100
+              </span>
+            </Link>
+          ))}
+        </div>
+      </div>
+
       <div className="mt-12 grid gap-6 lg:grid-cols-3">
-        {store_products.map((product) => (
-          <Card
+        {products.map((product) => {
+          const href = product.public_slug
+            ? `/r/${product.public_slug}`
+            : `/vendors/${product.vendor.id || product.id.split("-").slice(0, 2).join("-")}`;
+
+          return (
+          <Link
             key={product.id}
+            href={href}
+            title={`View ${product.payment_request.item_name} product details`}
             data-store-animate
             data-store-card
-            className="group/card overflow-hidden border border-border/70 bg-background/80 pt-0 shadow-[0_20px_60px_-30px_rgba(14,30,86,0.35)] backdrop-blur-sm"
+            className="group/card block focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-4"
+          >
+          <Card
+            className="h-full overflow-hidden border border-border/70 bg-background/80 pt-0 shadow-[0_20px_60px_-30px_rgba(14,30,86,0.35)] backdrop-blur-sm transition group-hover/card:-translate-y-1 group-hover/card:shadow-[0_24px_70px_-34px_rgba(14,30,86,0.45)]"
           >
             <div className="relative aspect-4/3 overflow-hidden">
-              <Image
-                data-store-image
-                src={product.image}
-                alt={product.payment_request.item_name}
-                fill
-                className="object-cover transition-transform duration-500 group-hover/card:scale-105"
-                sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
-              />
+              <ProductImage product={product} />
               <div className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-linear-to-t from-black/75 to-transparent px-4 py-4 text-white">
                 <div>
                   <p className="text-xs uppercase tracking-[0.24em] text-white/70">
@@ -247,11 +387,16 @@ const StoreSection = () => {
                 <Badge data-store-badge variant="outline">
                   {product.vendor.completed_transactions} completed sales
                 </Badge>
+                <Badge data-store-badge variant="secondary">
+                  {product.public_slug ? "Open checkout" : "View vendor"}
+                </Badge>
               </div>
             </CardHeader>
 
           </Card>
-        ))}
+          </Link>
+          );
+        })}
       </div>
     </section>
   );
