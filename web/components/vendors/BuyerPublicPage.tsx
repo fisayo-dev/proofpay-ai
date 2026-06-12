@@ -219,7 +219,7 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
   );
   const callbackUrl = `/payments/callback/${paymentConfig.payment_request_id}`;
   const aiSummary =
-    product.trust.ai_summary ||
+    product.trust.ai_summary?.replace(/^"|"$/g, "") ||
     "ProofPay AI reviewed seller signals, payment context, and request details before sending you to checkout.";
   const anomalyWarnings = product.trust.anomaly_warnings || [];
   const trustHistory = product.trust.history || [];
