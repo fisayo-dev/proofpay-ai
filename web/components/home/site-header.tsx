@@ -62,9 +62,9 @@ export function SiteHeader() {
               <>
                 {isVendor ? (
                   <Button variant="outline" asChild>
-                    <Link href="/vendors/new-product" title="Create Product">
+                    <Link href="/vendors/new-product" title="New Product">
                       <Plus />
-                      Create Product
+                      New Product
                     </Link>
                   </Button>
                 ) : null}
@@ -153,9 +153,9 @@ export function SiteHeader() {
                       asChild
                       className="w-full sm:flex-1"
                     >
-                      <Link href="/vendors/new-product" title="Create Product" onClick={closeMenu}>
+                      <Link href="/vendors/new-product" title="New Product" onClick={closeMenu}>
                         <Plus />
-                        Create Product
+                        New Product
                       </Link>
                     </Button>
                   ) : null}
