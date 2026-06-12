@@ -25,11 +25,9 @@ type BuyerRecommendations = {
   latest: StoreProduct[];
 };
 
-const hasImage = (src?: string | null): src is string =>
-  !!src && !src.includes("localhost") && !src.includes("127.0.0.1");
+const hasImage = (src?: string | null): src is string => !!src;
 
 const ProductImage = ({ product }: { product: StoreProduct }) => {
-  console.log(product)
   const [errored, setErrored] = useState(false);
 
   if (!hasImage(product.image) || errored) {
@@ -281,7 +279,7 @@ const StoreSection = () => {
         data-store-animate
         className="mx-auto mt-8 grid max-w-5xl gap-4 rounded-2xl border border-primary/15 bg-primary/[0.03] p-4 shadow-[0_18px_60px_-40px_rgba(14,30,86,0.4)] sm:p-5 lg:grid-cols-[1.2fr_0.8fr]"
       >
-        <div className="flex gap-3">
+        <div className="flex items-center gap-3">
           <span className="mt-1 flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
             <Sparkles className="size-4" />
           </span>
@@ -293,7 +291,7 @@ const StoreSection = () => {
               </Badge>
             </div>
             <p className="text-sm leading-7 text-muted-foreground">
-              {recommendations?.summary.summary ||
+              {
                 "ProofPay ranks products using trust score, completed sales, and recent listings so buyers can start with safer options."}
             </p>
           </div>

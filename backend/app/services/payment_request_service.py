@@ -59,9 +59,6 @@ def normalize_image_url(image_url: str | None) -> str | None:
     if not value:
         return None
 
-    if "localhost" in value or "127.0.0.1" in value:
-        return None
-
     if value.startswith("/uploads/"):
         return f"{settings.backend_base_url.rstrip('/')}{value}"
 
