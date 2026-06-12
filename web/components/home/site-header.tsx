@@ -48,6 +48,7 @@ export function SiteHeader() {
                 <Link
                   href={link.link}
                   key={index}
+                  title={link.text}
                   className="cursor-pointer rounded-full px-3 py-2 hover:bg-gray-100"
                 >
                   {link.text}
@@ -61,14 +62,14 @@ export function SiteHeader() {
               <>
                 {isVendor ? (
                   <Button variant="outline" asChild>
-                    <Link href="/vendors/new-product">
+                    <Link href="/vendors/new-product" title="Create Product">
                       <Plus />
                       Create Product
                     </Link>
                   </Button>
                 ) : null}
                 <Button variant="outline" asChild>
-                  <Link href="/vendors/profile">
+                  <Link href="/vendors/profile" title={`${session.full_name} profile`}>
                     {avatarUrl ? (
                       <Avatar size="sm">
                         <AvatarImage
@@ -85,7 +86,7 @@ export function SiteHeader() {
                     {session.full_name}
                   </Link>
                 </Button>
-                <Button variant="outline" onClick={handleLogout}>
+                <Button variant="outline" onClick={handleLogout} title="Logout">
                   <LogOut />
                   Logout
                 </Button>
@@ -93,13 +94,13 @@ export function SiteHeader() {
             ) : (
               <>
                 <Button variant="outline" asChild>
-                  <Link href="/vendors/signup?mode=login">
+                  <Link href="/vendors/signup?mode=login" title="Login">
                     <User2 />
                     Login
                   </Link>
                 </Button>
                 <Button asChild>
-                  <Link href="/vendors/signup">
+                  <Link href="/vendors/signup" title="Sign up">
                     <User2 />
                     Sign up
                   </Link>
@@ -115,6 +116,7 @@ export function SiteHeader() {
             aria-label={
               isMenuOpen ? "Close navigation menu" : "Open navigation menu"
             }
+            title={isMenuOpen ? "Close navigation menu" : "Open navigation menu"}
             aria-expanded={isMenuOpen}
             onClick={() => setIsMenuOpen((open) => !open)}
           >
@@ -133,6 +135,7 @@ export function SiteHeader() {
                 <Link
                   href={link.link}
                   key={index}
+                  title={link.text}
                   onClick={closeMenu}
                   className="rounded-2xl px-4 py-3 hover:bg-white/20"
                 >
@@ -150,7 +153,7 @@ export function SiteHeader() {
                       asChild
                       className="w-full sm:flex-1"
                     >
-                      <Link href="/vendors/new-product" onClick={closeMenu}>
+                      <Link href="/vendors/new-product" title="Create Product" onClick={closeMenu}>
                         <Plus />
                         Create Product
                       </Link>
@@ -161,7 +164,7 @@ export function SiteHeader() {
                     asChild
                     className="w-full sm:flex-1"
                   >
-                    <Link href="/vendors/profile" onClick={closeMenu}>
+                    <Link href="/vendors/profile" title={`${session.full_name} profile`} onClick={closeMenu}>
                       {avatarUrl ? (
                         <Avatar size="sm">
                           <AvatarImage
@@ -181,6 +184,7 @@ export function SiteHeader() {
                   <Button
                     variant="outline"
                     className="w-full sm:flex-1"
+                    title="Logout"
                     onClick={() => {
                       closeMenu();
                       handleLogout();
@@ -197,13 +201,13 @@ export function SiteHeader() {
                     asChild
                     className="w-full sm:flex-1"
                   >
-                    <Link href="/vendors/signup?mode=login" onClick={closeMenu}>
+                    <Link href="/vendors/signup?mode=login" title="Login" onClick={closeMenu}>
                       <User2 />
                       Login
                     </Link>
                   </Button>
                   <Button asChild className="w-full sm:flex-1">
-                    <Link href="/vendors/signup" onClick={closeMenu}>
+                    <Link href="/vendors/signup" title="Sign up" onClick={closeMenu}>
                       <User2 />
                       Sign up
                     </Link>

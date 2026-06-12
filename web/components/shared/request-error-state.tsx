@@ -56,12 +56,12 @@ const RequestErrorState = ({
         </CardHeader>
 
         <CardContent className="flex flex-col gap-3 px-5 pb-6 sm:flex-row sm:justify-center sm:px-8">
-          <Button type="button" onClick={handleRetry}>
+          <Button type="button" onClick={handleRetry} title={retryLabel}>
             <RotateCcw className="size-4" />
             {retryLabel}
           </Button>
           <Button type="button" variant="outline" asChild>
-            <Link href={homeHref}>
+            <Link href={homeHref} title={homeLabel}>
               <Home className="size-4" />
               {homeLabel}
             </Link>

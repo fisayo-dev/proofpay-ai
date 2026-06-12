@@ -153,6 +153,7 @@ export function AccessibilityPanel() {
               onClick={resetSettings}
               className="rounded-lg p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
               aria-label="Reset accessibility settings"
+              title="Reset accessibility settings"
             >
               <RotateCcw className="size-4" />
             </button>
@@ -161,6 +162,7 @@ export function AccessibilityPanel() {
               onClick={() => setPanelOpen(false)}
               className="rounded-lg p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
               aria-label="Close accessibility panel"
+              title="Close accessibility panel"
             >
               <X className="size-4" />
             </button>

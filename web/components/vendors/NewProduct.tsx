@@ -357,6 +357,7 @@ const NewProductComponent = () => {
                 <AlertDialogTrigger asChild>
                   <button
                     type="button"
+                    title="View QR code"
                     className="cursor-pointer absolute right-5 top-5 flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                   >
                     <QrCode className="size-5" />
@@ -417,6 +418,7 @@ const NewProductComponent = () => {
                         </span>
                         <div
                           onClick={() => handleCopyPublicUrl()}
+                          title="Copy public URL"
                           className="flex items-center gap-1 hover:cursor-pointer hover:bg-muted p-2 rounded-full"
                         >
                           <Copy className="size-4" />
@@ -435,6 +437,7 @@ const NewProductComponent = () => {
                       type="button"
                       variant="outline"
                       className="w-full gap-2"
+                      title="Share on WhatsApp"
                       onClick={handleShareToWhatsApp}
                     >
                       <MessageCircle className="size-4 text-[#25D366]" />
@@ -444,6 +447,7 @@ const NewProductComponent = () => {
                       type="button"
                       variant="outline"
                       className="w-full gap-2"
+                      title="Share on Telegram"
                       onClick={handleShareToTelegram}
                     >
                       <Send className="size-4 text-[#0088cc]" />
@@ -458,6 +462,7 @@ const NewProductComponent = () => {
                       href={createdProduct.publicUrl}
                       target="_blank"
                       rel="noopener noreferrer"
+                      title="Visit public page"
                     >
                       Visit public page
                       <ExternalLink className="size-4" />
@@ -467,6 +472,7 @@ const NewProductComponent = () => {
                     type="button"
                     variant="outline"
                     className="w-full"
+                    title="Create another product"
                     onClick={handleCreateAnotherProduct}
                   >
                     <Plus className="size-4" />
@@ -494,7 +500,7 @@ const NewProductComponent = () => {
               </div>
               <AlertDialogFooter>
                 <AlertDialogCancel>Close</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDownloadQr}>
+                <AlertDialogAction onClick={handleDownloadQr} title="Download QR code">
                   <Download className="size-4" />
                   Download
                 </AlertDialogAction>
@@ -609,6 +615,7 @@ const NewProductComponent = () => {
                     />
                     <button
                       type="button"
+                      title="Remove image"
                       onClick={handleRemoveFile}
                       className="absolute right-2 top-2 rounded-full bg-background/80 p-1.5 text-muted-foreground transition-colors hover:text-foreground"
                     >

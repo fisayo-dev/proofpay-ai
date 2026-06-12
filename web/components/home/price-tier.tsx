@@ -193,10 +193,10 @@ const PriceTier = () => {
                       variant="outline"
                       className="w-full"
                     >
-                      <Link href="/vendors/signup">Get started free</Link>
+                      <Link href="/vendors/signup" title="Get started free">Get started free</Link>
                     </Button>
                   : <Button asChild className="w-full">
-                      <Link href="/vendors/signup">Upgrade to Pro</Link>
+                      <Link href="/vendors/signup" title="Upgrade to Pro">Upgrade to Pro</Link>
                     </Button>
                   }
                 </CardFooter>

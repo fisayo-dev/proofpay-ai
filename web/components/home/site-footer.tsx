@@ -31,6 +31,7 @@ export function SiteFooter() {
               <Link
                 key={link.text}
                 href={link.link}
+                title={link.text}
                 className="rounded-full border border-transparent px-3 py-2 transition-colors hover:border-border/70 hover:bg-muted/60 hover:text-foreground"
               >
                 {link.text}
