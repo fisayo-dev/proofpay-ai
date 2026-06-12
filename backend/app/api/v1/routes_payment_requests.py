@@ -13,7 +13,10 @@ from app.services.payment_request_service import (
     get_trust_check_by_payment_request_id,
     list_public_store_products,
 )
-from app.services.ai_trust_service import generate_ai_trust_explanation
+from app.services.ai_trust_service import (
+    generate_ai_trust_explanation,
+    generate_buyer_recommendation_summary,
+)
 from app.services.trust_score_service import calculate_trust_score
 from app.services.vendor_service import get_vendor_by_id, get_vendor_for_scoring
 from app.services.vendor_reputation_service import (
@@ -44,6 +47,40 @@ class CreatePaymentRequestBody(BaseModel):
 def list_public_store_products_endpoint():
     try:
         return {"products": list_public_store_products(limit=12)}
+    except psycopg.OperationalError:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/public/recommendations")
+def list_public_recommendations_endpoint():
+    try:
+        products = list_public_store_products(limit=12)
+        most_trusted = sorted(
+            products,
+            key=lambda product: (
+                int(product.get("trust", {}).get("score") or 0),
+                int(product.get("vendor", {}).get("completed_transactions") or 0),
+            ),
+            reverse=True,
+        )[:3]
+        popular = sorted(
+            products,
+            key=lambda product: (
+                int(product.get("vendor", {}).get("completed_transactions") or 0),
+                int(product.get("trust", {}).get("score") or 0),
+            ),
+            reverse=True,
+        )[:3]
+        latest = products[:3]
+
+        return {
+            "summary": generate_buyer_recommendation_summary(products),
+            "popular": popular,
+            "most_trusted": most_trusted,
+            "latest": latest,
+        }
     except psycopg.OperationalError:
         raise
     except Exception as e:

@@ -3,6 +3,7 @@
 import { useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Lightbulb, Sparkles } from "lucide-react";
 import { getCachedSession } from "@/lib/session";
 import { getVendorAvatarUrl } from "@/lib/avatar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -34,6 +35,12 @@ type VendorAnalytics = {
   };
 };
 
+type VendorAIAdvice = {
+  summary: string;
+  suggestions: string[];
+  ai_powered: boolean;
+};
+
 const formatDuration = (seconds: number | null) => {
   if (!seconds) return "No paid data yet";
   if (seconds < 60) return `${Math.round(seconds)}s`;
@@ -56,6 +63,7 @@ const ProfilePage = () => {
     () => null,
   );
   const [analytics, setAnalytics] = useState<VendorAnalytics | null>(null);
+  const [aiAdvice, setAiAdvice] = useState<VendorAIAdvice | null>(null);
 
   useEffect(() => {
     if (session === null) {
@@ -74,6 +82,15 @@ const ProfilePage = () => {
       })
       .catch(() => {
         if (!ignore) setAnalytics(null);
+      });
+
+    api
+      .get<VendorAIAdvice>(`/vendors/${session.vendor_id}/ai-advice`)
+      .then((response) => {
+        if (!ignore) setAiAdvice(response.data);
+      })
+      .catch(() => {
+        if (!ignore) setAiAdvice(null);
       });
 
     return () => {
@@ -231,6 +248,51 @@ const ProfilePage = () => {
               </CardContent>
             </Card>
           </div>
+
+          <Card className="border-primary/20 bg-primary/[0.03]">
+            <CardHeader>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="flex size-9 items-center justify-center rounded-full bg-primary/10 text-primary">
+                    <Sparkles className="size-4" />
+                  </span>
+                  <div>
+                    <CardTitle className="text-xl">ProofPay AI Advisor</CardTitle>
+                    <p className="text-sm text-muted-foreground">
+                      Tailored suggestions to improve buyer trust and conversion.
+                    </p>
+                  </div>
+                </div>
+                <Badge variant={aiAdvice?.ai_powered ? "default" : "secondary"}>
+                  {aiAdvice?.ai_powered ? "AI powered" : "Data guided"}
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="grid gap-4">
+              <p className="text-sm leading-7 text-muted-foreground">
+                {aiAdvice?.summary ||
+                  "ProofPay AI will analyze your vendor metrics after your first payment requests."}
+              </p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {(aiAdvice?.suggestions?.length
+                  ? aiAdvice.suggestions
+                  : [
+                      "Keep your profile complete and consistent with your bank account name.",
+                      "Complete more small Kora-verified transactions to build history.",
+                      "Use clear item photos, delivery method, and buyer communication.",
+                    ]
+                ).map((suggestion) => (
+                  <div
+                    key={suggestion}
+                    className="flex gap-3 rounded-lg border border-border/70 bg-background p-4 text-sm leading-6"
+                  >
+                    <Lightbulb className="mt-0.5 size-4 shrink-0 text-primary" />
+                    <span>{suggestion}</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
 
           <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
             <Card className="border-border/70">
