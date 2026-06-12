@@ -219,7 +219,7 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
   );
   const callbackUrl = `/payments/callback/${paymentConfig.payment_request_id}`;
   const aiSummary =
-    product.trust.ai_summary ||
+    product.trust.ai_summary?.replace(/^"|"$/g, "") ||
     "ProofPay AI reviewed seller signals, payment context, and request details before sending you to checkout.";
   const anomalyWarnings = product.trust.anomaly_warnings || [];
   const trustHistory = product.trust.history || [];
@@ -516,6 +516,11 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
 
                 <button
                   type="button"
+                  title={
+                    toggleReason
+                      ? "Hide trust score reasons"
+                      : "Show trust score reasons"
+                  }
                   className="flex w-full items-center justify-between rounded-lg border border-border/70 bg-background px-4 py-3 text-left transition-colors hover:bg-muted/50"
                   onClick={() => setToggleReason(!toggleReason)}
                   aria-expanded={toggleReason}
@@ -620,7 +625,7 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
                   }}
                 >
                   <AlertDialogTrigger asChild>
-                    <Button className="w-full">
+                    <Button className="w-full" title="Proceed to checkout">
                       <span>Buy now</span>
                       <ArrowRight />
                     </Button>
@@ -670,10 +675,10 @@ const BuyerPublicPage = ({ product, paymentConfig }: BuyerPublicPageProps) => {
                       </div>
 
                       <AlertDialogFooter>
-                        <AlertDialogCancel type="button">
+                        <AlertDialogCancel type="button" title="Cancel checkout">
                           Cancel
                         </AlertDialogCancel>
-                        <Button type="submit">
+                        <Button type="submit" title="Proceed to Kora checkout">
                           Proceed to checkout
                           <ArrowRight />
                         </Button>

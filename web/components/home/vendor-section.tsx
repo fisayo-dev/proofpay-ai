@@ -226,6 +226,7 @@ const VendorSection = () => {
           <button
             key={filter}
             type="button"
+            title={filterDescriptions[filter]}
             data-vendor-animate
             data-vendor-filter
             data-vendor-filter-active={filter === activeFilter ? "" : undefined}
@@ -253,6 +254,7 @@ const VendorSection = () => {
             <Link
               href={`/vendors/${vendor.id}`}
               key={index}
+              title={`View ${vendor.business_name} vendor profile`}
               data-vendor-animate
               data-vendor-card
               className={cn(

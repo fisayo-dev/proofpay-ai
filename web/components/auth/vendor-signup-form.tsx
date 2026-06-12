@@ -366,6 +366,7 @@ const VendorSignupForm = () => {
                         key={role}
                         type="button"
                         onClick={() => setAccountType(role)}
+                        title={`Select ${role} account type`}
                         className={cn(
                           "rounded-2xl border px-4 py-3 text-left transition-colors",
                           accountType === role
@@ -570,6 +571,7 @@ const VendorSignupForm = () => {
                       type="button"
                       variant="outline"
                       disabled={isSubmitting}
+                      title="Go back to previous step"
                       onClick={handleBack}
                     >
                       Back
@@ -577,7 +579,7 @@ const VendorSignupForm = () => {
                   : null}
 
                   {authMode === "login" ? (
-                    <Button type="submit" disabled={isSubmitting}>
+                    <Button type="submit" disabled={isSubmitting} title={`Login as ${accountType}`}>
                       <LogIn className="size-4" />
                       {isSubmitting ? "Logging in..." : `Login as ${accountType}`}
                     </Button>
@@ -585,6 +587,7 @@ const VendorSignupForm = () => {
                     <Button
                       type="button"
                       disabled={isSubmitting}
+                      title={accountType === "buyer" ? "Create buyer account" : "Continue to vendor details"}
                       onClick={handleContinue}
                     >
                       {isSubmitting
@@ -593,7 +596,7 @@ const VendorSignupForm = () => {
                           ? "Create buyer account"
                           : "Continue to vendor details"}
                     </Button>
-                  : <Button type="submit" disabled={isSubmitting}>
+                  : <Button type="submit" disabled={isSubmitting} title="Start selling">
                       {isSubmitting ? "Creating account..." : "Start selling"}
                     </Button>
                   }

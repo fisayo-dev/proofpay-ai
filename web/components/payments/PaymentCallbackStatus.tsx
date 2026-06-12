@@ -357,12 +357,13 @@ const PaymentCallbackStatus = ({ paymentId }: PaymentCallbackStatusProps) => {
 
           <div className="flex flex-col gap-3 sm:flex-row justify-center">
             <Button asChild>
-              <Link href="/">Return home</Link>
+              <Link href="/" title="Return home">Return home</Link>
             </Button>
             {payment && paymentState === "success" ? (
               <Button
                 type="button"
                 variant="outline"
+                title="Download receipt"
                 onClick={() => setShowReceipt(true)}
               >
                 <ReceiptText className="size-4" />
@@ -372,6 +373,7 @@ const PaymentCallbackStatus = ({ paymentId }: PaymentCallbackStatusProps) => {
             <Button
               type="button"
               variant="outline"
+              title="Check payment status again"
               onClick={() => window.location.reload()}
             >
               <RotateCcw className="size-4" />
@@ -452,7 +454,7 @@ const PaymentCallbackStatus = ({ paymentId }: PaymentCallbackStatusProps) => {
 
           <AlertDialogFooter>
             <AlertDialogCancel>Close</AlertDialogCancel>
-            <AlertDialogAction onClick={captureAndDownload}>
+                <AlertDialogAction onClick={captureAndDownload} title="Download receipt">
               Download
             </AlertDialogAction>
           </AlertDialogFooter>

@@ -222,6 +222,7 @@ const StoreSection = () => {
           <Link
             key={product.id}
             href={href}
+            title={`View ${product.payment_request.item_name} product details`}
             data-store-animate
             data-store-card
             className="group/card block focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-4"
