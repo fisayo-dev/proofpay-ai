@@ -8,6 +8,7 @@ import psycopg
 from app.db.connection import get_connection
 from app.services.auth_service import hash_password, verify_password
 from app.services.trust_score_service import calculate_trust_score
+from app.services.vendor_reputation_service import get_vendor_badge
 
 
 class VendorAlreadyExistsError(Exception):
@@ -261,7 +262,8 @@ def get_vendor_score_prediction(vendor_id: str) -> dict | None:
 
 
 def get_vendor_analytics(vendor_id: str) -> dict | None:
-    if not get_vendor_by_id(vendor_id):
+    vendor = get_vendor_by_id(vendor_id)
+    if not vendor:
         return None
 
     conn = get_connection()
@@ -320,9 +322,14 @@ def get_vendor_analytics(vendor_id: str) -> dict | None:
     paid_count = int(analytics.get("paid_count") or 0)
     average_amount_kobo = analytics.get("average_amount_kobo")
     average_time = analytics.get("average_time_to_payment_seconds")
+    trust_score = int(vendor.get("trust_score") or 0)
+    completed_transactions = int(vendor.get("completed_transactions") or paid_count or 0)
 
     return {
         "vendor_id": vendor_id,
+        "trust_score": trust_score,
+        "total_transactions": int(vendor.get("total_transactions") or total_requests or 0),
+        "completed_transactions": completed_transactions,
         "total_requests": total_requests,
         "paid_count": paid_count,
         "failed_count": int(analytics.get("failed_count") or 0),
@@ -339,4 +346,5 @@ def get_vendor_analytics(vendor_id: str) -> dict | None:
             if average_time is not None
             else None
         ),
+        "badge": get_vendor_badge(trust_score, completed_transactions),
     }

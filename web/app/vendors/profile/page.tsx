@@ -2,17 +2,44 @@
 
 import { useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { getCachedSession } from "@/lib/session";
 import { getVendorAvatarUrl } from "@/lib/avatar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import api from "@/lib/axios";
+
+type VendorAnalytics = {
+  trust_score: number;
+  completed_transactions: number;
+  total_requests: number;
+  paid_count: number;
+  pending_count: number;
+  failed_count: number;
+  dispute_count: number;
+  completion_rate: number;
+  average_amount_naira: number;
+  average_time_to_payment_seconds: number | null;
+  badge?: {
+    label: string;
+    icon: string;
+    description: string;
+  };
+};
+
+const formatDuration = (seconds: number | null) => {
+  if (!seconds) return "No paid data yet";
+  if (seconds < 60) return `${Math.round(seconds)}s`;
+  if (seconds < 3600) return `${Math.round(seconds / 60)}m`;
+  return `${Math.round(seconds / 3600)}h`;
+};
 
 const ProfilePage = () => {
   const router = useRouter();
@@ -21,12 +48,31 @@ const ProfilePage = () => {
     () => getCachedSession(),
     () => null,
   );
+  const [analytics, setAnalytics] = useState<VendorAnalytics | null>(null);
 
   useEffect(() => {
     if (session === null) {
       router.push("/vendors/signup");
     }
   }, [session, router]);
+
+  useEffect(() => {
+    if (!session?.vendor_id) return;
+
+    let ignore = false;
+    api
+      .get<VendorAnalytics>(`/vendors/${session.vendor_id}/analytics`)
+      .then((response) => {
+        if (!ignore) setAnalytics(response.data);
+      })
+      .catch(() => {
+        if (!ignore) setAnalytics(null);
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [session?.vendor_id]);
 
   if (!session) return null;
 
@@ -38,13 +84,15 @@ const ProfilePage = () => {
   const isVendor = session.role === "vendor";
 
   return (
-    <section className="mx-auto max-w-2xl space-y-6 pb-20 sm:pb-24">
+    <section className="mx-auto max-w-5xl space-y-6 pb-20 sm:pb-24">
       <div className="space-y-2">
         <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
           Profile
         </h1>
         <p className="text-sm leading-7 text-muted-foreground sm:text-base">
-          Your vendor account details.
+          {isVendor
+            ? "Your vendor account, trust score, and payment performance."
+            : "Your buyer account details."}
         </p>
       </div>
 
@@ -63,6 +111,11 @@ const ProfilePage = () => {
             <CardTitle className="text-3xl font-medium">
               {session.full_name}
             </CardTitle>
+            {isVendor && analytics?.badge ? (
+              <Badge variant="outline" className="w-fit">
+                {analytics.badge.icon} {analytics.badge.label}
+              </Badge>
+            ) : null}
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -92,6 +145,71 @@ const ProfilePage = () => {
           )}
         </CardContent>
       </Card>
+
+      {isVendor ? (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Card className="border-border/70">
+            <CardContent className="p-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                Trust score
+              </p>
+              <p className="mt-2 text-3xl font-semibold">
+                {analytics?.trust_score ?? session.trust_score ?? 0}/100
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="border-border/70">
+            <CardContent className="p-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                Completion rate
+              </p>
+              <p className="mt-2 text-3xl font-semibold">
+                {Math.round((analytics?.completion_rate ?? 0) * 100)}%
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="border-border/70">
+            <CardContent className="p-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                Paid requests
+              </p>
+              <p className="mt-2 text-3xl font-semibold">
+                {analytics?.paid_count ?? 0}
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="border-border/70">
+            <CardContent className="p-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                Pending requests
+              </p>
+              <p className="mt-2 text-3xl font-semibold">
+                {analytics?.pending_count ?? 0}
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="border-border/70 sm:col-span-2">
+            <CardContent className="p-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                Average order value
+              </p>
+              <p className="mt-2 text-3xl font-semibold">
+                ₦{(analytics?.average_amount_naira ?? 0).toLocaleString()}
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="border-border/70 sm:col-span-2">
+            <CardContent className="p-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                Average time to payment
+              </p>
+              <p className="mt-2 text-3xl font-semibold">
+                {formatDuration(analytics?.average_time_to_payment_seconds ?? null)}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      ) : null}
     </section>
   );
 };

@@ -1,8 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { useRef } from "react";
-import { store_products } from "@/constants/home";
+import Link from "next/link";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { store_products, type StoreProduct } from "@/constants/home";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -11,10 +12,36 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { nairaFormatter } from "@/utils/store";
+import api from "@/lib/axios";
 import { useHomeGsap } from "./use-home-gsap";
 
 const StoreSection = () => {
   const rootRef = useRef<HTMLElement>(null);
+  const [liveProducts, setLiveProducts] = useState<StoreProduct[]>([]);
+
+  useEffect(() => {
+    let ignore = false;
+
+    api
+      .get<{ products: StoreProduct[] }>("/public/store-products")
+      .then((response) => {
+        if (!ignore && response.data.products?.length) {
+          setLiveProducts(response.data.products);
+        }
+      })
+      .catch(() => {
+        if (!ignore) setLiveProducts([]);
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
+  const products = useMemo(
+    () => (liveProducts.length > 0 ? liveProducts : store_products),
+    [liveProducts],
+  );
 
   useHomeGsap(rootRef, (gsap, _ScrollTrigger, prefersReducedMotion) => {
     if (prefersReducedMotion) {
@@ -186,17 +213,26 @@ const StoreSection = () => {
       </div>
 
       <div className="mt-12 grid gap-6 lg:grid-cols-3">
-        {store_products.map((product) => (
-          <Card
+        {products.map((product) => {
+          const href = product.public_slug
+            ? `/r/${product.public_slug}`
+            : `/vendors/${product.vendor.id || product.id.split("-").slice(0, 2).join("-")}`;
+
+          return (
+          <Link
             key={product.id}
+            href={href}
             data-store-animate
             data-store-card
-            className="group/card overflow-hidden border border-border/70 bg-background/80 pt-0 shadow-[0_20px_60px_-30px_rgba(14,30,86,0.35)] backdrop-blur-sm"
+            className="group/card block focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-4"
+          >
+          <Card
+            className="h-full overflow-hidden border border-border/70 bg-background/80 pt-0 shadow-[0_20px_60px_-30px_rgba(14,30,86,0.35)] backdrop-blur-sm transition group-hover/card:-translate-y-1 group-hover/card:shadow-[0_24px_70px_-34px_rgba(14,30,86,0.45)]"
           >
             <div className="relative aspect-4/3 overflow-hidden">
               <Image
                 data-store-image
-                src={product.image}
+                src={product.image || "/images/products/ceramic-mug.jpg"}
                 alt={product.payment_request.item_name}
                 fill
                 className="object-cover transition-transform duration-500 group-hover/card:scale-105"
@@ -247,11 +283,16 @@ const StoreSection = () => {
                 <Badge data-store-badge variant="outline">
                   {product.vendor.completed_transactions} completed sales
                 </Badge>
+                <Badge data-store-badge variant="secondary">
+                  {product.public_slug ? "Open checkout" : "View vendor"}
+                </Badge>
               </div>
             </CardHeader>
 
           </Card>
-        ))}
+          </Link>
+          );
+        })}
       </div>
     </section>
   );
