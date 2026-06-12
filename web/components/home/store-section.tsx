@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Sparkles, TrendingUp } from "lucide-react";
+import { ImageIcon, Sparkles, TrendingUp } from "lucide-react";
 import { store_products, type StoreProduct } from "@/constants/home";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -25,14 +25,32 @@ type BuyerRecommendations = {
   latest: StoreProduct[];
 };
 
-const FALLBACK_PRODUCT_IMAGE = "/images/products/ceramic-mug.jpg";
+const hasImage = (src?: string | null): src is string =>
+  !!src && !src.includes("localhost") && !src.includes("127.0.0.1");
 
-const getSafeImageSrc = (src?: string | null) => {
-  if (!src || src.includes("localhost") || src.includes("127.0.0.1")) {
-    return FALLBACK_PRODUCT_IMAGE;
+const ProductImage = ({ product }: { product: StoreProduct }) => {
+  const [errored, setErrored] = useState(false);
+
+  if (!hasImage(product.image) || errored) {
+    return (
+      <div
+        data-store-image
+        className="flex h-full w-full items-center justify-center bg-muted"
+      >
+        <ImageIcon className="size-14 text-muted-foreground/40" />
+      </div>
+    );
   }
 
-  return src;
+  return (
+    <img
+      data-store-image
+      src={product.image}
+      alt={product.payment_request.item_name}
+      className="h-full w-full object-cover transition-transform duration-500 group-hover/card:scale-105"
+      onError={() => setErrored(true)}
+    />
+  );
 };
 
 const StoreSection = () => {
@@ -324,16 +342,7 @@ const StoreSection = () => {
             className="h-full overflow-hidden border border-border/70 bg-background/80 pt-0 shadow-[0_20px_60px_-30px_rgba(14,30,86,0.35)] backdrop-blur-sm transition group-hover/card:-translate-y-1 group-hover/card:shadow-[0_24px_70px_-34px_rgba(14,30,86,0.45)]"
           >
             <div className="relative aspect-4/3 overflow-hidden">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                data-store-image
-                src={getSafeImageSrc(product.image)}
-                alt={product.payment_request.item_name}
-                className="h-full w-full object-cover transition-transform duration-500 group-hover/card:scale-105"
-                onError={(event) => {
-                  event.currentTarget.src = FALLBACK_PRODUCT_IMAGE;
-                }}
-              />
+              <ProductImage product={product} />
               <div className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-linear-to-t from-black/75 to-transparent px-4 py-4 text-white">
                 <div>
                   <p className="text-xs uppercase tracking-[0.24em] text-white/70">
