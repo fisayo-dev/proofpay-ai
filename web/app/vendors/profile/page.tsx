@@ -3,7 +3,7 @@
 import { useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { FileText, Lightbulb, Sparkles } from "lucide-react";
+import { FileText, Lightbulb } from "lucide-react";
 import { getCachedSession } from "@/lib/session";
 import { getVendorAvatarUrl } from "@/lib/avatar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -134,7 +134,7 @@ const ProfilePage = () => {
     { label: "paid", count: paidCount, fill: "var(--color-paid)" },
     { label: "pending", count: pendingCount, fill: "var(--color-pending)" },
     { label: "failed", count: failedCount, fill: "var(--color-failed)" },
-  ];
+  ].filter((d) => d.count > 0);
 
   return (
     <section className="mx-auto space-y-6 pb-20 sm:pb-24">
@@ -354,7 +354,7 @@ const ProfilePage = () => {
                         className="fill-background"
                         stroke="none"
                         fontSize={12}
-                        formatter={(value: any) =>
+                        formatter={(value: unknown) =>
                           String(value).charAt(0).toUpperCase() + String(value).slice(1)
                         }
                       />

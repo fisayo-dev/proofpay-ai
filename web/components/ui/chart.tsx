@@ -119,9 +119,13 @@ function ChartTooltipContent({
   labelKey?: string
   labelClassName?: string
   active?: boolean
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   payload?: any[]
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   label?: any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   labelFormatter?: (label: any, payload: any[]) => React.ReactNode
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   formatter?: (
     value: any,
     name: any,
@@ -170,6 +174,7 @@ function ChartTooltipContent({
     >
       {!nestLabel ? tooltipLabel : null}
       <div className="grid gap-1.5">
+        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
         {payload.map((item: any, index: number) => {
           const key = `${nameKey || item.name || item.dataKey || "value"}`
           const itemConfig = getPayloadConfigFromPayload(config, item, key)
@@ -237,6 +242,7 @@ function ChartTooltipContent({
   )
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getPayloadConfigFromPayload(
   config: ChartConfig,
   payload: any,
