@@ -143,10 +143,11 @@ const ProfilePage = () => {
         </p>
       </div>
 
+      <div className="grid gap-6 lg:grid-cols-[1fr_2fr] items-start">
       <Card className="border border-border/70 bg-background shadow-[0_24px_80px_-48px_rgba(14,30,86,0.28)]">
         <CardHeader>
-          <div className="flex items-center gap-4">
-            <Avatar className="size-20 shadow-sm">
+          <div className="flex items-center gap-4 flex-wrap">
+            <Avatar className="size-16 sm:size-20 shadow-sm">
               <AvatarImage
                 src={avatarUrl}
                 alt={`${session.full_name} account avatar`}
@@ -371,6 +372,7 @@ const ProfilePage = () => {
           </div>
         </div>
       ) : null}
+      </div>
     </section>
   );
 };

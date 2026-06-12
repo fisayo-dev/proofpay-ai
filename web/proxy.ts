@@ -16,7 +16,7 @@ export function proxy(request: NextRequest) {
   }
 
   if (isValid && pathname === "/vendors/signup") {
-    return NextResponse.redirect(new URL("/vendors/new-product", request.url));
+    return NextResponse.redirect(new URL("/vendors/profile", request.url));
   }
 
   if (!isValid && (pathname === "/vendors/profile" || pathname === "/vendors/new-product")) {
